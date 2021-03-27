@@ -14,3 +14,4 @@ RUN pip install pipenv && pipenv install --system
 
 # Copy project
 COPY . /metroweb/
+RUN pipenv install psycopg2-binary==2.8.5
