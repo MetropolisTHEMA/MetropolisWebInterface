@@ -3,4 +3,5 @@ from django.http import HttpResponse
 
 # Create your views here.
 def hello(request):
-    return HttpResponse('Welcome to metroplis app')
+    return render(request, 'index.html')
+    #return HttpResponse('Welcome to metroplis app')
