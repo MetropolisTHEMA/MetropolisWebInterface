@@ -1,4 +1,4 @@
 secretkey
 .DS_Store
-db_sqlite3
-metro_project/settings
+db.sqlite3
+metro_project/settings.py
