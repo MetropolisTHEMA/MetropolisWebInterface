@@ -1,0 +1,291 @@
+@startuml
+
+entity "User" as user {
+  *id : integer
+  --
+  *username : character
+  *email : character
+  first_name : character
+  last_name : character
+  *password : character
+  *date_join = timestamp
+  *last_login = timestamp
+  *is_active = boolean
+  *is_admin = boolean
+}
+
+entity "Project" as proj {
+  *id : integer
+  --
+  *owner : integer <<FK>>
+  *public : boolean
+  *name : character
+  comment : character
+}
+
+entity "File" as file {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *public : boolean
+  *title : character
+  *location : character varying
+}
+
+entity "Run" as run {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *parameter_set : integer <<FK>>
+  *population : integer <<FK>>
+  policy : integer <<FK>>
+  road_network : integer <<FK>>
+  pt_network : integer <<FK>>
+  *status : enum
+  *public : boolean
+  name : character
+  comment : character
+  tags : character
+  start_time : timestamp
+  end_time : timestamp
+  time_taken : interval
+  iterations : smallint
+}
+
+entity "ParameterSet" as param {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *public : boolean
+  *period_start : time
+  *period_end : time
+  *period_interval : interval
+  *learn_process : enum
+  *learn_param : real
+  *iter_check : boolean
+  *iter_value : smallint
+  *converg_check : boolean
+  *converg_value : real
+  *spillback_enable : boolean
+  *spillback_value : real
+  *locked : boolean
+  name : character
+  comment : character
+  tags : character
+}
+
+entity "Preferences" as pref {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *public : boolean
+  *parameters : TBD
+  *locked : boolean
+  name : character
+  comment : character
+  tags : character
+}
+
+entity "ODMatrix" as od_matrix {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *public : boolean
+  *size : integer
+  *locked : boolean
+  name : character
+  comment : character
+  tags : character
+}
+
+entity "Zone" as zone {
+  *id : integer
+  --
+  *centroid : point
+  geometry : polygon
+  radius : real
+  name : character
+}
+
+entity "ODPair" as od_pair {
+  *id : integer
+  --
+  *matrix : integer <<FK>>
+  *origin : integer <<FK>>
+  *destination : integer <<FK>>
+  *size : integer
+}
+
+entity "Population" as pop {
+  *id : integer
+  --
+  *generated : boolean
+  random_seed : integer
+}
+
+entity "PopulationSegment" as pop_seg {
+  *id : integer
+  --
+  *population : integer <<FK>>
+  *preferences : integer <<FK>>
+  *od_matrix : integer <<FK>>
+}
+
+entity "Agent" as agent {
+  *id : integer
+  --
+  *population : integer <<FK>>
+  origin_node : integer <<FK>>
+  destination_node : integer <<FK>>
+  origin_stop : integer <<FK>>
+  destination_stop : integer <<FK>>
+  *parameters : TBD
+}
+
+entity "AgentResults" as a_res {
+  *id : integer
+  --
+  *agent : integer <<FK>>
+  *run : integer <<FK>>
+  *mode : enum
+  *departure_time : time
+  *arrival_time : time
+  *travel_time : time
+  *utility : real
+  *real_cost : real
+}
+
+entity "AgentRoadPath" as a_path {
+  *id : integer
+  --
+  *agent : integer <<FK>>
+  *run : integer <<FK>>
+  *edge : integer <<FK>>
+  *time : time
+  *travel_time : interval
+}
+
+entity "RoadNetwork" as net {
+  *id : integer
+  --
+  *project : integer <<FK>>
+  *public : boolean
+  *simple : boolean
+  *locked : boolean
+  *representation : character varying
+  *nb_nodes : integer
+  *nb_edges : integer
+  crs : character
+  name : character
+  comment : character
+  tags : character
+}
+
+entity "Node" as node {
+  *id : integer
+  --
+  *network : integer <<FK>>
+  *user_id : integer
+  *enable_origin : boolean
+  *enable_destination : boolean
+  name : character
+  *loc : point
+}
+
+entity "NodeResults" as n_res {
+  *id : integer
+  --
+  *node : integer <<FK>>
+  *run : integer <<FK>>
+  *upstream : integer <<FK>>
+  *downstream : integer <<FK>>
+  *time : time
+  *vehicles : integer
+  *crossing_time : interval
+}
+
+entity "RoadType" as road_type {
+  *id : integer
+  --
+  *network : integer <<FK>>
+  *user_id : integer
+  name : character
+  *congestion : enum
+  *default_speed : real
+  *default_lanes : smallint
+  *default_capacity : real
+  *default_param1 : real
+  *default_param2 : real
+  *default_param3 : real
+}
+
+entity "Edge" as edge {
+  *id : integer
+  --
+  *network : integer <<FK>>
+  *source : integer <<FK>>
+  *target : integer <<FK>>
+  *road_type : integer <<FK>>
+  *user_id : integer
+  name : character
+  *geometry : path
+  *length : real
+  speed : real
+  lanes : smallint
+  capacity : real
+  param1 : real
+  param2 : real
+  param3 : real
+}
+
+entity "EdgeResults" as e_res {
+  *id : integer
+  --
+  *edge : integer <<FK>>
+  *run : integer <<FK>>
+  *time : time
+  *congestion : real
+  *travel_time : interval
+  *speed : real
+}
+
+user }|--o{ proj
+user ||--o{ proj
+file }o--|| proj
+proj ||--o{ run
+proj ||--o{ net
+proj ||--o{ param
+proj ||--o{ pref
+proj ||--o{ od_matrix
+run }o--o| net
+run }o--|| param
+run }o--|| pop
+pop ||--|{ pop_seg
+pop_seg }o--|| od_matrix
+pop_seg }o--|| pref
+od_matrix ||--o{ od_pair
+od_matrix ||--o{ zone
+od_pair }o--|| zone
+od_pair }o--|| zone
+pop ||--o{ agent
+node ||--o{ agent
+node ||--o{ agent
+a_res }o--|| agent
+a_res }o--|| run
+a_path }o--|| agent
+a_path }o--|| run
+a_path }o--|| edge
+net ||--o{ edge
+net ||--o{ road_type
+road_type ||--o{ edge
+net ||--o{ node
+node ||--o{ edge
+node ||--o{ edge
+n_res }o--|| node
+n_res }o--|| run
+n_res }o--|| edge
+n_res }o--|| edge
+e_res }o--|| edge
+e_res }o--|| run
+
+@enduml
