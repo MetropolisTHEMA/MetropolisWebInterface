@@ -70,6 +70,8 @@ to your computer and more importantly, it allows for collaboration with other so
 Bitbucket, and GitLab. When you’re learning web development, it’s best to stick to private rather than public repositories so you
 don’t inadvertently post critical information such as passwords online.
 
+git remote add orign https://github.com/aba2s/Metropolis.git
+git push -u origin main
 Sphinx
 ------
 We will come back to this section later.

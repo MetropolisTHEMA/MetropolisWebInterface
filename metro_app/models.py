@@ -14,6 +14,7 @@ https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 """
 #from django.db import models
 from django.contrib.gis.db import models
+from users.models import CustomUser
 
 #class CustomUser(AbstractUser):
     #https://testdriven.io/blog/django-custom-user-model/
@@ -27,7 +28,7 @@ class Project(models.Model):
     :public bool: specify if the created project is private or public.
     :name str: is the name of the project's owner.
     """
-    #owner = models.ManyToManyField(CustomUser, on_delete=models.CASCADE)
+    owner = models.ManyToManyField(CustomUser)
     public = models.BooleanField(default=False)
     name = models.CharField('Project Name', max_length=200, null=False)
 
@@ -150,7 +151,7 @@ class Node(models.Model):
         db_table='Node'
 
 
-class Edges(models.Model):
+class Edge(models.Model):
     """
     Sometimes you may read edge and other time link. These two words mean same thing.
     A RoadNetwork model record can have many Edges model records associated with.
