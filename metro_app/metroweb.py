@@ -1,43 +1,49 @@
-
-import pandas as pd
-import geopandas as gpd
-from pyproj import CRS
-from shapely import affinity
-from shapely.geometry import Point, LineString
-import networkx as nx
-import folium
-from folium.plugins import Search
-import sys
-import os
-import tkinter as tk
-from tkinter import filedialog
-import math
-from math import cos
-import datetime
-from datetime import datetime
-
+#import pandas as pd
+#import geopandas as gpd
+#from pyproj import CRS
+#from shapely import affinity
+#from shapely.geometry import Point, LineString
+#import networkx as nx
+#import sys
+#import os
+#mport tkinter as tk
+#from tkinter import filedialog
+#mport math
+#from math import cos
+#import datetime
+#from datetime import datetime
+#
 
 """
+Street Network
+==============
 The main task of this function is to draw an interactive web map representing a street network.
 
-Steps
-_____
+.. figure:: ../images/idf.png
+   :height: 500px
+   :align: center
 
+
+Steps
+-----
 * importing nodes and edges files, nodes first.
 * merging them into one dataframe which will be converted as a geodataframe
-* Setting geometry's variables. 
+* Setting geometry's variables.
 * spliting network : abstract (Simple=True) and real (Simple=False) network
 * adding oneway column to separte multidirectional and one-way roads
 * appliying an offset distance in multi-directional roads to repesent them
 
 Prerequisites
 -------------
-
 Installing Python 3 and all imprted packages in the module
+
+Input
+-----
+The function receive two files containing nodes and edges of a street network.
 
 """
 def metroweb_network(Simple,
-         set_initial_crs=4326,
+         set_initial_crs,
          zone_radius=15,
          intersection_radius_percentage = 0.8,
          distance_offset_percentage = 0.8,
@@ -48,21 +54,18 @@ def metroweb_network(Simple,
     '''
     Parameters
     ----------
-    Simple                         : boolean, if True this is an abstract network, False a valid network)
-    set_initial_crs                : initial coordinates system reference from which the data is created
+    Simple                         : boolean, if True this is an abstract network, False a valid network
+    set_initial_crs                : initial coordinates system reference from which the data is created.
     convert_to_crs                 : projection coordinates system reference we want to project the data
     zone_radius                    : radius of zone nodes (in meter)
     intersection_radius_percentage : number between 0 and 1, representing a percentage of zone's radius
     distance_offset_percentage     : number between 0 and 1, representing a percentage of zone's radius
     line_color                     : color of lines
-
-    Input
-    -----
-    two files containing nodes and edges of a street network.
+    link_side                      : shift made to the right or left
 
     Returns
     -------
-    html object representing an interactive folium map.
+    Html object representing an interactive folium map.
     '''
 
     # Statical variables
@@ -122,13 +125,13 @@ def metroweb_network(Simple,
         nodes_gdf = gpd.GeoDataFrame(nodes_df, crs=initial_crs, geometry = nodes_geometry)
         edges_gdf = gpd.GeoDataFrame(edges_df, crs=initial_crs, geometry = edges_geometry)
         nodes_gdf.to_crs(convert_to_crs, inplace=True)
-        edges_gdf = edges_gdf[edges_gdf.geometry.length>0]                                   # Delete edges with null lenght (points)      
+        edges_gdf = edges_gdf[edges_gdf.geometry.length>0]                                   # Delete edges with null lenght (points)
         intersection_radius = intersection_radius_percentage*zone_radius
         zone_radius=zone_radius
         distance_offset =distance_offset_percentage*zone_radius
         tiles_layer = 'OpenStreetMap'
 
-    
+
     # Takes only valid links and nodes
     # edges_gdf = edges_gdf[edges_gdf.is_valid==True]
     # nodes_gdf = nodes_gdf[nodes_gdf.is_valid==True]
@@ -167,7 +170,7 @@ def metroweb_network(Simple,
     df_all_roads.drop('geometry', axis=1, inplace=True)
     gdf_all_roads = gpd.GeoDataFrame(df_all_roads, geometry ='_offset_geometry_', crs=default_crs)
     gdf_all_roads.to_crs(crs=convert_to_crs, inplace=True)
-    
+
     # Ploting the network
     nodes_gdf=nodes_gdf.sort_values(by="zone", ascending=True, ignore_index=True)
     latitudes = list(nodes_gdf['geometry'].y)
@@ -177,7 +180,7 @@ def metroweb_network(Simple,
     # Initialize the map
     m = folium.Map(location=[latitudes[0],longitudes[0]],max_zoom = 18, prefer_canvas=True,
                    tiles = tiles_layer)
-    
+
     # Create a GeoJson onject and display the street network
     layer = folium.GeoJson(gdf_all_roads,tooltip=folium.GeoJsonTooltip(
         fields=['oneway','id_edge','lanes', 'length','speed', 'capacity'], localize=True),
