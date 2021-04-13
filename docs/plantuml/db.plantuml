@@ -42,7 +42,6 @@ entity "Run" as run {
   road_network : integer <<FK>>
   pt_network : integer <<FK>>
   *status : enum
-  *public : boolean
   name : character
   comment : character
   tags : character
@@ -56,7 +55,6 @@ entity "ParameterSet" as param {
   *id : integer
   --
   *project : integer <<FK>>
-  *public : boolean
   *period_start : time
   *period_end : time
   *period_interval : interval
@@ -78,7 +76,6 @@ entity "Preferences" as pref {
   *id : integer
   --
   *project : integer <<FK>>
-  *public : boolean
   *parameters : TBD
   *locked : boolean
   name : character
@@ -90,7 +87,6 @@ entity "ODMatrix" as od_matrix {
   *id : integer
   --
   *project : integer <<FK>>
-  *public : boolean
   *size : integer
   *locked : boolean
   name : character
@@ -120,6 +116,7 @@ entity "Population" as pop {
   *id : integer
   --
   *generated : boolean
+  *locked : boolean
   random_seed : integer
 }
 
@@ -150,7 +147,7 @@ entity "AgentResults" as a_res {
   *mode : enum
   *departure_time : time
   *arrival_time : time
-  *travel_time : time
+  *travel_time : interval
   *utility : real
   *real_cost : real
 }
@@ -169,10 +166,9 @@ entity "RoadNetwork" as net {
   *id : integer
   --
   *project : integer <<FK>>
-  *public : boolean
   *simple : boolean
   *locked : boolean
-  *representation : character varying
+  representation : character varying
   *nb_nodes : integer
   *nb_edges : integer
   crs : character
@@ -186,8 +182,6 @@ entity "Node" as node {
   --
   *network : integer <<FK>>
   *user_id : integer
-  *enable_origin : boolean
-  *enable_destination : boolean
   name : character
   *loc : point
 }
@@ -213,7 +207,6 @@ entity "RoadType" as road_type {
   *congestion : enum
   *default_speed : real
   *default_lanes : smallint
-  *default_capacity : real
   *default_param1 : real
   *default_param2 : real
   *default_param3 : real
@@ -232,7 +225,6 @@ entity "Edge" as edge {
   *length : real
   speed : real
   lanes : smallint
-  capacity : real
   param1 : real
   param2 : real
   param3 : real

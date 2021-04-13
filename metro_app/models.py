@@ -21,12 +21,20 @@ from users.models import CustomUser
     #pass # Create an separate app for users accounts
 
 class Project(models.Model):
-    """
-    A project can belongs to many users. And a user can have many projects
+    """Projects are containers used to store input models, runs and output
+    models in a coherent and organized manner.
 
-    :owner str: the owner of the project.
-    :public bool: specify if the created project is private or public.
-    :name str: is the name of the project's owner.
+    Each user can create multiple projects and each project can be shared
+    between multiple users.
+    The creator of the project is the owner. He can decide to add or remove
+    users to the project.
+
+    :owner CustomUser: The user who created and owns the project.
+    :users set of CustomUser: Set of users who can view and modify the project.
+    :public bool: If True, the project can be viewed (but not modified) by
+    anyone (default is False).
+    :name str: Name of the project.
+    :comment str: Description of the project (default is '').
     """
     owner = models.ManyToManyField(CustomUser)
     public = models.BooleanField(default=False)
@@ -40,11 +48,13 @@ class Project(models.Model):
         db_table = 'Project'
 
 class File(models.Model):
-    """
-    :project: a foreign key. The first argument "Project" indicate the relationship model.
-    :public: boolean field. If true this is a public, else this private.
-    :title: file name
-    :location:
+    """File shared by the users of a project.
+
+    :project Project: Project the file belongs to.
+    :public bool: if True, the file can be viewed by anyone (only if the
+    project is also public.
+    :title str: Title of the file, as shown on the interface.
+    :location file: Location of the file on the server.
     """
     project = models.ForeignKey(Project, related_name='file_project', on_delete=models.CASCADE)
     public = models.BooleanField()
@@ -58,28 +68,42 @@ class File(models.Model):
         db_table='File'
 
 class ParameterSet(models.Model):
-    """
-    :project: a foreign key. The first argument "Project" indicate the relationship model.
-    :public: boolean field. If true this is a public, else this private.
-    :period_start: start period
-    :period_end: end period
-    :period_interval:
-    :lerarn_process: type of learning process (exponential, linear, quadratic, genetic )
-    :iter_check: boolean value
-    :iter_value: number of iterations, if zero number of iterations is unlimited
-    :converg_check: boolean value
-    :converg_value: value of convergence after iteration.
-    :spill_back: boolean value
-    :locked: if true, I can no more modify it.
+    """Set of technical parameters used for a run.
+
+    :project Project: Project the ParameterSet instance belongs to.
+    :period_start datetime.time: Earliest possible departure time.
+    :period_end datetime.time: Latest possible departure time.
+    :period_interval  timedelta: Interval at which link-specific results are
+    recorded.
+    :learn_process str: Type of learning process for the day-to-day model.
+    Possible values are 'EX' (exponential model), 'LI' (linear model), 'QU'
+    (quadratic model) and 'GE' (genetic model).
+    :learn_param float: Weight of the previous day in the learning process. The
+    exact meaning depends on the type of learning process.
+    :iter_check bool: If True, the run stops when the maximum number of
+    iterations is exceeded.
+    :iter_value int: Maximum number of iterations of the run.
+    :converg_check bool: If True, ther run stops when the convergence criteria
+    is smaller than the threshold value.
+    :converg_value float: Threshold of the convergence criteria.
+    :spillback_enable bool: If True, congestion can spread on upstream links
+    (i.e., queues are horizontal, not vertical).
+    :spillback_value float: Length of a base vehicle, in meters. Used to
+    compute the length of the trafic jams. Only relevant if spillback_enable
+    is True.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance.
+    :tags set of str: Tags describing the instance, used to search and filter
+    the instances.
     """
     leraning_process = (
-        (1, 'exponential'),
-        (2, 'linear'),
-        (3, 'quadratic'),
-        (4, 'genetic')
+        ('EX', 'exponential'),
+        ('LI', 'linear'),
+        ('QU', 'quadratic'),
+        ('GE', 'genetic')
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
     period_start = models.DateTimeField('Period Start', auto_now_add=True)
     period_end = models.DateTimeField('Period Start', auto_now_add=True)
     #period_interval =
@@ -100,18 +124,29 @@ class ParameterSet(models.Model):
         db_table='ParameterSet'
 
 class RoadNetwork(models.Model):
-    """
-    :project: foreign key. The first argument "Project" indicate the relationship model.
-    :public: boolean field. If true this is a public, else this private.
-    :boolean: if True this is an abstract network, False a valid network.
-    :locked: boolean field, if true this is locked.
-    :representation:
-    :nb_nodes: total number of nodes.
-    :nb_edges: total number of edges.
-    :name: network name. It can be IDF, Brussels, etc.
+    """Container storing the graph-representation of a road network.
+
+    A road network is composed of a set of nodes and of a set of edges
+    connecting the nodes.
+    Road types are used to describe the congestion model of the roads.
+
+    :project Project: Project the RoadNetwork instance belongs to.
+    :simple bool: If True, the coordinates of the nodes are abstract.
+    Otherwise, the coordinates of the nodes are expressed in a real coordinate
+    system.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :representation file: Location on the server of the HTML file with the
+    Leaflet.js representation of the road network.
+    :nb_nodes int: Total number of nodes in the road network.
+    :nb_edges int: Total number of edges in the road network.
+    :crs str: Coordinate reference system used for the coordinates of the
+    nodes and the geometry of the edges.
+    :name str: Name of the instance.
+    :comment str: Description of the instance.
+    :tags set of str: Tags describing the instance, used to search and filter
+    the instances.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
     simple = models.BooleanField(default=False)
     locked = models.BooleanField(default=False)
     #representation = path
@@ -126,22 +161,41 @@ class RoadNetwork(models.Model):
         db_table='RoadNetWork'
 
 
-class Node(models.Model):
+class RoadType(models.Model):
+    """Congestion model for a set of edges.
+
+    :network RoadNetwork: RoadNetwork the RoadType instance belongs to.
+    :user_id int: Id of the road type, as used by the users in the import
+    files. Must be unique for a specific RoadNetwork.
+    :name str: Name of the road type (default is '').
+    :congestion str: Congestion model used to compute the travel time of the
+    edges. Possible values are 'FF' (free-flow), 'BN' (bottleneck), 'LD' (log
+    density) and 'BP' (bureau of public roads function).
+    :default_speed float: Default free-flow speed of the edges for this road
+    type, in kilometers per hour.
+    :default_param1 float: Default value for the first parameter used in the
+    congestion model. The exact meaning depends on the congestion model.
+    :default_param2 float: Default value for the second parameter used in the
+    congestion model. The exact meaning depends on the congestion model.
+    :default_param3 float: Default value for the third parameter used in the
+    congestion model. The exact meaning depends on the congestion model.
     """
-    A RoadNetwork model record can have many Edges model records associated with.
-    A Node belongs to a single RoadNetWork record. This is one to many relationship.
+    pass
 
-    :network: a foreign key which create the one to many relationship.
-              The first argument "RoadNetWork" indicate the relationship model.
 
-    :user_id: used in import and output files. Should be unique among all network's links.
-    :enable_origin: boolean value
-    :enable_destination: boolean value
+class Node(models.Model):
+    """A Node is an element of the road-network graph, representing an
+    intersection or an origin / destination point.
+
+    :network RoadNetwork: RoadNetwork the Node instance belongs to.
+    :user_id int: Id of the node, as used by the users in the import files.
+    Must be unique for a specific RoadNetwork.
+    :name str: Name of the node (default is '').
+    :loc Point: Point representing the location of the node on the network, in
+    EPSG:4326.
     """
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
     id_node =models.IntegerField() #user_id =
-    enable_origin = models.BooleanField()
-    enable_destination= models.BooleanField()
     name = models.CharField('Node Name', max_length=200)
 
     def __str__(self):
@@ -152,21 +206,34 @@ class Node(models.Model):
 
 
 class Edge(models.Model):
-    """
-    Sometimes you may read edge and other time link. These two words mean same thing.
-    A RoadNetwork model record can have many Edges model records associated with.
-    An Edge belongs to a single RoadNetWork record. This is one to many relationship.
+    """An Edge is an element of the road-network graph, representing road
+    sections or connectors (between an origin / destination and the network).
 
-    :congestion: congestion function, 1 equal to free flow and 2 to congestion
-    :capacity: number of vehicle per lane and per hour.
-    :speed: speed of the link (km/h)
-    :length: lenth of the link (km)
-    :lanes: number of lanes of a link
-    :geometry: linestring of links
-    :name: edge name, usefull for displaying name on the netowork
-    :user_id: used in import and output files. Should be unique among all network's links.
-    :target: is the destination of travellers
-    :source: is the orgin of travellers
+    :network RoadNetwork: RoadNetwork the Node instance belongs to.
+    :source Node: Node representing the starting point of the edge.
+    :target Node: Node representing the ending point of the edge.
+    :roadtype RoadType: Road type representing the congestion model of the
+    edge.
+    :user_id int: Id of the edge, as used by the users in the import files.
+    Must be unique for a specific RoadNetwork.
+    :name str: Name of the edge (default is '').
+    :geometry LineString: Exact or approximate representation of the geometry
+    of the edge as a sequence of points, in EPSG:4326 (default is a straight
+    line between source and target node).
+    :length float: Length of the edge, in kilometers.
+    :speed float: Free-flow speed of the link, in kilometers per hour. The
+    default speed for the given road type is used if empty.
+    :lanes int: Number of lanes on the edge. The default number of lanes for
+    the given road type is used if empty.
+    :param1 float: Parameter used to compute the travel time of the edge. The
+    exact meaning depends on the congestion model. The default value for the
+    given road type is used if empty.
+    :param2 float: Parameter used to compute the travel time of the edge. The
+    exact meaning depends on the congestion model. The default value for the
+    given road type is used if empty.
+    :param3 float: Parameter used to compute the travel time of the edge. The
+    exact meaning depends on the congestion model. The default value for the
+    given road type is used if empty.
     """
     free_flow, congestion =1, 2
     congestion_choice = (
@@ -193,9 +260,20 @@ class Edge(models.Model):
 
 
 class Population(models.Model):
-    """
-    :generated: boolen value
-    :random_seed: radom number.
+    """A Population represents a set of agents, with given characteristics,
+    whose preferences and decisions are simulated.
+
+    A Population is composed of two parts:
+    - A set of population segments representing each an origin-destination
+      matrix of agents with a given distribution of preferences.
+    - A set of agents with given origin, destination and preferences, generated
+      according to the population segments.
+
+    :generated bool: If True, indicate that the set of agents corresponding to
+    the population segments has been generated.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :random_seed int: Seed for the random number generator used to generate the
+    agents (default is a random integer).
     """
     generated = models.BooleanField(blank=False)
     random_seed = models.IntegerField()
@@ -208,14 +286,18 @@ class Population(models.Model):
 
 
 class ODMatrix(models.Model):
-    """
-    :project: a foreign key. The first argument "Project" indicate the relationship model.
-    :public: boolean field. If true this is a public, else this private.
-    :size:  total number of agents in OD matrix.
-    :locked: boolean field, if true this is locked.
+    """Origin-destination matrix representing the origin and destination for a
+    set of agents.
+
+    :project Project: Project the ODMatrix instance belongs to.
+    :size int: Total number of agents in the origin-destination matrix.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance (default is '').
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+    the instances.
     """
     project = models.ForeignKey(Project, related_name='odmatrix_project', on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
     size = models.IntegerField(null=False)
     locked = models.BooleanField(default=False)
 
@@ -227,10 +309,14 @@ class ODMatrix(models.Model):
 
 
 class PopulationSegment(models.Model):
-    """
-    :population: a foreign key which creates the one to many relationship.
-    :preferences: user preferences
-    :od_matrix: the origin destination matrix.
+    """Representation of a set of agents that can be represented with an
+    origin-destination matrix and a distribution of preferences.
+
+    :population Population: Population the PopulationSegment is a part of.
+    :preferences Preferences: Preferences instance representing the
+    distribution of preferences for this population segment.
+    :od_matrix ODMatrix: ODMatrix instance representing the origin-destination
+    matrix for this population segment.
     """
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     preferences = models.IntegerField(blank=False)
@@ -244,13 +330,17 @@ class PopulationSegment(models.Model):
 
 
 class Preferences(models.Model):
-    """
-    :project: a foreign key. The first argument "Project" indicate the relationship model.
-    :public: boolean field. If true this is a public, else this private.
-    :locked: boolean field, if true this is locked.
+    """Distribution of preferences describing a set of agents.
+
+    :project Project: Project the Preferences instance belongs to.
+    ...
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance (default is '').
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+    the instances.
     """
     project = models.ForeignKey(Project, related_name='preferences_project' , on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
     #parameter =TBD
     locked = models.BooleanField(default=False)
 
@@ -261,12 +351,16 @@ class Preferences(models.Model):
         db_table='Preferences'
 
 class Zone(models.Model):
-    """
-    :centroid: fixed point of network representing an area(e.g city or district), which is the origin
-     or destination of travellers.
-    :geometry: Polygon Field
-    :raidus: zone or intersection radius
-    :name: zone name
+    """Point or area representing the origin or destination of agents.
+
+    Zones can be defined in two ways:
+    - As a circle, with a given center and radius (zero for points).
+    - As an area defined by a polygon.
+
+    :centroid Point: Center point of the circle or centroid of the area.
+    :geometry Polygon: Polygon representing the zone, if it is an area.
+    :radius float: Radius of the zone in meters, if it is a circle.
+    :name str: Name of the zone (default is '').
     """
     centroid= models.PointField()
     geometry = models.PolygonField()
@@ -281,11 +375,12 @@ class Zone(models.Model):
 
 
 class ODPair(models.Model):
-    """
-    :matrix: a foreign key. The first argument "ODMatrix" indicate the relationship model.
-    :origin: foreign key
-    :destination: foreign key
-    :size: number of agents travelling from an origin to a destination.
+    """Single origin-destination pair of an ODMatrix.
+
+    :matrix ODMatrix: ODMatrix the ODPair belongs to.
+    :origin Zone: Origin zone for the OD pair.
+    :destination Zone: Destination zone for the OD pair.
+    :size int: Number of agents with the given origin and destination.
     """
     matrix = models.ForeignKey(ODMatrix, related_name='odpairs_matrix', on_delete=models.CASCADE)
     origin = models.ForeignKey(Zone, related_name='odpairs_origin', on_delete=models.CASCADE)
@@ -303,13 +398,64 @@ class ODPair(models.Model):
  # ........................................................................... #
 
 class Run(models.Model):
+    """Class to represent a run of MetroSim.
+
+    :project Project: Project the Run instance belongs to.
+    :parameter_set ParameterSet: ParameterSet used for the run.
+    :population Population: Population used for the run.
+    :policy Policy: Policy used for the run.
+    :road_network RoadNetwork: RoadNetwork used for the run.
+    :pt_network PTNetwork: PTNetwork used for the run.
+    :status str: Status of the run. Possible values are 'NR' (not ready), 'RY'
+    (ready), 'IP' (in progress), 'FI' (finished), 'AB' (aborted) and 'FA'
+    (failed).
+    :name str: Name of the instance (default is '').
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+    the instances.
+    :start_time datetime.datetime: Starting time of the run.
+    :end_time datetime.datetime: Ending time of the run.
+    :time_taken timedelta: Total running time of the run.
+    :iterations int: Number of iterations of the run.
+    """
     pass
 
     class Meta:
         db_table='Run'
 
 
+class Agent(models.Model):
+    """Generated agent ready to be used by MetroSim.
+
+    :population Population: Population instance the Agent belongs to.
+    :origin_node Node: Node of the road network used as the origin of the
+    agent for car trips.
+    :destination_node Node: Node of the road network used as the destination of the
+    agent for car trips.
+    :origin_stop PTStop: PTStop of the public-transit network used as the
+    origin of the agent for public-transit trips.
+    :destination_stop PTStop: PTStop of the public-transit network used as the
+    destination of the agent for public-transit trips.
+    ...
+    """
+    pass
+
+
 class AgentResults(models.Model):
+    """Class to hold results of MetroSim for a specific agent.
+
+    :agent Agent: Agent instance for which the AgentResults is created.
+    :run Run: Run instance from which the results are coming.
+    :mode str: Mode chosen by the agent for the last iteration. Possible values
+    are 'PV' (private vehicle), 'PT' (public transit) and 'WA' (walking).
+    :departure_time datetime.time: Departure time of the agent for the last
+    iteration.
+    :arrival_time datetime.time: Arrival time of the agent for the last
+    iteration.
+    :travel_time timedelta: Travel time of the agent for the last iteration.
+    :utility float: Utility level obtained by the agent for the last iteration.
+    :real_cost float: Cost paid by the agent for the last iteration.
+    """
     pass
 
     class Meta:
@@ -317,6 +463,17 @@ class AgentResults(models.Model):
 
 
 class AgentRoadPath(models.Model):
+    """Road path taken by a specific agent for the last iteration of a run.
+
+    An AgentRoadPath only exists for agents who took the car for the last
+    iteration of the run.
+
+    :agent Agent: Agent instance for which the AgentRoadPath is created.
+    :run Run: Run instance from which the results are coming.
+    :edge Edge: Edge of the road network taken.
+    :time datetime.time: Time at which the edge was taken.
+    :travel_time timedelta: Travel time on the edge.
+    """
     pass
 
     class Meta:
@@ -324,6 +481,20 @@ class AgentRoadPath(models.Model):
 
 
 class NodeResults(models.Model):
+    """Class to hold results of MetroSim for a specific node of the road
+    network.
+
+    :node Node: Node instance for which the NodeResults is created.
+    :run Run: Run instance from which the results are coming.
+    :upstream Edge: Edge whose target is node.
+    :downstream Edge: Edge whose source is node.
+    :time datetime.time: Center of the time window for which results are
+    computed.
+    :vehicles int: Number of vehicles who crossed the node, from edge upstream
+    to edge downstream during the time window.
+    :crossing_time timedelta: Average crossing time of the vehicles during the
+    time window.
+    """
     pass
 
     class Meta:
@@ -331,6 +502,20 @@ class NodeResults(models.Model):
 
 
 class EdgeResults(models.Model):
+    """Class to hold results of MetroSim for a specific edge of the road
+    network.
+
+    :edge Edge: Edge instance for which the EdgeResults is created.
+    :run Run: Run instance from which the results are coming.
+    :time datetime.time: Center of the time window for which results are
+    computed.
+    :congestion float: Average congestion level on the edge during the time
+    window, in percentage.
+    :travel_time timedelta: Average travel time of the edge during the time
+    window.
+    :speed real: Average speed on the edge during the time window, in
+    kilometers per hour.
+    """
     pass
 
     class Meta:
