@@ -1,4 +1,12 @@
-secretkey
 .DS_Store
 db.sqlite3
-metro_project/settings.py
+metro_project/settings
+metro_app/migrations
+settings
+*.py[co]
+*.sw[po]
+*~
+secrets.json
+debug.py
+file.py
+nodes.geojson

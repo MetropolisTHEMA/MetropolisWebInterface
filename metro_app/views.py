@@ -69,9 +69,12 @@ It's a good habit to create a remote repository of our code for each project. Th
 to your computer and more importantly, it allows for collaboration with other software developers. Popular choices include GitHub,
 Bitbucket, and GitLab. When you’re learning web development, it’s best to stick to private rather than public repositories so you
 don’t inadvertently post critical information such as passwords online.
+To link you local development to your git remote repository, and push, type the following command :
 
 git remote add orign https://github.com/aba2s/Metropolis.git
 git push -u origin main
+
+
 Sphinx
 ------
 We will come back to this section later.
@@ -81,14 +84,81 @@ Django Views Modules
 """
 
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.contrib import messages
+from .forms import *
+from .models import *
+
 
 # Create your views here.
 def index(request):
     """
     Describes the data presented to the user.
-
     request : user request
     """
-    return render(request, 'index.html')
-    #return HttpResponse('Welcome to metroplis app')
+    return render(request, 'base.html')
+
+
+#.............................................................................#
+#                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
+#.............................................................................#
+
+def create_project(request):
+    if request.method=='POST':
+        form=ProjectForm(request.POST)
+        if form.is_valid():
+           form.save()
+
+    form =ProjectForm()
+    return render(request, 'project.html', {'form': form})
+
+
+# ........................................................................... #
+#                      VIEW OF CREATING A ROADNETWORK                         #
+#............................................................................ #
+
+def create_roadnetwork(request):
+    # If this is a post request, we need to process the form data.
+    if request.method == 'POST':
+        # Let create a form instance from POST data
+        form = RoadNetworkForm(request.POST)
+        # Check wether the form is valid
+        if form.is_valid():
+            # let's save a new created roadnetwork object from the form's data
+            form.save()
+
+    form = RoadNetworkForm()
+    return render(request, 'project.html', {'form': form})
+
+
+
+"""
+def upload_node(request):
+    template = "upload.html"
+
+    form = NodeForm()
+    if request.method == 'POST':
+        csv_file = request.FILES['my_file']
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a .csv file.')
+
+        data_set = csv_file.read().decode('utf-8')
+        io_string = io.StringIO(data_set)
+        next(io_string)
+        for column in csv.reader(io_string, delimiter=','):
+            _, created = Node.objects.update_or_create(
+                node_id=column[0],
+                name=column[1],
+                location=column[2],
+                network_id=column[3],
+            )
+    elif request.method == 'GET':
+        # DO something in GET call
+        # message error
+        pass
+
+    context = {
+        'nodes': Node.objects.all()
+    }
+
+    return render(request, template, {'form':form})
+"""
