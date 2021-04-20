@@ -6,7 +6,8 @@ settings
 *.py[co]
 *.sw[po]
 *~
-secrets.json
+settings.json
 debug.py
 file.py
 nodes.geojson
+docs/plantuml/*.png
