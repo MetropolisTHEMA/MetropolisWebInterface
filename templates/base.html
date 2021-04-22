@@ -45,7 +45,7 @@
               <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <li><a class="dropdown-item" href="{% url 'upload_node' %}">Node file</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#">Edge file</a></li>
+                <li><a class="dropdown-item" href="{% url 'upload_edge' %}">Edge file</a></li>
               </ul>
             </li>
 
@@ -57,6 +57,8 @@
                 <li><a class="dropdown-item" href="{% url 'create_roadnetwork' %}">Create network</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="#">Update network</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'create_roadtype' %}">Create road type</a></li>
               </ul>
             </li>
 

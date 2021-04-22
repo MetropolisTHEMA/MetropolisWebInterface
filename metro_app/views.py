@@ -83,7 +83,7 @@ Django Views Modules
 ====================
 """
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import *
 from .models import *
@@ -107,6 +107,7 @@ def create_project(request):
         form=ProjectForm(request.POST)
         if form.is_valid():
            form.save()
+           return redirect('home')
 
     form =ProjectForm()
     return render(request, 'project.html', {'form': form})
@@ -125,10 +126,28 @@ def create_roadnetwork(request):
         if form.is_valid():
             # let's save a new created roadnetwork object from the form's data
             form.save()
+            return redirect('home')
 
     form = RoadNetworkForm()
-    return render(request, 'project.html', {'form': form})
+    return render(request, 'roadnetwork.html', {'form': form})
 
+# ........................................................................... #
+#                      VIEW OF CREATING A ROAD TYPE                         #
+#............................................................................ #
+
+def create_roadtype(request):
+    # If this is a post request, we need to process the form data.
+    if request.method == 'POST':
+        # Let create a form instance from POST data
+        form = RoadTypeForm(request.POST)
+        # Check wether the form is valid
+        if form.is_valid():
+            # let's save a new created roadtype object from the form's data
+            form.save()
+            return redirect('home')
+
+    form = RoadTypeForm()
+    return render(request, 'roadtype.html', {'form': form})
 
 
 """

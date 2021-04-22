@@ -11,6 +11,18 @@ class NodeForm(forms.ModelForm):
             'my_file',
         ]
 
+class EdgeForm(forms.ModelForm):
+    my_file = forms.FileField()
+
+    class Meta:
+        model = Edge
+        fields = [
+            'road_type',
+            'target',
+            'source',
+            'network'
+        ]
+
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -24,7 +36,7 @@ class ProjectForm(forms.ModelForm):
 
 class RoadNetworkForm(forms.ModelForm):
     class Meta:
-        model=RoadNetwork
+        model = RoadNetwork
         fields = '__all__'
         widgets = {
             'nb_nodes': forms.TextInput(attrs = {'placeholder ': 'Total number of nodes in the road network'}),
@@ -32,3 +44,8 @@ class RoadNetworkForm(forms.ModelForm):
             'comments': forms.TextInput(attrs = {'rows':1}),
             'tags': forms.TextInput(attrs = {'rows':1}),
         }
+
+class RoadTypeForm(forms.ModelForm):
+    class Meta:
+        model = RoadType
+        fields = '__all__'

@@ -1,11 +1,8 @@
 .DS_Store
 db.sqlite3
-metro_project/settings
+metro_project/settings.py
 metro_app/migrations
-settings
-*.py[co]
-*.sw[po]
-*~
+settings.py
 secrets.json
 debug.py
 file.py

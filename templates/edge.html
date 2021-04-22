@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+  <h3>Import edge data file</h3>
+  <p> The links are roads of the network. They connect zones and intersections of the network. <br>
+    Each link is associated with a congestion function.
+  </p>
+
+  <h4>Attributes</h4>
+  <ul>
+    <li><strong>network</strong> RoadNetwork: RoadNetwork the Node instance belongs to.</li>
+    <li><strong>source</strong> Node: Node representing the starting point of the edge.</li>
+    <li><strong>target</strong> Node: Node representing the ending point of the edge.</li>
+    <li><strong>roadtype</strong> RoadType: Road type representing the congestion model of the
+     edge.</li>
+    <li><strong>user_id</strong> int: Id of the edge, as used by the users in the import files.
+       Must be unique for a specific RoadNetwork.
+     </li>
+    <li><strong>name</strong> str: Name of the edge (default is '').</li>
+    <li><strong>geometry</strong> LineString: Exact or approximate representation of the geometry
+       of the edge as a sequence of points, <br> in EPSG:4326 (default is a straight
+       line between source and target node).
+    </li>
+    <li><strong>length</strong> float: Length of the edge, in kilometers.</li>
+    <li><strong>speed</strong> float: Free-flow speed of the link, in kilometers per hour.
+      The default speed for the given road type is used if empty. <br>
+    </li>
+    <li><strong>lanes</strong> int: Number of lanes on the edge. The default number of lanes
+      for the given road type is used if empty</li>
+    <li><strong>param1</strong> float: Parameter used to compute the travel time of the edge. The
+     exact meaning depends on the congestion model. <br> The default value for the
+     given road type is used if empty.</li>
+    <li><strong>param2</strong> float: Parameter used to compute the travel time of the edge.
+      The exact meaning depends on the congestion model. <br> The default value
+      for the given road type is used if empty.</li>
+    <li><strong>param3</strong> float: Parameter used to compute the travel time of the edge.
+      The exact meaning depends on the congestion model. <br> The default value
+      for the given road type is used if empty.</li>
+  </ul>
+  <hr>
+
+  <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
+    <div class="mb-3">
+      {{form}}
+      <button type="submit" class="btn btn-success" name="button">Upload</button>
+      <button type="button" class="btn btn-danger">Cancel</button>
+    </div>
+  </form>
+
+{% endblock %}

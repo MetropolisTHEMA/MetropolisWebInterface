@@ -1,4 +1,3 @@
-
 """
 Django Models Modules
 =====================
@@ -39,7 +38,8 @@ class Project(models.Model):
     :name str: Name of the project.
     :comment str: Description of the project (default is '').
     """
-    owner = models.ManyToManyField(User)
+    owner = models.ManyToManyField(User) # define as FK and add a user as ManyToManyField
+
     public = models.BooleanField(default=False)
     name = models.CharField('Project Name', max_length=200, null=False)
     comment = models.TextField()
@@ -199,7 +199,7 @@ class RoadType(models.Model):
     :default_param3 float: Default value for the third parameter used in the
      congestion model. The exact meaning depends on the congestion model.
     """
-    name = models.CharField('Network Name', max_length=200, blank=False)
+    name = models.CharField('Road Type', max_length=200, blank=False)
     free_flow, congestion = 1, 2
     congestion_choice = (
         (1, free_flow),
@@ -214,12 +214,12 @@ class RoadType(models.Model):
         default=free_flow, choices=congestion_choice)
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
-    default_param1 = models.FloatField(default=1)
-    default_param2 = models.FloatField(default=1)
-    default_param3 = models.FloatField(default=3)
+    default_param1 = models.FloatField(default=1.0)
+    default_param2 = models.FloatField(default=1.0)
+    default_param3 = models.FloatField(default=3.0)
 
     def __str__(self):
-        return "Road Type {}".format(self.congestion)
+        return "Road Type ({})".format(self.congestion)
 
     class Meta:
         db_table = 'RoadType '
@@ -280,7 +280,7 @@ class Edge(models.Model):
      given road type is used if empty.
     """
     # capacity = models.FloatField()
-    param1 = models.FloatField()
+    param1 = models.FloatField(null=True, blank=True)
     param2 = models.FloatField()
     param3 = models.FloatField()
     speed = models.FloatField()
