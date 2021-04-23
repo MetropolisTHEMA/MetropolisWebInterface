@@ -2,8 +2,7 @@
 db.sqlite3
 metro_project/settings.py
 metro_app/migrations
-settings.py
-secrets.json
+settings.json
 debug.py
 file.py
 nodes.geojson
