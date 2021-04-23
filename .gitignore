@@ -7,3 +7,4 @@ secrets.json
 debug.py
 file.py
 nodes.geojson
+docs/plantuml/*.png

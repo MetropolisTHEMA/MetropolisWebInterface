@@ -14,7 +14,6 @@ https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 #from django.db import models
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
-import random
 #from users.models import CustomUser
 
 # class CustomUser(AbstractUser):
@@ -330,7 +329,7 @@ class Population(models.Model):
      agents (default is a random integer).
     """
     generated = models.BooleanField(blank=False)
-    random_seed = models.IntegerField(default=random.randint(0, 9))
+    random_seed = models.IntegerField()
 
     def __str__(self):
         return "Population - random vaule: ({})".format(self.random_seed)
