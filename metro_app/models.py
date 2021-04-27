@@ -199,18 +199,16 @@ class RoadType(models.Model):
      congestion model. The exact meaning depends on the congestion model.
     """
     name = models.CharField('Road Type', max_length=200, blank=False)
-    free_flow, congestion = 1, 2
-    congestion_choice = (
-        (1, free_flow),
-        (2, congestion),
+    congestion_choices = (
+        ('Free flow', 'Free flow'),
+        ('Congestion', 'Congestion'),
     )
     network = models.ForeignKey(
         RoadNetwork,
         related_name='roads_type_network',
         on_delete=models.CASCADE)
     # user_id
-    congestion = models.IntegerField(
-        default=free_flow, choices=congestion_choice)
+    congestion = models.CharField(max_length=200, choices=congestion_choices)
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
     default_param1 = models.FloatField(default=1.0)
@@ -218,7 +216,7 @@ class RoadType(models.Model):
     default_param3 = models.FloatField(default=3.0)
 
     def __str__(self):
-        return "Road Type ({})".format(self.congestion)
+        return "{} - ({})".format(self.name, self.congestion)
 
     class Meta:
         db_table = 'RoadType '
@@ -309,7 +307,7 @@ class Edge(models.Model):
         return "Edge : {}".format(self.name)
 
     class Meta:
-        db_table = 'Edges'
+        db_table = 'Edge'
 
 
 class Population(models.Model):

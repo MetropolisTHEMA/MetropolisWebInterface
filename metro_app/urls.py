@@ -9,5 +9,6 @@ urlpatterns=[
     path('upload_edge/', upload_edge, name='upload_edge'),
     path('project/', create_project, name='create_project'),
     path('roadnetwork/', create_roadnetwork, name='create_roadnetwork'),
-    path('roadtype/', create_roadtype, name='create_roadtype')
+    path('roadtype/', create_roadtype, name='create_roadtype'),
+    path('visualization/', network_visualization, name='network_visualization')
 ]
