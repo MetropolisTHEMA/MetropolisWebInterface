@@ -240,7 +240,7 @@ class Node(models.Model):
     location = models.PointField()
 
     def __str__(self):
-        return "Node : {}".format(self.name)
+        return "Node : {} of ( Network {} )".format(self.name, self.network)
 
     class Meta:
         db_table = 'Node'

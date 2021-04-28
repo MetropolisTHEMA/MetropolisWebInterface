@@ -13,6 +13,7 @@ import geopandas as gpd
 import matplotlib
 from pyproj import CRS
 import networkx as nx
+import folium
 #............................................................................ #
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 #............................................................................ #
@@ -29,28 +30,6 @@ def upload_node(request):
         print(datafile)
 """
 
-
-def file_process(filename):
-    objects = json.load(filename)
-    if filename.endswith('.geojson'):
-        for object in objects['features']:
-            try:
-                objet_type = object['geometry']['type']
-                if objet_type == 'Point':
-                    properties = object['properties']
-                    geometry = object['geometry']
-
-                    # Get models's variables values.
-                    node_id = properties.get('id')
-                    name = properties['name']
-                    lat = geometry['coordinates'][0]
-                    lon = geometry['coordinates'][1]
-                    #location = geometry['coordinates']
-                    location = fromstr(f'POINT({lon} {lat})')
-
-            except KeyError:
-                pass
-        return (node_id, name, location)
 
 # bulk_create, bulk_update
 
@@ -97,8 +76,8 @@ def upload_edge(request):
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
             road_type = form.cleaned_data['road_type']
-            target = form.cleaned_data['target']
-            source = form.cleaned_data['source']
+            #target = form.cleaned_data['target']
+            #source = form.cleaned_data['source']
             network = form.cleaned_data['network']
             # Getting data from the fielfield input
             datafile = request.FILES['my_file']
@@ -112,20 +91,37 @@ def upload_edge(request):
                     point2 = geometry['coordinates'][1]
                     location = GEOSGeometry(
                         LineString(geometry['coordinates']))
-                    Edge(
-                        param1=properties.get('param1', 1.0),
-                        param2=properties.get('param2', 0),
-                        param3=properties.get('param3', 0),
-                        speed=properties.get('speed', 0),
-                        lenth=properties.get('lenth', 0),
-                        lanes=properties.get('lanes', 0),
-                        geometry=location,
-                        name=properties.get('name', 0),
-                        road_type=road_type,
-                        target=target,
-                        source=source,
-                        network=network
-                    ).save()
+
+                    target = properties.get('target')
+                    source = properties.get('source')
+                    name = properties.get('name')
+                    try:
+                        target_node_instance = Node.objects.get(node_id=target)
+                        source_node_instance = Node.objects.get(node_id=source)
+                        target = Node.objects.get(
+                            network_id=target_node_instance.network_id,
+                            node_id=target_node_instance.node_id)
+                        source = Node.objects.get(
+                            network_id=source_node_instance.network_id,
+                            node_id=source_node_instance.node_id)
+                        Edge(
+                            param1=properties.get('param1', 1.0),
+                            param2=properties.get('param2', 0),
+                            param3=properties.get('param3', 0),
+                            speed=properties.get('speed', 0),
+                            lenth=properties.get('lenth', 0),
+                            lanes=properties.get('lanes', 0),
+                            geometry=location,
+                            name=properties.get('name', 0),
+                            road_type=road_type,
+                            target=target,
+                            source=source,
+                            network=network
+                        ).save()
+
+                    except BaseException:
+                        pass  # Do something later
+
         return redirect('home')
     else:
         form = EdgeForm()
@@ -133,22 +129,30 @@ def upload_edge(request):
 
 
 def read_from_postgres(table_name):
-    if table_name == "Edges":
-        conn = psycopg2.connect(database="postgres",
-                                user="postgres",
-                                password="",
-                                host="127.0.0.1",
-                                port=5433)
-        cursor = conn.cursor()
-        sql = 'select speed, lenth, lanes, name, geometry as geom from "{}"'.format(
+    conn = psycopg2.connect(database="metroweb",
+                            user="postgres",
+                            password="",
+                            host="127.0.0.1",
+                            port=5433)
+    cursor = conn.cursor()
+    if table_name == "Edge":
+        sql = 'select source_id, target_id, speed, lenth, lanes, name, geometry as geom from "{}"'.format(
             table_name)
         cursor.execute(sql)
         gdf = gpd.read_postgis(sql, conn)
-        return gdf
+
+    elif table_name == "Node":
+        sql = 'select node_id, name, location as geom from "{}"'.format(
+            table_name)
+        cursor.execute(sql)
+        gdf = gpd.read_postgis(sql, conn)
+    else:
+        print("Table non identifiable")
+    return gdf
 
 
 def network_from_postgres(Simple,
-                          set_initial_crs,
+                          set_initial_crs=4326,
                           zone_radius=15,
                           intersection_radius_percentage=0.8,
                           distance_offset_percentage=0.8,
@@ -160,13 +164,41 @@ def network_from_postgres(Simple,
     convert_to_crs = "EPSG:4326"
     default_crs = "EPSG:3857"
 
-    edges_gdf = read_from_postgres("Edges")
+    # Let's get data from the postgres database
+    edges_gdf = read_from_postgres("Edge")
+    nodes_gdf = read_from_postgres("Node")
 
-    # Convert a GeoDataFrame to a Graph
-    G = nx.from_pandas_edgelist(edges_gdf, 'origin', 'destination',
-                                ['key', 'id_edge', 'name', 'lanes', 'length',
-                                 'speed', 'capacity', 'function', 'geometry'],
-                                create_using=nx.MultiDiGraph())
+    # Split street network caracteristics like Circular City (Simple=True) and
+    # others huge one (Simple=False)
+    if Simple:
+        # Delete edges with null lenght (points)
+        #edges_gdf = edges_gdf[edges_gdf.geometry.length > 0]
+        # Setting projection equal to 4326
+        edges_gdf.set_crs(convert_to_crs, inplace=True)
+        nodes_gdf.set_crs(convert_to_crs, inplace=True)
+        # output is a degree value which we will convert to meter in next line
+        intersection_radius = min(edges_gdf.geometry.length) * 0.1
+        # applying a formula which convert degree to meter (regle de trois)
+        intersection_radius = intersection_radius * 111.11 * 1000
+        # zone_radius and intersection_radius are dependents
+        zone_radius = intersection_radius / intersection_radius_percentage
+        # distance_offset depends on intersection_radius (meter)
+        distance_offset = distance_offset_percentage * intersection_radius
+        tiles_layer = None
+    else:
+        nodes_gdf.set_crs(initial_crs, allow_override=True)
+        edges_gdf.set_crs(initial_crs, allow_override=True)
+        nodes_gdf.to_crs(convert_to_crs, inplace=True)
+        # Delete edges with null lenght (points)
+        edges_gdf = edges_gdf[edges_gdf.geometry.length > 0]
+        intersection_radius = intersection_radius_percentage * zone_radius
+        zone_radius = zone_radius
+        distance_offset = distance_offset_percentage * zone_radius
+        tiles_layer = 'OpenStreetMap'
+
+    G = nx.from_pandas_edgelist(
+        edges_gdf, 'source_id', 'target_id', [
+            'speed', 'lenth', 'lanes', 'name', 'geom'], create_using=nx.MultiDiGraph())
 
     # Add oneway column (it is a boolean column)
     for u, v, d in G.edges(keys=False, data=True):
@@ -176,60 +208,72 @@ def network_from_postgres(Simple,
             G.edges[u, v, 0]['oneway'] = True
 
     df_graph_to_pandas = nx.to_pandas_edgelist(
-        G, source='origin', target='destination')
-    df_all_roads = df_graph_to_pandas.copy()
-    df_all_roads = gpd.GeoDataFrame(df_all_roads, crs=set_initial_crs)
+        G, source='source_id', target='target_id')
+    gdf = gpd.GeoDataFrame(
+        df_graph_to_pandas,
+        geometry='geom',
+        crs=convert_to_crs)
 
-    # We convert to meters (m) before applying the offset in order to have the
-    # same unit
-    df_all_roads.to_crs(crs=default_crs, inplace=True)
+    # On convertit en metre (m) avant d'appliquer le décalage afin
+    # d'uniformiser
+    gdf.to_crs(crs=default_crs, inplace=True)
 
-    # Let's define the parallel offset GeoSerie
-    df_all_roads['_offset_geometry_'] = df_all_roads[['geometry', 'oneway']].apply(
-        lambda x: x['geometry'].parallel_offset(distance_offset, link_side) if not
-        x['oneway'] else x['geometry'].parallel_offset(0, link_side), axis=1)
+    # Define parallel offset Geoserie
+    # geometry to offset and column it depends on
+    col_list = ['geom', 'oneway']
+    gdf['_offset_geometry_'] = gdf[col_list].apply(
+        lambda x: x['geom'].parallel_offset(
+            distance_offset,link_side) if not x['oneway']
+            else x['geom'].parallel_offset(0, link_side),
+        axis=1)
 
-    # Drop the old geometry and replace it by __offset_geometry_
-    df_all_roads.drop('geometry', axis=1, inplace=True)
-    gdf_all_roads = gpd.GeoDataFrame(
-        df_all_roads,
-        geometry='_offset_geometry_',
-        crs=default_crs)
+    # Drop old geometry and replace it by _offset_geometry_
+    gdf.drop('geom', axis=1, inplace=True)
+    gdf.set_geometry('_offset_geometry_', inplace=True)
 
-    gdf_all_roads.to_crs(crs=convert_to_crs, inplace=True)
+    # Converting back in 4326 before ploting
+    gdf.to_crs(crs=convert_to_crs, inplace=True)
 
-    # Ploting the network
+    latitudes = list(nodes_gdf['geom'].y)
+    longitudes = list(nodes_gdf['geom'].x)
 
     # Initialize the map
-    m = folium.Map(
-        location=[
-            latitudes[0],
-            longitudes[0]],
-        max_zoom=18,
-        prefer_canvas=True,
-        tiles=tiles_layer)
+    m = folium.Map(location=[latitudes[0], longitudes[0]],
+                   max_zoom=18, prefer_canvas=True, tiles=tiles_layer)
 
-    # Create a GeoJson onject and display the street network
     layer = folium.GeoJson(
-        gdf_all_roads,
+        gdf,
         tooltip=folium.GeoJsonTooltip(
             fields=[
                 'oneway',
-                'id_edge',
                 'lanes',
-                'length',
+                'lenth',
                 'speed',
-                'capacity'],
+                'name'],
             localize=True),
         style_function=lambda x: {
-            'color': line_color,
-            'dashArray': '5, 5' if x['properties']['function'] == 1 else '5, 1'}).add_to(m)
+            'color': line_color
+        }).add_to(m)
 
     # Bounding box the map such that the network is entirely center and visible
     m.fit_bounds(layer.get_bounds())
-    m.save('templates/__network__.html')
+
+    # Adding the nodes points
+    dx = zone_radius * 10**-3 / 111.3  # Conversion metre en degres
+    for lat, long in list(zip(latitudes, longitudes)):
+        folium.Circle(
+            location=[
+                lat,
+                long],
+            color='cyan',
+            fill=True,
+            fill_opacity=1,
+            radius=intersection_radius
+        ).add_to(m)
+
+    m.save('templates/_network_.html')
 
 
 def network_visualization(request):
-    network_from_postgres(False, 27561)
-    return render(request, '__network.html__')
+    network_from_postgres(Simple=True)
+    return render(request, '_network_.html')

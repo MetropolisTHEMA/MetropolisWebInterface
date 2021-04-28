@@ -18,8 +18,6 @@ class EdgeForm(forms.ModelForm):
         model = Edge
         fields = [
             'road_type',
-            'target',
-            'source',
             'network'
         ]
 
