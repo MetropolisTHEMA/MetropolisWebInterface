@@ -7,3 +7,4 @@ debug.py
 file.py
 nodes.geojson
 docs/plantuml/*.png
+**/__pycache__/
