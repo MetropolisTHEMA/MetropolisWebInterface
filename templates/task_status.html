@@ -4,16 +4,14 @@
 
 <h3>Task status</h3>
 
-{% if task.started %}
-    {% if task.success %}
-        {% if task.result %}
-        Task finished, result is: {{ task.result }}.
-        {% endif %}
-    {% else %}
-        Task is in progress.
+{% if job %}
+    Task status is: {{ job.get_status }}
+    {% if job.is_finished %}
+        <br>
+        Task result is: {{job.result }}
     {% endif %}
 {% else %}
-    Task has not been started yet.
+    Task not found.
 {% endif %}
 
 {% endblock %}

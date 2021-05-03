@@ -12,5 +12,6 @@ urlpatterns=[
     path('roadtype/', create_roadtype, name='create_roadtype'),
     path('visualization/', network_visualization, name='network_visualization'),
     path('task/', test_async_view, name='test_async_view'),
-    path('task/<slug:task_id>/', test_task_status, name='test_task_status'),
+    path('task_sim/', test_async_sim_view, name='test_async_sim_view'),
+    path('task/<slug:job_id>/', test_task_status, name='test_task_status'),
 ]

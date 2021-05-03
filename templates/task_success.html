@@ -4,8 +4,8 @@
 
 <h3>Task created successfully</h3>
 
-Task id: {{ id }}.
+Task id: {{ job.id }}.
 
-<a role="button" class="btn btn-outline-primary" href="{% url 'test_task_status' task_id=id %}">Task Status</a>
+<a role="button" class="btn btn-outline-primary" href="{% url 'test_task_status' job_id=job.id %}">Task Status</a>
 
 {% endblock %}

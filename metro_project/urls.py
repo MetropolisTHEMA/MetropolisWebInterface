@@ -21,4 +21,5 @@ urlpatterns = [
     path('users/', include('django.contrib.auth.urls')),
     path('users/', include('users.urls')),
     path('', include('metro_app.urls')),
+    path('django-rq/', include('django_rq.urls')),
 ]

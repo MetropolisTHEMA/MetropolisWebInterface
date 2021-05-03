@@ -85,7 +85,7 @@ Django Views Modules
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django_q.tasks import async_task, fetch
+import django_rq
 
 from .forms import *
 from .models import *
@@ -185,9 +185,15 @@ def upload_node(request):
 """
 
 def test_async_view(request):
-    task_id = async_task('metro_app.test_task', 30)
-    return render(request, 'task_success.html', {'id': task_id})
+    job = test_task.delay(30)
+    return render(request, 'task_success.html', {'job': job})
 
-def test_task_status(request, task_id):
-    task = fetch(task_id)
-    return render(request, 'task_status.html', {'task': task})
+def test_async_sim_view(request):
+    job = test_task_simulation.delay(60)
+    return render(request, 'task_success.html', {'job': job})
+
+def test_task_status(request, job_id):
+    job = django_rq.get_queue().fetch_job(job_id)
+    if not job:
+        job = django_rq.get_queue('simulations').fetch_job(job_id)
+    return render(request, 'task_status.html', {'job': job})
