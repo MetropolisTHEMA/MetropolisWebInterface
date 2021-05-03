@@ -85,9 +85,11 @@ Django Views Modules
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django_q.tasks import async_task, fetch
+
 from .forms import *
 from .models import *
-
+from .tasks import *
 
 # Create your views here.
 def index(request):
@@ -181,3 +183,11 @@ def upload_node(request):
 
     return render(request, template, {'form':form})
 """
+
+def test_async_view(request):
+    task_id = async_task('metro_app.test_task', 30)
+    return render(request, 'task_success.html', {'id': task_id})
+
+def test_task_status(request, task_id):
+    task = fetch(task_id)
+    return render(request, 'task_status.html', {'task': task})

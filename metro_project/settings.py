@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'users',
     'crispy_forms',
     'django.contrib.gis',
+    'django_q',
 ]
 
 MIDDLEWARE = [
@@ -154,3 +155,10 @@ LOGIN_URL = 'home'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 #AUTH_USER_MODEL = 'users.CustomUser'
+
+# Django-Q Configuration.
+Q_CLUSTER = {
+    "name": "metropolis",
+    "timeout": 60,
+    "redis": {"host": "127.0.0.1", "port": 6379, "db": 0,},
+}
