@@ -159,15 +159,17 @@ LOGOUT_REDIRECT_URL = 'login'
 # Django-RQ Configuration.
 RQ_QUEUES = {
     "default": {
-        "HOST": "localhost",
-        "PORT": 6379,
-        "DB": 0,
+        "HOST": settings.get('rq_queues', {}).get('host', 'localhost'),
+        "PORT": settings.get('rq_queues', {}).get('port', 6379),
+        "DB": settings.get('rq_queues', {}).get('db_default', 0),
+        "PASSWORD": settings.get('rq_queues', {}).get('password', None),
         "DEFAULT_TIMEOUT": "2h",
     },
     "simulations": {
-        "HOST": "localhost",
-        "PORT": 6379,
-        "DB": 0,
+        "HOST": settings.get('rq_queues', {}).get('host', 'localhost'),
+        "PORT": settings.get('rq_queues', {}).get('port', 6379),
+        "DB": settings.get('rq_queues', {}).get('db_simulations', 0),
+        "PASSWORD": settings.get('rq_queues', {}).get('password', None),
         "DEFAULT_TIMEOUT": "48h",
     },
 }
