@@ -10,7 +10,6 @@ from django.contrib.gis.geos import GEOSGeometry, LineString
 import psycopg2
 import pandas
 import geopandas as gpd
-import matplotlib
 from pyproj import CRS
 import networkx as nx
 import folium
