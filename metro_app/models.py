@@ -38,14 +38,12 @@ class Project(models.Model):
     :comment str: Description of the project (default is '').
     """
     owner = models.ManyToManyField(User) # define as FK and add a user as ManyToManyField
-
     public = models.BooleanField(default=False)
     name = models.CharField('Project Name', max_length=200, null=False)
     comment = models.TextField()
 
     def __str__(self):
-        return "Project Name : {} \n Project Owner: {} \n Public:  {}".format(
-            self.name, self.owner, self.public)
+        return "{}".format(self.name)
 
     class Meta:
         db_table = 'Project'
@@ -139,14 +137,13 @@ class ParameterSet(models.Model):
         db_table = 'ParameterSet'
 
 
-class RoadNetwork(models.Model):
+class RoadNetWork(models.Model):
     """Container storing the graph-representation of a road network.
-
     A road network is composed of a set of nodes and of a set of edges
     connecting the nodes.
     Road types are used to describe the congestion model of the roads.
 
-    :project Project: Project the RoadNetwork instance belongs to.
+    :project Project: Project the RoadNetWork instance belongs to.
     :simple bool: If True, the coordinates of the nodes are abstract.
      Otherwise, the coordinates of the nodes are expressed in a real coordinate
      system.
@@ -163,11 +160,11 @@ class RoadNetwork(models.Model):
      the instances.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    simple = models.BooleanField(default=False)
-    locked = models.BooleanField(default=False)
-    #representation = path
-    nb_nodes = models.IntegerField()
-    nb_edges = models.IntegerField()
+    abstract = models.BooleanField()
+    #locked = models.BooleanField()
+    visualization_path = models.FileField(upload_to='Downloads/', max_length=300)
+    #nb_nodes = models.IntegerField()
+    #nb_edges = models.IntegerField()
     name = models.CharField('Network Name', max_length=200, blank=False)
     comment = models.TextField()
     tags = models.TextField()
@@ -182,9 +179,9 @@ class RoadNetwork(models.Model):
 class RoadType(models.Model):
     """Congestion model for a set of edges.
 
-    :network RoadNetwork: RoadNetwork the RoadType instance belongs to.
+    :network RoadNetWork: RoadNetWork the RoadType instance belongs to.
     :user_id int: Id of the road type, as used by the users in the import
-     files. Must be unique for a specific RoadNetwork.
+     files. Must be unique for a specific RoadNetWork.
     :name str: Name of the road type (default is '').
     :congestion str: Congestion model used to compute the travel time of the
      edges. Possible values are 'FF' (free-flow), 'BN' (bottleneck), 'LD' (log
@@ -203,10 +200,7 @@ class RoadType(models.Model):
         ('Free flow', 'Free flow'),
         ('Congestion', 'Congestion'),
     )
-    network = models.ForeignKey(
-        RoadNetwork,
-        related_name='roads_type_network',
-        on_delete=models.CASCADE)
+    network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
     # user_id
     congestion = models.CharField(max_length=200, choices=congestion_choices)
     default_speed = models.FloatField(default=50)
@@ -226,16 +220,16 @@ class Node(models.Model):
     """A Node is an element of the road-network graph, representing an
     intersection or an origin / destination point.
 
-    :network: RoadNetwork instance the Node belongs to.
+    :network: RoadNetWork instance the Node belongs to.
      The first argument "RoadNetWork" indicate the relationship model.
     :user_id int: Id of the node, as used by the users in the import files.
-     Must be unique for a specific RoadNetwork.
+     Must be unique for a specific RoadNetWork.
     :name str: Name of the node (default is '').
     :location Point: Point representing the location of the node on the
      network, in EPSG:4326.
     """
-    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    node_id = models.IntegerField()  # user_id =
+    network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
+    node_id = models.BigIntegerField()  # user_id =
     name = models.CharField('Node Name', max_length=200)
     location = models.PointField()
 
@@ -250,13 +244,13 @@ class Edge(models.Model):
     """An Edge is an element of the road-network graph, representing road
     sections or connectors (between an origin / destination and the network).
 
-    :network RoadNetwork: RoadNetwork the Node instance belongs to.
+    :network RoadNetWork: RoadNetWork the Node instance belongs to.
     :source Node: Node representing the starting point of the edge.
     :target Node: Node representing the ending point of the edge.
     :roadtype RoadType: Road type representing the congestion model of the
      edge.
     :user_id int: Id of the edge, as used by the users in the import files.
-     Must be unique for a specific RoadNetwork.
+     Must be unique for a specific RoadNetWork.
     :name str: Name of the edge (default is '').
     :geometry LineString: Exact or approximate representation of the geometry
      of the edge as a sequence of points, in EPSG:4326 (default is a straight
@@ -278,11 +272,11 @@ class Edge(models.Model):
     """
     # capacity = models.FloatField()
     param1 = models.FloatField(null=True, blank=True)
-    param2 = models.FloatField()
-    param3 = models.FloatField()
-    speed = models.FloatField()
-    lenth = models.FloatField(null=False)
-    lanes = models.SmallIntegerField(null=False)
+    param2 = models.FloatField(null=True, blank=True)
+    param3 = models.FloatField(null=True, blank=True)
+    speed = models.FloatField(null=True)
+    length = models.FloatField(null=False)
+    lanes = models.SmallIntegerField(null=True)
     geometry = models.LineStringField(null=True)
     name = models.CharField('Edge Name', max_length=200, blank=False)
     # user_id
@@ -299,12 +293,12 @@ class Edge(models.Model):
         related_name='edges_source',
         on_delete=models.CASCADE)
     network = models.ForeignKey(
-        RoadNetwork,
+        RoadNetWork,
         related_name='edges_network',
         on_delete=models.CASCADE)
 
     def __str__(self):
-        return "Edge : {}".format(self.name)
+        return "Edge : {} ({})".format(self.name, self.network)
 
     class Meta:
         db_table = 'Edge'
@@ -482,7 +476,7 @@ class Run(models.Model):
     :parameter_set ParameterSet: ParameterSet used for the run.
     :population Population: Population used for the run.
     :policy Policy: Policy used for the run.
-    :road_network RoadNetwork: RoadNetwork used for the run.
+    :road_network RoadNetWork: RoadNetWork used for the run.
     :pt_network PTNetwork: PTNetwork used for the run.
     :status str: Status of the run. Possible values are 'NR' (not ready), 'RY'
      (ready), 'IP' (in progress), 'FI' (finished), 'AB' (aborted) and 'FA'

@@ -118,7 +118,7 @@ def metroweb_network(Simple,
     edges_df.drop('id_node', axis=1, inplace=True)
 
     # Convert a dataframe to a geodataframe
-    nodes_geometry = gpd.points_from_xy(nodes_df.x, nodes_df.y)
+    nodes_geometry = gpd.points_from_xy(nodes_df.x, nodes_df.y) # logitude, latitude
     edges_geometry = edges_df.apply(lambda x: LineString(
         [(x['x_origin'], x['y_origin']), (x['x_dest'], x['y_dest'])]), axis=1)
 
@@ -155,19 +155,11 @@ def metroweb_network(Simple,
         distance_offset = distance_offset_percentage * zone_radius
         tiles_layer = 'OpenStreetMap'
 
-    # Takes only valid links and nodes
-    # edges_gdf = edges_gdf[edges_gdf.is_valid==True]
-    # nodes_gdf = nodes_gdf[nodes_gdf.is_valid==True]
-
     # Convert a GeoDataFrame to a Graph
     G = nx.from_pandas_edgelist(edges_gdf, 'origin', 'destination',
                                 ['key', 'id_edge', 'name', 'lanes', 'length',
                                  'speed', 'capacity', 'function', 'geometry'],
                                 create_using=nx.MultiDiGraph())
-
-    # Add nodes to the graph G
-    #data = nodes_gdf.set_index('id_node').to_dict('index').items()
-    # G.add_nodes_from(data)
 
     # Add oneway column (it is a boolean column)
     for u, v, d in G.edges(keys=False, data=True):
@@ -188,22 +180,16 @@ def metroweb_network(Simple,
 
     # Let's define the parallel offset GeoSerie
     df_all_roads['_offset_geometry_'] = df_all_roads[['geometry',
-                                                      'oneway']].apply(lambda x: x['geometry'].parallel_offset(distance_offset,
-                                                                                                               link_side) if not x['oneway'] else x['geometry'].parallel_offset(0,
-                                                                                                                                                                                link_side),
-                                                                       axis=1)
+        'oneway']].apply(lambda x: x['geometry'].parallel_offset(distance_offset,
+        link_side) if not x['oneway'] else x['geometry'].parallel_offset(0,axis=1)
 
     # Drop the old geometry and replace it by __offset_geometry_
     df_all_roads.drop('geometry', axis=1, inplace=True)
-    gdf_all_roads = gpd.GeoDataFrame(
-        df_all_roads,
-        geometry='_offset_geometry_',
-        crs=default_crs)
+    gdf_all_roads = gpd.GeoDataFrame(df_all_roads,geometry='_offset_geometry_',crs=default_crs)
     gdf_all_roads.to_crs(crs=convert_to_crs, inplace=True)
 
     # Ploting the network
-    nodes_gdf = nodes_gdf.sort_values(
-        by="zone", ascending=True, ignore_index=True)
+    nodes_gdf = nodes_gdf.sort_values(by="zone", ascending=True, ignore_index=True)
     latitudes = list(nodes_gdf['geometry'].y)
     longitudes = list(nodes_gdf['geometry'].x)
     labels = list(nodes_gdf['zone'])

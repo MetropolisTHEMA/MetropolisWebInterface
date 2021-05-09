@@ -1,0 +1,61 @@
+{% extends 'index.html' %}
+
+{% block title %} Accueil {% endblock title %}
+
+{% block content %}
+
+{% include 'status.html' %}
+
+    <br>
+    <div class="row">
+        <div class="col-md-5">
+            <h5>PROJECTS</h5>
+            <hr>
+            <div class="card card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th></th>
+                        <th>Project Name</th>
+                        <th>Public</th>
+                        <th>Comment</th>
+                    </tr>
+
+                    {% for project in projects %}
+                      <tr>
+                        <td><a class="btn btn-sm btn-info" href="{% url 'project_details' project.pk %}">details</a></td>
+                        <td>{{project.name}}</td>
+                        <td>{{project.public}}</td>
+                        <td>{{project.comment}}</td>
+                      <tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <h5>Users Participants</h5>
+            <hr>
+            <div class="card card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Add</th>
+                        <th>Remove</th>
+                    </tr>
+
+                    {% for user in users %}
+                      <tr>
+                        <td>{{user.username}}</td>
+                        <td>{{user.email}}</td>
+                        <td><a class="btn btn-sm btn-info" href="#">Add</a></td>
+                        <td><a class="btn btn-sm btn-danger" href="#">Remove</a></td>
+                      </tr>
+                    {% endfor %}
+
+                </table>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

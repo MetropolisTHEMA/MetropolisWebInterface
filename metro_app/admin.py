@@ -13,14 +13,14 @@ class FileAdmin(admin.OSMGeoAdmin):
 class ParameterSetAdmin(admin.OSMGeoAdmin):
     pass
 
-@admin.register(RoadNetwork)
+@admin.register(RoadNetWork)
 class RoadNetworkAdmin(admin.OSMGeoAdmin):
     pass
 
 @admin.register(RoadType)
 class RoadTypeAdmin(admin.OSMGeoAdmin):
     pass
-    
+
 @admin.register(Node)
 class NodeAdmin(admin.OSMGeoAdmin):
     pass

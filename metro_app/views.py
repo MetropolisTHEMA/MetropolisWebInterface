@@ -85,18 +85,31 @@ Django Views Modules
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.models import User
 from .forms import *
 from .models import *
+from .networks import retrieve_data_from_postgres
 
 
 # Create your views here.
 def index(request):
-    """
-    Describes the data presented to the user.
-    request : user request
-    """
-    return render(request, 'base.html')
+    projects = Project.objects.all()
+    roadnetworks = RoadNetWork.objects.all()
+    users = User.objects.all()
 
+    total_projects = projects.count()
+    total_roadnetworks = roadnetworks.count()
+    total_users = users.count()
+
+    context = {
+        'projects':projects,
+        'roadnetworks':roadnetworks,
+        'users':users,
+        'total_projects': total_projects,
+        'total_roadnetworks': total_roadnetworks,
+        'total_users':total_users
+    }
+    return render(request, 'dashboard.html', context)
 
 #.............................................................................#
 #                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
@@ -110,74 +123,107 @@ def create_project(request):
            return redirect('home')
 
     form =ProjectForm()
-    return render(request, 'project.html', {'form': form})
+    return render(request, 'views/project.html', {'form': form})
 
+def project_details(request, pk):
+    project = Project.objects.get(id=pk)
+    roadnetworks = project.roadnetwork_set.all()
+    total_roadnetworks = roadnetworks.count()
+
+    context = {
+        'project':project,
+        'roadnetworks':roadnetworks,
+        'total_roadnetworks':total_roadnetworks
+    }
+
+    return render(request, 'views/project_details.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROADNETWORK                         #
 #............................................................................ #
 
-def create_roadnetwork(request):
-    # If this is a post request, we need to process the form data.
-    if request.method == 'POST':
-        # Let create a form instance from POST data
-        form = RoadNetworkForm(request.POST)
-        # Check wether the form is valid
+def create_network(request, pk):
+    """A roadnetwork depends on a project. It
+     must be created inside the project"""
+
+    current_project = Project.objects.get(id=pk)
+    form = RoadNetWorkForm(initial={'project':current_project})
+    if request.method =='POST':
+        network = RoadNetWork(project=current_project)
+        form=RoadNetWorkForm(request.POST, instance=network)
         if form.is_valid():
-            # let's save a new created roadnetwork object from the form's data
             form.save()
             return redirect('home')
 
-    form = RoadNetworkForm()
-    return render(request, 'roadnetwork.html', {'form': form})
+    context = {'form':form}
+    return render(request, 'views/roadnetwork_form.html', context)
 
-# ........................................................................... #
-#                      VIEW OF CREATING A ROAD TYPE                         #
-#............................................................................ #
+def network_details(request, pk):
 
-def create_roadtype(request):
-    # If this is a post request, we need to process the form data.
-    if request.method == 'POST':
-        # Let create a form instance from POST data
-        form = RoadTypeForm(request.POST)
-        # Check wether the form is valid
-        if form.is_valid():
-            # let's save a new created roadtype object from the form's data
-            form.save()
-            return redirect('home')
-
-    form = RoadTypeForm()
-    return render(request, 'roadtype.html', {'form': form})
-
-
-"""
-def upload_node(request):
-    template = "upload.html"
-
-    form = NodeForm()
-    if request.method == 'POST':
-        csv_file = request.FILES['my_file']
-        if not csv_file.name.endswith('.csv'):
-            messages.error(request, 'Please upload a .csv file.')
-
-        data_set = csv_file.read().decode('utf-8')
-        io_string = io.StringIO(data_set)
-        next(io_string)
-        for column in csv.reader(io_string, delimiter=','):
-            _, created = Node.objects.update_or_create(
-                node_id=column[0],
-                name=column[1],
-                location=column[2],
-                network_id=column[3],
-            )
-    elif request.method == 'GET':
-        # DO something in GET call
-        # message error
-        pass
+    roadnetwork = RoadNetWork.objects.get(id=pk)
+    total_nodes = Node.objects.filter(network_id=pk).count()
+    total_edges = Edge.objects.filter(network_id=pk).count()
 
     context = {
-        'nodes': Node.objects.all()
+        'roadnetwork': roadnetwork,
+        'total_nodes': total_nodes,
+        'total_edges': total_edges
     }
 
-    return render(request, template, {'form':form})
-"""
+    return render(request, 'views/network_details.html', context)
+
+def update_network(request, pk):
+    roadnetwork = RoadNetWork.objects.get(id=pk)
+    form = RoadNetWorkForm(instance=roadnetwork)
+    if request.method == 'POST':
+        form = RoadNetWorkForm(request.POST, instance=roadnetwork)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+
+    context = {'form':form}
+    return render(request, 'update.html', context)
+
+def delete_network(request, pk):
+    network_to_delete = RoadNetWork.objects.get(id=pk)
+    if request.method == 'POST':
+        network_to_delete.delete()
+        return redirect('home')
+
+    context = {'network_to_delete': network_to_delete}
+    return render(request, 'delete.html', context)
+
+def read_from_postgres(request, pk):
+    roadnetwork = RoadNetWork.objects.get(id=pk)
+    simple = roadnetwork.abstract
+    retrieve_data_from_postgres(Simple=simple,
+                              set_initial_crs=4326,
+                              zone_radius=15,
+                              intersection_radius_percentage=0.8,
+                              distance_offset_percentage=0.8,
+                              line_color='orange',
+                              link_side='right',
+                              network_id=pk
+                              )
+
+    context = {"roadnetwork":roadnetwork}
+    return render(request, 'visualization/visualization.html',context)
+
+# ........................................................................... #
+#                      VIEW OF CREATING A ROAD TYPE                           #
+#............................................................................ #
+
+def create_roadtype(request, pk):
+    """A roadtype depends on a project. It
+     must be created inside the roadnetwork"""
+
+    current_network = RoadNetWork.objects.get(id=pk)
+    form = RoadTypeForm(initial={'roadnetwork':current_network})
+    if request.method == 'POST':
+        road_type = RoadType(network=current_network)
+        form = RoadTypeForm(request.POST, instance=road_type)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+
+    return render(request, 'views/roadtype.html', {'form': form})

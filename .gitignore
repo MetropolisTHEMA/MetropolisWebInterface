@@ -1,9 +1,15 @@
 .DS_Store
+.empty
+.git
 db.sqlite3
 metro_project/settings.py
 metro_app/migrations
+metro_app/csv_to_geojson
+metro_project/.DS_Store
 settings.json
 debug.py
 file.py
 nodes.geojson
 docs/plantuml/*.png
+sql.log
+staticfiles

@@ -1,25 +1,12 @@
 from django import forms
 from .models import *
 
-class NodeForm(forms.ModelForm):
+class NodeForm(forms.Form):
     my_file = forms.FileField()
 
-    class Meta:
-        model=Node
-        fields = [
-            'network',
-            'my_file',
-        ]
 
-class EdgeForm(forms.ModelForm):
+class EdgeForm(forms.Form):
     my_file = forms.FileField()
-
-    class Meta:
-        model = Edge
-        fields = [
-            'road_type',
-            'network'
-        ]
 
 
 class ProjectForm(forms.ModelForm):
@@ -32,13 +19,16 @@ class ProjectForm(forms.ModelForm):
         }
 
 
-class RoadNetworkForm(forms.ModelForm):
+class RoadNetWorkForm(forms.ModelForm):
     class Meta:
-        model = RoadNetwork
-        fields = '__all__'
+        model = RoadNetWork
+        fields = [
+            'abstract',
+            'name',
+            'comment',
+            'tags',
+        ]
         widgets = {
-            'nb_nodes': forms.TextInput(attrs = {'placeholder ': 'Total number of nodes in the road network'}),
-            'nb_edges': forms.TextInput(attrs = {'placeholder ': 'Total number of edges in the road network'}),
             'comments': forms.TextInput(attrs = {'rows':1}),
             'tags': forms.TextInput(attrs = {'rows':1}),
         }
@@ -47,3 +37,4 @@ class RoadTypeForm(forms.ModelForm):
     class Meta:
         model = RoadType
         fields = '__all__'
+        #exclude = ('network',)
