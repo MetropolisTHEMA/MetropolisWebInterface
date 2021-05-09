@@ -28,6 +28,11 @@ from datetime import datetime
 def upload_node(request, pk):
     template = "networks/node.html"
     roadnetwork = RoadNetWork.objects.get(id=pk)
+    node_instance = Node.objects.filter(network_id=pk)
+    if node_instance.count()>0:
+        messages.warning(request, "Fail ! Network contains already nodes data.")
+        return redirect('network_details', roadnetwork.pk )
+
     if request.method == 'POST':
         # We need to include the files when creating the form
         form = NodeForm(request.POST, request.FILES)
@@ -64,7 +69,12 @@ def upload_edge(request, pk):
     template = "networks/edge.html"
     roadnetwork = RoadNetWork.objects.get(id=pk)
     road_type = RoadType.objects.get(pk=2)
-    node_instance = Node.objects.filter(network_id=pk).select_related()
+    node_instance = Node.objects.filter(network_id=pk)
+    edge_instance = Edge.objects.filter(network_id=pk)
+
+    if edge_instance.count()>0:
+        messages.warning(request, "Fail ! Network contains already edges data.")
+        return redirect('network_details', roadnetwork.pk )
 
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
@@ -207,7 +217,7 @@ def retrieve_data_from_postgres(network_id, Simple,
     edges_gdf.drop('geometry', axis=1, inplace=True)
     edges_gdf.set_geometry('_offset_geometry_', inplace=True)
     edges_gdf.to_crs(crs=CRS84, inplace=True) # Converting back in 4326 before ploting
-
+    
     latitudes = list(nodes_gdf['geometry'].y)
     longitudes = list(nodes_gdf['geometry'].x)
 
