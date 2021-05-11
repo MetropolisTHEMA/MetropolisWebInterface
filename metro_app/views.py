@@ -1,33 +1,47 @@
 """
 Initial Django Project Set Up
 =============================
-* First of all install Pyton 3 (Python 3.x). This project will not work prorperly under python 3 version.
-* Then install Django. Notice : Don't install Django within your whole os. Create your project folder and
+* First of all install Pyton 3 (Python 3.x). This project will not work
+prorperly under python 3 version.
+* Then install Django. Notice : Don't install Django within your whole os.
+Create your project folder and
   install it in.
-* Virtual Environments are an indispensable part of « They are an isolated container containing all the
-  software dependencies for a given project. This is important because by default software like Python and
-  Django is installed in the same directory. This causes a problem when you want to work on multiple projects
-  on the same computer. What if ProjectA uses Django 3.1 but ProjectB from last year is still on Django 2.2?
-  Without virtual environments this becomes very difficult; with virtual environments it’s no problem at all
-* Create your new Django project and app. Two folders will be created; one containg the app files and the other
-  the whole project folder.The most important file is setting.py included in the project folder. Within this
+* Virtual Environments are an indispensable part of « They are an isolated
+container containing all the
+  software dependencies for a given project. This is important because by
+  default software like Python and
+  Django is installed in the same directory. This causes a problem when you
+  want to work on multiple projects
+  on the same computer. What if ProjectA uses Django 3.1 but ProjectB from
+  last year is still on Django 2.2?
+  Without virtual environments this becomes very difficult; with virtual
+   environments it’s no problem at all
+* Create your new Django project and app. Two folders will be created;
+ one containg the app files and the other
+  the whole project folder.The most important file is setting.py included
+   in the project folder. Within this
   file, we will set up our postgresql database.
 
 PostgreSQL
 ----------
-* Install postgres by following the instruction and open it one finish. So you hzve a PostgreSQL server ready and
-  waiting nexw connections.
-* Create your project database by psql command line or by using pgAdmin (install it). The second option is very
+* Install postgres by following the instruction and open it one finish.
+So you have a PostgreSQL server ready and  waiting nexw connections.
+* Create your project database by psql command line or by using pgAdmin
+(install it). The second option is very
   easy and useful.
-* Postgres PgAdmin allows you to create all kinds of PostgreSQL database server objects. These objects can be
-  databases, schemas, tables, users ... It can also be used to execute SQL queries.
+* Postgres PgAdmin allows you to create all kinds of PostgreSQL database server
+objects. These objects can be  databases, schemas, tables, users ... It can
+also be used to execute SQL queries.
 
 Settings file
 -------------
-* By default Django specifies sqlite3 as the database engine, gives it the name db.sqlite3, and places it at BASE_DIR
-  which means in our project-level directory (top directory of our project which contains config, manage.py, Pipfile,
+* By default Django specifies sqlite3 as the database engine, gives it the name
+ db.sqlite3, and places it at BASE_DIR
+  which means in our project-level directory (top directory of our project
+  which contains config, manage.py, Pipfile,
   Pipfile.lock).
-* To switch ower to PostgreSQL, we will update the ENGINE configuration. PostgreSQL requires a NAME, USER, PASSWORD,
+* To switch ower to PostgreSQL, we will update the ENGINE configuration.
+PostgreSQL requires a NAME, USER, PASSWORD,
   HOST and PORT. All these variables must be in capital letter.
 
 ::
@@ -43,19 +57,21 @@ Settings file
         }
     }
 
-
-* Postgres being a different software and Django being a different software, so how do they connect to each otehr?
+* Postgres being a different software and Django being a different software,
+  so how do they connect to each otehr?
 
 To answer to this quesstion to need to install a connector.
 
 psycopg2
 --------
-Psycopg is, the most popular database adapter for Python programming langage. « If you’d like to learn more about
-how Psycopg works here is a link to a fuller description on the official site. https://www.psycopg.org/docs/index.html
+Psycopg is, the most popular database adapter for Python programming langage.
+« If you’d like to learn more about how Psycopg works here is a link to a full
+ description on the official site. https://www.psycopg.org/docs/index.html
 
 Git
 ---
-Git is the version control system of choice these days and we’ll use it in this project. First add a new Git file with git init,
+Git is the version control system of choice these days and we’ll use it in this
+project. First add a new Git file with git init,
 then check the status of changes, add updates, and include a commit message.
 
 * git init
@@ -65,11 +81,15 @@ then check the status of changes, add updates, and include a commit message.
 
 GitHub
 ------
-It's a good habit to create a remote repository of our code for each project. This way you have a backup in case anything happens
-to your computer and more importantly, it allows for collaboration with other software developers. Popular choices include GitHub,
-Bitbucket, and GitLab. When you’re learning web development, it’s best to stick to private rather than public repositories so you
+It's a good habit to create a remote repository of our code for each project.
+This way you have a backup in case anything happens
+to your computer and more importantly, it allows for collaboration with other
+software developers. Popular choices include GitHub,
+Bitbucket, and GitLab. When you’re learning web development, it’s best to stick
+to private rather than public repositories so you
 don’t inadvertently post critical information such as passwords online.
-To link you local development to your git remote repository, and push, type the following command :
+To link you local development to your git remote repository, and push, type
+the following command :
 
 git remote add orign https://github.com/aba2s/Metropolis.git
 git push -u origin main
@@ -84,10 +104,10 @@ Django Views Modules
 """
 
 from django.shortcuts import render, redirect
-from django.contrib import messages
+# from django.contrib import messages
 from django.contrib.auth.models import User
-from .forms import *
-from .models import *
+from .forms import ProjectForm, RoadTypeForm, RoadNetWorkForm
+from .models import Node, Edge, Project, RoadNetWork, RoadType
 from .networks import retrieve_data_from_postgres
 
 
@@ -102,28 +122,53 @@ def index(request):
     total_users = users.count()
 
     context = {
-        'projects':projects,
-        'roadnetworks':roadnetworks,
-        'users':users,
+        'projects': projects,
+        'roadnetworks': roadnetworks,
+        'users': users,
         'total_projects': total_projects,
         'total_roadnetworks': total_roadnetworks,
-        'total_users':total_users
+        'total_users': total_users
     }
     return render(request, 'dashboard.html', context)
 
-#.............................................................................#
+# ............................................................................#
 #                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
-#.............................................................................#
+# ............................................................................#
+
 
 def create_project(request):
-    if request.method=='POST':
-        form=ProjectForm(request.POST)
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
         if form.is_valid():
-           form.save()
-           return redirect('home')
+            form.save()
+            return redirect('home')
 
-    form =ProjectForm()
+    form = ProjectForm()
     return render(request, 'views/project.html', {'form': form})
+
+
+def update_project(request, pk):
+    project = Project.objects.get(id=pk)
+    form = ProjectForm(instance=project)
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+
+    context = {'form': form, 'project': project}
+    return render(request, 'update_project.html', context)
+
+
+def delete_project(request, pk):
+    project_to_delete = Project.objects.get(id=pk)
+    if request.method == 'POST':
+        project_to_delete.delete()
+        return redirect('home')
+
+    context = {'project_to_delete': project_to_delete}
+    return render(request, 'delete_project.html', context)
+
 
 def project_details(request, pk):
     project = Project.objects.get(id=pk)
@@ -131,32 +176,34 @@ def project_details(request, pk):
     total_roadnetworks = roadnetworks.count()
 
     context = {
-        'project':project,
-        'roadnetworks':roadnetworks,
-        'total_roadnetworks':total_roadnetworks
+        'project': project,
+        'roadnetworks': roadnetworks,
+        'total_roadnetworks': total_roadnetworks
     }
 
     return render(request, 'views/project_details.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROADNETWORK                         #
-#............................................................................ #
+# ............................................................................#
+
 
 def create_network(request, pk):
     """A roadnetwork depends on a project. It
      must be created inside the project"""
 
     current_project = Project.objects.get(id=pk)
-    form = RoadNetWorkForm(initial={'project':current_project})
-    if request.method =='POST':
+    form = RoadNetWorkForm(initial={'project': current_project})
+    if request.method == 'POST':
         network = RoadNetWork(project=current_project)
-        form=RoadNetWorkForm(request.POST, instance=network)
+        form = RoadNetWorkForm(request.POST, instance=network)
         if form.is_valid():
             form.save()
             return redirect('home')
 
-    context = {'form':form}
+    context = {'form': form}
     return render(request, 'views/roadnetwork_form.html', context)
+
 
 def network_details(request, pk):
 
@@ -172,6 +219,7 @@ def network_details(request, pk):
 
     return render(request, 'views/network_details.html', context)
 
+
 def update_network(request, pk):
     roadnetwork = RoadNetWork.objects.get(id=pk)
     form = RoadNetWorkForm(instance=roadnetwork)
@@ -181,8 +229,9 @@ def update_network(request, pk):
             form.save()
             return redirect('home')
 
-    context = {'form':form}
-    return render(request, 'update.html', context)
+    context = {'form': form}
+    return render(request, 'update_network.html', context)
+
 
 def delete_network(request, pk):
     network_to_delete = RoadNetWork.objects.get(id=pk)
@@ -191,34 +240,34 @@ def delete_network(request, pk):
         return redirect('home')
 
     context = {'network_to_delete': network_to_delete}
-    return render(request, 'delete.html', context)
+    return render(request, 'delete_network.html', context)
 
-def read_from_postgres(request, pk):
+
+def visualization(request, pk):
     roadnetwork = RoadNetWork.objects.get(id=pk)
     simple = roadnetwork.abstract
-    retrieve_data_from_postgres(Simple=simple,
-                              set_initial_crs=4326,
-                              zone_radius=15,
-                              intersection_radius_percentage=0.8,
-                              distance_offset_percentage=0.8,
-                              line_color='orange',
-                              link_side='right',
-                              network_id=pk
-                              )
+    retrieve_data_from_postgres(Simple=simple, set_initial_crs=4326,
+                                zone_radius=15,
+                                intersection_radius_percentage=0.8,
+                                distance_offset_percentage=0.8,
+                                line_color='orange',
+                                link_side='right',
+                                network_id=pk)
 
-    context = {"roadnetwork":roadnetwork}
-    return render(request, 'visualization/visualization.html',context)
+    context = {"roadnetwork": roadnetwork}
+    return render(request, 'visualization/visualization.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #
-#............................................................................ #
+# ............................................................................#
+
 
 def create_roadtype(request, pk):
     """A roadtype depends on a project. It
      must be created inside the roadnetwork"""
 
     current_network = RoadNetWork.objects.get(id=pk)
-    form = RoadTypeForm(initial={'roadnetwork':current_network})
+    form = RoadTypeForm(initial={'roadnetwork': current_network})
     if request.method == 'POST':
         road_type = RoadType(network=current_network)
         form = RoadTypeForm(request.POST, instance=road_type)

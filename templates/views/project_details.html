@@ -9,7 +9,7 @@
 		<div class="card card-body">
 			<h5>Project name : {{project.name}}</h5>
 			<hr>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="#">Update project</a>
+			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'update_project' project.pk %}">Update project</a>
 			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'create_network' project.pk %}">Create Network</a>
 		</div>
 	</div>

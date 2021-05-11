@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+
+{% block content %}
+
+<div class="row">
+	<div class="col-md">
+		<div class="card card-body">
+      <p>You're about to delete {{project_to_delete}}. Are you sure ? </p>
+      <form class="" action="{% url 'delete_project' project_to_delete.pk %}" method="post"
+				enctype="multipart/form-data"> {% csrf_token %}
+        <a class="btn btn-info" href="{% url 'home' %}">Cancel</a>
+        <input class="btn btn-danger" type="submit" name="" value="Confirm">
+      </form>
+    </div>
+ </div>
+</div>
+
+
+
+
+{% endblock %}
