@@ -4,7 +4,7 @@ from .views import (create_project, create_network, create_roadtype,
                     delete_project, network_details, index,
                     delete_network, visualization)
 
-from .networks import (upload_edge, upload_node, upload_road, upload_csv)
+from .networks import (upload_edge, upload_node, upload_road)  # , upload_csv)
 
 urlpatterns = [
     path('', index, name='home'),
@@ -22,5 +22,4 @@ urlpatterns = [
     path('visualization/<str:pk>/', visualization, name='network_visualization'
          ),
     path('network/<str:pk>/upload_road/', upload_road, name='upload_road'),
-    path('csv/', upload_csv, name='upload_csv')
 ]
