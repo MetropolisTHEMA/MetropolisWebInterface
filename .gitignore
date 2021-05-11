@@ -13,4 +13,3 @@ nodes.geojson
 docs/plantuml/*.png
 sql.log
 staticfiles
-templates/visualization/visualization.html
