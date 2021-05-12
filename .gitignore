@@ -12,3 +12,6 @@ nodes.geojson
 docs/plantuml/*.png
 sql.log
 staticfiles
+templates/visualization/
+**/__pycache__/
+docs/build/
