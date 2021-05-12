@@ -18,6 +18,9 @@
                         <th>Project Name</th>
                         <th>Public</th>
                         <th>Comment</th>
+                        <th>Date created</th>
+                        <th>Update</th>
+                        <th>Delete</th>
                     </tr>
 
                     {% for project in projects %}
@@ -26,6 +29,9 @@
                         <td>{{project.name}}</td>
                         <td>{{project.public}}</td>
                         <td>{{project.comment}}</td>
+                        <td>{{project.date_created}}</td>
+                        <td><a class="btn btn-sm btn-info" href="{% url 'update_project' project.pk %}">Update</a></td>
+                        <td><a class="btn btn-sm btn-danger" href="{% url 'delete_project' project.pk %}">Remove</a></td>
                       <tr>
                     {% endfor %}
                 </table>

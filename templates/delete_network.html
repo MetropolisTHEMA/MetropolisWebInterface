@@ -9,9 +9,9 @@
 <div class="row">
 	<div class="col-md">
 		<div class="card card-body">
-      <p>You're about to delete {{order_to_delete}}. Are you sure ? </p>
+      <p>You're about to delete {{network_to_delete}}. Are you sure ? </p>
       <form class="" action="{% url 'delete_network' network_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-        <a class="btn btn-info" href="{% url 'home' %}">Cancel</a>
+        <a class="btn btn-info" href="{% url 'project_details' network_to_delete.project_id %}">Cancel</a>
         <input class="btn btn-danger" type="submit" name="" value="Confirm">
       </form>
     </div>
