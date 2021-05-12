@@ -1,20 +1,23 @@
 """
 Django Models Modules
 =====================
-Note: Please note that the models module is imported from django.contrib.gis.db and not the
-usual django.db module.
+Note: Please note that the models module is imported from django.contrib.gis.db
+and not the usual django.db module.
 
-All model relationship create dependencies between one another, so an important behavior is
-what happens to the other party when one party is removed. The on_delete option is designed
-for this purpose, to determine what to do with records on the other side of a relationship
-when one side is removed. The on_delete option is available for all three relationship model
+All model relationship create dependencies between one another, so an important
+behavior is
+what happens to the other party when one party is removed. The on_delete option
+is designed
+for this purpose, to determine what to do with records on the other side of a
+relationship
+when one side is removed. The on_delete option is available for all three
+relationship model
 data types. Here is an exellent book about this topic
 https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 """
-#from django.db import models
+
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
-#from users.models import CustomUser
 
 # class CustomUser(AbstractUser):
 # https://testdriven.io/blog/django-custom-user-model/
@@ -37,10 +40,11 @@ class Project(models.Model):
     :name str: Name of the project.
     :comment str: Description of the project (default is '').
     """
-    owner = models.ManyToManyField(User) # define as FK and add a user as ManyToManyField
+    owner = models.ManyToManyField(User)
     public = models.BooleanField(default=False)
     name = models.CharField('Project Name', max_length=200, null=False)
     comment = models.TextField()
+    date_created = models.DateField(auto_now_add=True, null=True)
 
     def __str__(self):
         return "{}".format(self.name)
@@ -161,13 +165,12 @@ class RoadNetWork(models.Model):
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     abstract = models.BooleanField()
-    #locked = models.BooleanField()
-    visualization_path = models.FileField(upload_to='Downloads/', max_length=300)
-    #nb_nodes = models.IntegerField()
-    #nb_edges = models.IntegerField()
+    visualization_path = models.FileField(upload_to='Downloads/',
+                                          max_length=300)
     name = models.CharField('Network Name', max_length=200, blank=False)
     comment = models.TextField()
     tags = models.TextField()
+    date_created = models.DateField(auto_now_add=True, null=True)
 
     def __str__(self):
         return "{}".format(self.name)
@@ -201,7 +204,6 @@ class RoadType(models.Model):
         ('Congestion', 'Congestion'),
     )
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
-    # user_id
     congestion = models.CharField(max_length=200, choices=congestion_choices)
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
@@ -229,7 +231,7 @@ class Node(models.Model):
      network, in EPSG:4326.
     """
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
-    node_id = models.BigIntegerField()  # user_id =
+    node_id = models.BigIntegerField()
     name = models.CharField('Node Name', max_length=200)
     location = models.PointField()
 
@@ -279,7 +281,6 @@ class Edge(models.Model):
     lanes = models.SmallIntegerField(null=True)
     geometry = models.LineStringField(null=True)
     name = models.CharField('Edge Name', max_length=200, blank=False)
-    # user_id
     road_type = models.ForeignKey(
         RoadType,
         related_name='edges_road_type',
@@ -342,10 +343,7 @@ class ODMatrix(models.Model):
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
     """
-    project = models.ForeignKey(
-        Project,
-        related_name='odmatrix_project',
-        on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     public = models.BooleanField(default=False)
     size = models.IntegerField(null=False)
     locked = models.BooleanField(default=False)
@@ -370,12 +368,10 @@ class PopulationSegment(models.Model):
     :od_matrix ODMatrix: ODMatrix instance representing the origin-destination
      matrix for this population segment.
     """
-    population = models.ForeignKey(Population, related_name='population_segment', on_delete=models.CASCADE)
+    population = models.ForeignKey(Population,
+                                   on_delete=models.CASCADE)
     preferences = models.IntegerField(blank=False)
-    od_matrix = models.ForeignKey(
-        ODMatrix,
-        related_name='opulationsegments_od_matrix',
-        on_delete=models.CASCADE)
+    od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
 
     def __str__(self):
         return "Population segment - ({})".format(self.population)
@@ -464,9 +460,9 @@ class ODPair(models.Model):
     class Meta:
         db_table = 'ODPair'
 
- # ........................................................................... #
- #                            Metrosim                                         #
- # ........................................................................... #
+# ........................................................................... #
+#                             Metrosim                                        #
+# ........................................................................... #
 
 
 class Run(models.Model):

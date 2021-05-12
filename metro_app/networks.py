@@ -13,7 +13,7 @@ import geopandas as gpd
 from pyproj import CRS
 import folium
 import csv
-import io
+
 # ............................................................................#
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 # ............................................................................#
@@ -227,7 +227,7 @@ def retrieve_data_from_postgres(network_id, Simple,
 
     nodes = Node.objects.filter(network_id=network_id).values()
     nodes_df = pd.DataFrame(nodes)
-    nodes_df['location'] = nodes_df['location'].apply(geometry.Point)
+    nodes_df['location'] = nodes_df['location'].apply(geom.Point)
     nodes_gdf = gpd.GeoDataFrame(nodes_df, geometry=nodes_df['location'])
 
     # Split street network caracteristics like Circular City (Simple=True) and

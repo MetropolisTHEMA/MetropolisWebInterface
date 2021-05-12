@@ -227,7 +227,7 @@ def update_network(request, pk):
         form = RoadNetWorkForm(request.POST, instance=roadnetwork)
         if form.is_valid():
             form.save()
-            return redirect('home')
+            return redirect('project_details', roadnetwork.project.pk)
 
     context = {'form': form}
     return render(request, 'update_network.html', context)
@@ -237,7 +237,7 @@ def delete_network(request, pk):
     network_to_delete = RoadNetWork.objects.get(id=pk)
     if request.method == 'POST':
         network_to_delete.delete()
-        return redirect('home')
+        return redirect('project_details', network_to_delete.project.pk)
 
     context = {'network_to_delete': network_to_delete}
     return render(request, 'delete_network.html', context)
