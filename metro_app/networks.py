@@ -11,11 +11,14 @@ import io
 import json
 from shapely import geometry
 from shapely.geometry import mapping, shape
+from shapely.ops import split
 from django_pandas.io import read_frame
 import psycopg2
+import numpy as np
 import pandas as pd
 import geopandas as gpd
-import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from pyproj import CRS
 import networkx as nx
 import folium
@@ -150,93 +153,215 @@ def read_from_postgress_old(table_name):
     return gdf
 """
 
-def retrieve_data_from_postgres(network_id, Simple,
-                          set_initial_crs=4326,
-                          zone_radius=15,
-                          intersection_radius_percentage=0.8,
-                          distance_offset_percentage=0.8,
-                          line_color='orange',
-                          link_side='left',
+def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
+    """Returns a polygon of a given width, representing a road defined by a
+    LineString.
 
-                          ):
-    initial_crs = "EPSG:{}".format(set_initial_crs)
-    initial_crs = CRS(initial_crs)
-    CRS84 = "EPSG:4326"
-    default_crs = "EPSG:3857"
-
-    edges = Edge.objects.filter(network_id=network_id)
-    edges = serialize('geojson', edges,
-        fields=('id', 'param1', 'param2', 'param3', 'speed', 'length',
-        'lanes','geometry', 'name', 'source', 'target','network', 'road_type'))
-
-    edges = json.loads(edges)
-    edges_gdf = gpd.GeoDataFrame.from_features(edges['features']) # Convert a geojson as geodataframe
-
-    nodes = Node.objects.filter(network_id=network_id).values()
-    nodes_df = pd.DataFrame(nodes)
-    nodes_df['location'] = nodes_df['location'].apply(geometry.Point)
-    nodes_gdf = gpd.GeoDataFrame(nodes_df, geometry=nodes_df['location'])
-
-
-    # Split street network caracteristics like Circular City (Simple=True) and
-    # others huge one (Simple=False)
-    if Simple:
-        edges_gdf.set_crs(CRS84, inplace=True)
-        nodes_gdf.set_crs(CRS84, inplace=True)
-        intersection_radius = min(edges_gdf.geometry.length) * 0.1 # output is a degree value which we will convert to meter in next line
-        intersection_radius = intersection_radius * 111.11 * 1000 # applying a formula which convert degree to meter (regle de trois)
-        zone_radius = intersection_radius / intersection_radius_percentage # zone_radius and intersection_radius are dependents
-        distance_offset = distance_offset_percentage * intersection_radius # # distance_offset depends on intersection_radius (meter)
-        tiles_layer = None
+    :param linestring: Geometry of the road, in EPSG:3857.
+    :param width: Width of the road, in meters.
+    :param oneway: If True, the polygon is centered on the linestring. If
+       False, the polygon is offset so that there can be two parallel roads.
+    :param drive_right: If True, the polygon is offset toward the right, to
+       represent right-hand traffic. If False, it is offset toward the left.
+       This has no effect if oneway is True.
+    :type linestring: shapely.geometry.LineString
+    :type width: numeric
+    :type oneway: boolean
+    :type drive_right: boolean
+    :returns: Polygon geometry representing a road.
+    :rtype: shapely.geometry.Polygon
+    """
+    if not oneway:
+        # Double the width as the first polygon computed represent the road in
+        # both directions.
+        width *= 2
+    # Compute a polygon from the linestring by increasing its width.
+    polygon = linestring.buffer(width, join_style=2, cap_style=2)
+    if oneway:
+        # The polygon is centered and has the correct width, returns it.
+        return polygon
+    # Split the polygon in two in the middle (represented by the linestring).
+    splitted_polygons = split(polygon, linestring)
+    if drive_right:
+        # Returns the right-hand side of the split.
+        return split(polygon, linestring)[0]
     else:
-        edges_gdf.set_crs(initial_crs, inplace=True)
-        nodes_gdf.set_crs(initial_crs, inplace=True)
-        nodes_gdf.to_crs(CRS84, inplace=True)
-        edges_gdf = edges_gdf[edges_gdf.geometry.length > 0]
-        zone_radius = zone_radius
-        intersection_radius = intersection_radius_percentage * zone_radius
-        distance_offset = distance_offset_percentage * zone_radius
-        tiles_layer = 'OpenStreetMap'
+        # Returns the left-hand side of the split.
+        return split(polygon, linestring)[-1]
 
-    edges_gdf["oneway"] = edges_gdf.apply(lambda x: not edges_gdf[
-            (edges_gdf["source"] == x["target"]) &
-            (edges_gdf["target"] == x["source"])
-            & (edges_gdf.index != x.name)].empty, axis=1)
+def make_network_visualization(road_network_id, node_radius=12,
+                               node_color='lightgray', edge_width_ratio=1,
+                               max_lanes=2):
+    """Generates an HTML file with the Leaflet.js representation of a network.
 
-    # On convertit en metre (m) avant d'appliquer le décalage afin
-    # d'uniformiser car parallel_offset se calcule en (m)
-    edges_gdf.to_crs(crs=default_crs, inplace=True)
+    :param road_network_id: Id of the road network to represent.
+    :param node_radius: Radius of the nodes of the road network, in meters. It
+       is used only if the road network is not abstract.
+    :param node_color: HTML color used to display the nodes of the road
+       network.
+    :param edge_width_ratio: Width of the edges of the road network, as a share
+       of node's diameter.
+    :param max_lanes: All edges whose number of lanes is greater or equal to
+       max_lanes are represented with a width equal to edges_width_ratio *
+       node_radius / 2. Edges with a number of lanes smaller than max_lanes
+       have a width proportional to their number of lanes.
+    :type road_network_id: integer
+    :type node_radius: numeric
+    :type node_color: str
+    :type edge_width_ratio: float
+    :type max_lanes: integer
+    :returns: Absolute path of the HTML file generated.
+    :rtype: str
+    """
+    road_network = RoadNetWork.objects.get(pk=road_network_id)
 
-    col_list = ['geometry', 'oneway']
-    edges_gdf['_offset_geometry_'] = edges_gdf[col_list].apply(
-        lambda x: x['geometry'].parallel_offset(
-            distance_offset, link_side) if not x['oneway']
-        else x['geometry'].parallel_offset(0, link_side),
-        axis=1)
+    degree_crs = "EPSG:4326"
+    meter_crs = "EPSG:3857"
 
-    edges_gdf.drop('geometry', axis=1, inplace=True)
-    edges_gdf.set_geometry('_offset_geometry_', inplace=True)
-    edges_gdf.to_crs(crs=CRS84, inplace=True) # Converting back in 4326 before ploting
-    
-    latitudes = list(nodes_gdf['geometry'].y)
-    longitudes = list(nodes_gdf['geometry'].x)
+    # Retrieve all nodes of the road network as a GeoDataFrame.
+    nodes = Node.objects.filter(network=road_network)
+    columns = ['id', 'node_id', 'location']
+    values = nodes.values_list(*columns)
+    nodes_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
+    nodes_gdf['location'] = gpd.GeoSeries.from_wkt(
+        nodes_gdf['location'].apply(lambda x: x.wkt), crs=degree_crs)
+    nodes_gdf.set_geometry('location', inplace=True)
+
+    # Retrieve all edges of the road network as a GeoDataFrame.
+    edges = Edge.objects.filter(network=road_network)
+    columns = ['id', 'lanes', 'road_type', 'source', 'target', 'geometry']
+    values = edges.values_list(*columns)
+    edges_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
+
+    # Retrieve all road types of the road network as a DataFrame.
+    rtypes = RoadType.objects.all()
+    # TODO: remove previous line and uncomment the following line once the road
+    # types are properly imported.
+    #  rtypes = RoadType.objects.filter(network=road_network)
+    columns = ['id', 'default_lanes', 'color']
+    values = rtypes.values_list(*columns)
+    rtypes_df = pd.DataFrame.from_records(values, columns=columns)
+
+    if (rtypes_df['color'] == '').any():
+        # Set a default color from a matplotlib colormap.
+        cmap = plt.get_cmap('Set1')
+        for key, row in rtypes_df.iterrows():
+            if not row['color']:
+                rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
+
+    edges_gdf = edges_gdf.merge(rtypes_df, left_on='road_type', right_on='id')
+
+    # Get the number of lanes for edges with NULL values from the default
+    # number of lanes of the corresponding road type.
+    edges_gdf.loc[
+        edges_gdf['lanes'].isna(),
+        'lanes'
+    ] = edges_gdf['default_lanes']
+
+    edges_gdf = edges_gdf.set_index(['source', 'target']).sort_index()
+    edges_gdf['geometry'] = gpd.GeoSeries.from_wkt(
+        edges_gdf['geometry'].apply(lambda x: x.wkt), crs=degree_crs)
+
+    # As node radius and edge width are expressed in meters, we need to convert
+    # the geometries in a metric projection.
+    edges_gdf.to_crs(crs=meter_crs, inplace=True)
+    # Discard NULL geometries.
+    edges_gdf = edges_gdf.loc[edges_gdf.geometry.length > 0]
+
+    if road_network.abstract:
+        # The node radius is implied from the characteristics of the network,
+        # i.e., the more widespread the nodes, the larger the radius.
+        node_radius = .1 * edges_gdf.geometry.length.min()
+
+    # Adjust the max_lanes value if it is larger than the maximum number of
+    # lanes in the edges of the road network.
+    max_lanes = min(max_lanes, edges_gdf['lanes'].max())
+    # Compute the width of a edge which has max_lanes lanes.
+    max_width = edge_width_ratio * node_radius / 2
+    # Constrain edge width by bounding the number of lanes of the edges.
+    edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
+    # The width of the edges is proportional to their number of lanes.
+    edges_gdf['width'] = max_width * edges_gdf['lanes'] / max_lanes
+
+    # Identify oneway edges.
+    edges_gdf['oneway'] = True
+    keys = set()
+    for key in edges_gdf.index:
+        if key[::-1] in keys:
+            edges_gdf.loc[key, 'oneway'] = False
+            edges_gdf.loc[key[::-1], 'oneway'] = False
+        else:
+            keys.add(key)
+
+    drive_right = True
+    # TODO: remove previous line and uncomment the following line once the
+    # drive_right attribute of road networks is added.
+    #  drive_right = road_network.drive_right
+
+    # Replace the geometry of the edges with an offset polygon of corresponding
+    # width.
+    col_list = ['geometry', 'oneway', 'width']
+    edges_gdf['geometry'] = edges_gdf[col_list].apply(
+        lambda row: get_offset_polygon(
+            linestring=row['geometry'],
+            width=row['width'],
+            drive_right=drive_right,
+            oneway=row['oneway']
+        ),
+        axis=1,
+    )
+
+    # Convert back to the CRS84 projection, required by Folium.
+    edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
     # Initialize the map
-    m = folium.Map(location=[latitudes[0], longitudes[0]],
-                   max_zoom=18, prefer_canvas=True, tiles=tiles_layer)
+    tiles_layer = None if road_network.abstract else 'OpenStreetMap'
+    m = folium.Map(max_zoom=19, prefer_canvas=True, tiles=tiles_layer)
 
-    layer=folium.GeoJson(
+    def style_function(feature):
+        """Function defining the style of the edges."""
+        return dict(
+            color='black',
+            weight=.1,
+            fillColor=feature['properties']['color'],
+            fillOpacity=.8,
+        )
+
+    def highlight_function(feature):
+        """Function defining the style of the edges on mouse hover."""
+        return dict(
+            color='red',
+            weight=.1,
+            fillColor='yellow',
+            fillOpacity=.8,
+        )
+
+    # Add the representation of the edges.
+    edges_gdf.drop(
+        columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
+    layer = folium.GeoJson(
         edges_gdf,
-        tooltip=folium.GeoJsonTooltip(fields=['oneway','lanes',
-        'length','speed','name'],localize=True),
-        style_function=lambda x: {'color': line_color}).add_to(m)
+        style_function=style_function,
+        highlight_function=highlight_function,
+        smooth_factor=1,
+        name='Roads'
+    ).add_to(m)
 
-    # Bounding box the map such that the network is entirely center and visible
+    # Create a FeatureGroup that will hold all the nodes.
+    node_group = folium.FeatureGroup(name='Intersections')
+    m.add_child(node_group)
+
+    # Add the representation of the nodes.
+    for lon, lat in zip(nodes_gdf.geometry.x, nodes_gdf.geometry.y):
+        folium.Circle(
+            location=[lat, lon], color=node_color, opacity=1, fill=True,
+            fill_opacity=.8, radius=node_radius,
+        ).add_to(node_group)
+
+    # Add a LayerControl to toggle FeatureGroups.
+    folium.LayerControl(position='topright').add_to(m)
+
+    # Bound the map such that the network is centered and entirely visible.
     m.fit_bounds(layer.get_bounds())
-
-    # Adding the nodes points
-    for lat, long in list(zip(latitudes, longitudes)):
-        folium.Circle(location=[lat, long], color='cyan', fill=True,
-            fill_opacity=1,radius=intersection_radius).add_to(m)
 
     m.save('templates/visualization/visualization.html')

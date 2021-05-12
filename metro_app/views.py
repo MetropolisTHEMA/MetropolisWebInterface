@@ -88,7 +88,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import *
 from .models import *
-from .networks import retrieve_data_from_postgres
+from .networks import make_network_visualization
 
 
 # Create your views here.
@@ -195,16 +195,7 @@ def delete_network(request, pk):
 
 def read_from_postgres(request, pk):
     roadnetwork = RoadNetWork.objects.get(id=pk)
-    simple = roadnetwork.abstract
-    retrieve_data_from_postgres(Simple=simple,
-                              set_initial_crs=4326,
-                              zone_radius=15,
-                              intersection_radius_percentage=0.8,
-                              distance_offset_percentage=0.8,
-                              line_color='orange',
-                              link_side='right',
-                              network_id=pk
-                              )
+    make_network_visualization(pk)
 
     context = {"roadnetwork":roadnetwork}
     return render(request, 'visualization/visualization.html',context)

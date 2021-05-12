@@ -208,6 +208,7 @@ class RoadType(models.Model):
     default_param1 = models.FloatField(default=1.0)
     default_param2 = models.FloatField(default=1.0)
     default_param3 = models.FloatField(default=3.0)
+    color = models.CharField(max_length=7, blank=True)
 
     def __str__(self):
         return "{} - ({})".format(self.name, self.congestion)
