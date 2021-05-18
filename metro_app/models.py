@@ -18,6 +18,7 @@ https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
+from colorfield.fields import ColorField
 
 # class CustomUser(AbstractUser):
 # https://testdriven.io/blog/django-custom-user-model/
@@ -68,7 +69,7 @@ class File(models.Model):
         on_delete=models.CASCADE)
     public = models.BooleanField(default=False)
     title = models.CharField('File Title', max_length=200)
-    location = models.CharField('File Location', max_length=300)
+    location = models.CharField('File Location', max_length=250)
 
     def __str__(self):
         return "{}".format(self.title)
@@ -166,7 +167,7 @@ class RoadNetWork(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     abstract = models.BooleanField()
     visualization_path = models.FileField(upload_to='Downloads/',
-                                          max_length=300)
+                                          max_length=250)
     name = models.CharField('Network Name', max_length=200, blank=False)
     comment = models.TextField()
     tags = models.TextField()
@@ -200,9 +201,11 @@ class RoadType(models.Model):
     """
     name = models.CharField('Road Type', max_length=200, blank=False)
     congestion_choices = (
-        ('Free flow', 'Free flow'),
-        ('Congestion', 'Congestion'),
+        (1, 'Free flow'),
+        (2, 'Congestion'),
+        (3, 'bottleneck')
     )
+    road_type_id = models.SmallIntegerField()
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
     congestion = models.CharField(max_length=200, choices=congestion_choices)
     default_speed = models.FloatField(default=50)
@@ -210,13 +213,13 @@ class RoadType(models.Model):
     default_param1 = models.FloatField(default=1.0)
     default_param2 = models.FloatField(default=1.0)
     default_param3 = models.FloatField(default=3.0)
-    color = models.CharField(max_length=7, blank=True)
+    color = ColorField(default='#FF0000')
 
     def __str__(self):
         return "{} - ({})".format(self.name, self.congestion)
 
     class Meta:
-        db_table = 'RoadType '
+        db_table = 'RoadType'
 
 
 class Node(models.Model):
@@ -231,6 +234,7 @@ class Node(models.Model):
     :location Point: Point representing the location of the node on the
      network, in EPSG:4326.
     """
+    id = models.BigAutoField(primary_key=True)
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
     node_id = models.BigIntegerField()
     name = models.CharField('Node Name', max_length=200)
@@ -282,22 +286,14 @@ class Edge(models.Model):
     lanes = models.SmallIntegerField(null=True)
     geometry = models.LineStringField(null=True)
     name = models.CharField('Edge Name', max_length=200, blank=False)
-    road_type = models.ForeignKey(
-        RoadType,
-        related_name='edges_road_type',
-        on_delete=models.CASCADE)
-    target = models.ForeignKey(
-        Node,
-        related_name='edges_target',
-        on_delete=models.CASCADE)
-    source = models.ForeignKey(
-        Node,
-        related_name='edges_source',
-        on_delete=models.CASCADE)
-    network = models.ForeignKey(
-        RoadNetWork,
-        related_name='edges_network',
-        on_delete=models.CASCADE)
+    road_type = models.ForeignKey(RoadType, related_name='edges_road_type',
+                                  on_delete=models.CASCADE)
+    target = models.ForeignKey(Node, related_name='edges_target',
+                               on_delete=models.CASCADE)
+    source = models.ForeignKey(Node, related_name='edges_source',
+                               on_delete=models.CASCADE)
+    network = models.ForeignKey(RoadNetWork, related_name='edges_network',
+                                on_delete=models.CASCADE)
 
     def __str__(self):
         return "Edge : {} ({})".format(self.name, self.network)

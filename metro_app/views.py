@@ -199,7 +199,7 @@ def create_network(request, pk):
         form = RoadNetWorkForm(request.POST, instance=network)
         if form.is_valid():
             form.save()
-            return redirect('home')
+            return redirect('project_details', current_project.pk)
 
     context = {'form': form}
     return render(request, 'views/roadnetwork_form.html', context)

@@ -1,10 +1,7 @@
 from django.contrib import messages
 from django.contrib.gis.geos import fromstr
 from django.contrib.gis.geos import GEOSGeometry, LineString
-from django.core.serializers import serialize
 from django.shortcuts import render, redirect
-from django.core.exceptions import ObjectDoesNotExist
-
 import json
 import csv
 import numpy as np
@@ -14,8 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from shapely import geometry as geom
 from shapely.ops import split
-from pyproj import CRS
 import folium
+import time
 
 from .forms import NodeForm, EdgeForm, RoadTypeFileForm
 from .models import Node, Edge, RoadNetWork, RoadType
@@ -26,8 +23,16 @@ from .models import Node, Edge, RoadNetWork, RoadType
 
 
 def upload_road_type(request, pk):
-    template = "networks/node.html"
+    template = "networks/roadtype.html"
     roadnetwork = RoadNetWork.objects.get(id=pk)
+    roadtypes = RoadType.objects.select_related('network').filter(
+                                                             network_id=pk)
+    roadtype_count = roadtypes.count()
+    if roadtype_count > 0:
+        messages.warning(request, "Fail ! Network contains \
+                            already road type data.")
+        return redirect('network_details', roadnetwork.pk)
+
     list_roadtype_instance = []
     if request.method == 'POST':
         form = RoadTypeFileForm(request.POST, request.FILES)
@@ -38,12 +43,13 @@ def upload_road_type(request, pk):
                                       delimiter=',', quoting=csv.QUOTE_NONE)
             for row in datafile:
                 roadtype = RoadType(
+                    road_type_id=row['id'],
                     name=row['name'],
                     congestion=row['congestion'],
                     default_speed=row.get('default_speed', 50),
-                    default_param1=row.get('default_param1', 0),
-                    default_param2=row.get('default_param2', 0),
-                    default_param3=row.get('default_param3', 0),
+                    default_param1=row.get('default_param1', 1.0),
+                    default_param2=row.get('default_param2', 1.0),
+                    default_param3=row.get('default_param3', 1.0),
                     network=roadnetwork)
                 list_roadtype_instance.append(roadtype)
             RoadType.objects.bulk_create(list_roadtype_instance)
@@ -58,19 +64,27 @@ def upload_road_type(request, pk):
 
 
 def upload_edge(request, pk):
+    t1 = time.time()
     template = "networks/edge.html"
     roadnetwork = RoadNetWork.objects.get(id=pk)
-    road_type = RoadType.objects.get(pk=2)
-    node_instance = Node.objects.filter(network_id=pk)
-    edge_instance = Edge.objects.filter(network_id=pk)
+    roadtypes = RoadType.objects.select_related('network').filter(
+                                                             network_id=pk)
+    nodes = Node.objects.select_related('network').filter(network_id=pk)
+    edges = Edge.objects.select_related().filter(network_id=pk)
+    node_id_dict = {node.node_id: node for node in nodes}
+    road_type_id_dict = {roadtype.road_type_id: roadtype
+                         for roadtype in roadtypes}
     list_edge_instance = []
-    if edge_instance.count() > 0:
+    edges_count = edges.count()
+    nodes_count = nodes.count()
+    roadtype_count = roadtypes.count()
+    if edges_count > 0:
         messages.warning(request, "Fail ! Network contains \
                             already edges data.")
         return redirect('network_details', roadnetwork.pk)
 
-    if node_instance.count() == 0:
-        messages.warning(request, "Fail ! First import node file \
+    if nodes_count == 0 or roadtype_count == 0:
+        messages.warning(request, "Fail ! First import node or road type file \
                             before importing edge.")
         return redirect('network_details', roadnetwork.pk)
 
@@ -117,11 +131,12 @@ def upload_edge(request, pk):
 
                     target = properties.get('target')
                     source = properties.get('source')
-
+                    road_type = properties.get('road_type')
                     try:
-                        target = node_instance.get(node_id=target)
-                        source = node_instance.get(node_id=source)
-                        node = Edge(
+                        target = node_id_dict[target]
+                        source = node_id_dict[source]
+                        roadtype = road_type_id_dict[road_type]
+                        edge = Edge(
                                 param1=properties.get('param1', 1.0),
                                 param2=properties.get('param2', 0),
                                 param3=properties.get('param3', 0),
@@ -130,16 +145,19 @@ def upload_edge(request, pk):
                                 lanes=properties.get('lanes', 0),
                                 geometry=location,
                                 name=properties.get('name', 0),
-                                road_type=road_type,
+                                road_type=roadtype,
                                 target=target,
                                 source=source,
                                 network=roadnetwork)
-                        list_edge_instance.append(node)
-                    except ObjectDoesNotExist:
-                        pass
+                        list_edge_instance.append(edge)
+                    except KeyError:
+                        messages.warning(request, "The nodes {} and {} \
+                                        don't exist".format(source, target))
 
             Edge.objects.bulk_create(list_edge_instance)
-            if edge_instance.count() > 0:
+            t2 = time.time()
+            print('Delta', t2-t1)
+            if edges_count > 0:
                 messages.success(request, 'Your edge file has been \
                              successfully imported !')
 
@@ -152,10 +170,10 @@ def upload_edge(request, pk):
 def upload_node(request, pk):
     template = "networks/node.html"
     roadnetwork = RoadNetWork.objects.get(id=pk)
-    node_instance = Node.objects.filter(network_id=pk)
+    nodes = Node.objects.select_related('network').filter(network_id=pk)
     list_node_instance = []
-
-    if node_instance.count() > 0:
+    nodes_count = nodes.count()
+    if nodes_count > 0:
         messages.warning(request, "Fail ! Network contains\
                         already nodes data.")
         return redirect('network_details', roadnetwork.pk)
@@ -198,7 +216,7 @@ def upload_node(request, pk):
                                 format guidelines')
 
             Node.objects.bulk_create(list_node_instance)
-            if node_instance.count() > 0:
+            if nodes_count > 0:
                 messages.success(request, 'Your node file has been \
                              successfully imported !')
 
@@ -236,13 +254,14 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         # The polygon is centered and has the correct width, returns it.
         return polygon
     # Split the polygon in two in the middle (represented by the linestring).
-    splitted_polygons = split(polygon, linestring)
+    # splitted_polygons = split(polygon, linestring)
     if drive_right:
         # Returns the right-hand side of the split.
         return split(polygon, linestring)[0]
     else:
         # Returns the left-hand side of the split.
         return split(polygon, linestring)[-1]
+
 
 def make_network_visualization(road_network_id, node_radius=12,
                                node_color='lightgray', edge_width_ratio=1,

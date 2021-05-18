@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+  <h3>Import road type file </h3>
+  <hr>
+<p>Congestion model for a set of edges.</p>
+
+<h4>Attributes</h4>
+<ul>
+  <li><strong>network</strong> RoadNetwork: RoadNetwork instance the RoadType belongs to.
+    The first argument "RoadNetWork" indicate the relationship model.</li>
+  <li><strong>user_id</strong> int: Id of the node, as used by the users in the import files.
+    Must be unique for a specific RoadNetwork.</li>
+  <li><strong>name</strong> str: Name of the road type (default is '').</li>
+  <li><strong>congestion</strong> str: Congestion model used to compute the travel time of the
+   edges. Possible values are 'FF' (free-flow), 'BN' (bottleneck), 'LD' (log
+   density) and 'BP' (bureau of public roads function).</li>
+</ul>
+
+  <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
+    <div class="mb-3">
+      {{form}}
+      <button type="submit" class="btn btn-success" name="button">Upload</button>
+      <button type="button" class="btn btn-danger">Cancel</button>
+    </div>
+
+  </form>
+
+{% endblock %}
+
+  :congestion str: Congestion model used to compute the travel time of the
+   edges. Possible values are 'FF' (free-flow), 'BN' (bottleneck), 'LD' (log
+   density) and 'BP' (bureau of public roads function).
+  :default_speed float: Default free-flow speed of the edges for this road
+   type, in kilometers per hour.
+  :default_param1 float: Default value for the first parameter used in the
+   congestion model. The exact meaning depends on the congestion model.
+  :default_param2 float: Default value for the second parameter used in the
+   congestion model. The exact meaning depends on the congestion model.
+  :default_param3 float: Default value for the third parameter used in the
+   congestion model. The exact meaning depends on the congestion model.
+  """

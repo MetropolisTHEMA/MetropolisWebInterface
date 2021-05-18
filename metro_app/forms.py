@@ -40,6 +40,9 @@ class RoadTypeForm(forms.ModelForm):
     class Meta:
         model = RoadType
         fields = '__all__'
+        widgets = {
+            'color': forms.TextInput(attrs={'type': 'color'}),
+        }
 
 
 class RoadTypeFileForm(forms.Form):

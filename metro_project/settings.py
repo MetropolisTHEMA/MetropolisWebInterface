@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 from pathlib import Path
+from django.contrib.messages import constants as message_constants
 import os
 import json
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'users',
     'crispy_forms',
     'django.contrib.gis',
+    'colorfield',
 ]
 
 MIDDLEWARE = [
@@ -164,7 +166,7 @@ STATICFILES_DIRS = [
 ]
 # Location where django collect all static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
@@ -176,7 +178,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
 LOGIN_URL = 'home'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
-#AUTH_USER_MODEL = 'users.CustomUser'
+# AUTH_USER_MODEL = 'users.CustomUser'
 
-from django.contrib.messages import constants as message_constants
 MESSAGE_LEVEL = message_constants.DEBUG
