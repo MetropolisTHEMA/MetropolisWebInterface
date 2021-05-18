@@ -49,4 +49,12 @@
     </div>
   </form>
 
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  
 {% endblock %}

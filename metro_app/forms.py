@@ -13,7 +13,11 @@ class EdgeForm(forms.Form):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = [
+            'public',
+            'name',
+            'comment',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Give a name for the project'}),

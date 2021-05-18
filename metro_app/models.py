@@ -208,11 +208,11 @@ class RoadType(models.Model):
     road_type_id = models.SmallIntegerField()
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
     congestion = models.CharField(max_length=200, choices=congestion_choices)
-    default_speed = models.FloatField(default=50)
-    default_lanes = models.SmallIntegerField(default=1)
-    default_param1 = models.FloatField(default=1.0)
-    default_param2 = models.FloatField(default=1.0)
-    default_param3 = models.FloatField(default=3.0)
+    default_speed = models.FloatField(null=True, blank=True)
+    default_lanes = models.SmallIntegerField(null=True, blank=True)
+    default_param1 = models.FloatField(null=True, blank=True)
+    default_param2 = models.FloatField(null=True, blank=True)
+    default_param3 = models.FloatField(null=True, blank=True)
     color = ColorField(default='#FF0000')
 
     def __str__(self):

@@ -42,6 +42,7 @@ def upload_road_type(request, pk):
             datafile = csv.DictReader(datafile,
                                       delimiter=',', quoting=csv.QUOTE_NONE)
             for row in datafile:
+                row = {k: 0 if not v else v for k, v in row.items()}
                 roadtype = RoadType(
                     road_type_id=row['id'],
                     name=row['name'],
@@ -53,7 +54,7 @@ def upload_road_type(request, pk):
                     network=roadnetwork)
                 list_roadtype_instance.append(roadtype)
             RoadType.objects.bulk_create(list_roadtype_instance)
-            messages.success(request, 'Your road file has been \
+            messages.success(request, 'Your road type file has been \
                              successfully imported !')
             return redirect('network_details', roadnetwork.pk)
 
@@ -87,7 +88,7 @@ def upload_edge(request, pk):
         messages.warning(request, "Fail ! First import node or road type file \
                             before importing edge.")
         return redirect('network_details', roadnetwork.pk)
-
+    form = EdgeForm()
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
@@ -151,19 +152,22 @@ def upload_edge(request, pk):
                                 network=roadnetwork)
                         list_edge_instance.append(edge)
                     except KeyError:
-                        messages.warning(request, "The nodes {} and {} \
+                        messages.error(request, "The nodes {} and {} \
                                         don't exist".format(source, target))
+                else:
+                    messages.error(request, "The uploaded file is not \
+                                   the edge one, please select the good one !")
+                    return render(request, template, {'form': form})
 
             Edge.objects.bulk_create(list_edge_instance)
             t2 = time.time()
             print('Delta', t2-t1)
-            if edges_count > 0:
+            if edges.count() > 0:
                 messages.success(request, 'Your edge file has been \
                              successfully imported !')
 
         return redirect('network_details', roadnetwork.pk)
     else:
-        form = EdgeForm()
         return render(request, template, {'form': form})
 
 
@@ -172,12 +176,12 @@ def upload_node(request, pk):
     roadnetwork = RoadNetWork.objects.get(id=pk)
     nodes = Node.objects.select_related('network').filter(network_id=pk)
     list_node_instance = []
-    nodes_count = nodes.count()
-    if nodes_count > 0:
+    if nodes.count() > 0:
         messages.warning(request, "Fail ! Network contains\
                         already nodes data.")
         return redirect('network_details', roadnetwork.pk)
 
+    form = NodeForm()
     if request.method == 'POST':
         # We need to include the files when creating the form
         form = NodeForm(request.POST, request.FILES)
@@ -201,6 +205,10 @@ def upload_node(request, pk):
                         node = Node(node_id=node_id, name=name,
                                     location=location, network=roadnetwork)
                         list_node_instance.append(node)
+                    else:
+                        messages.error(request, "The uploaded file is not the \
+                                      node one, please select the good one ! ")
+                        return render(request, template, {'form': form})
 
             elif datafile.name.endswith('.csv'):  # A CSV EXTENSION
                 datafile = datafile.read().decode('utf-8').splitlines()
@@ -216,13 +224,12 @@ def upload_node(request, pk):
                                 format guidelines')
 
             Node.objects.bulk_create(list_node_instance)
-            if nodes_count > 0:
+            if nodes.count() > 0:
                 messages.success(request, 'Your node file has been \
                              successfully imported !')
 
         return redirect('network_details', roadnetwork.pk)
     else:
-        form = NodeForm()
         return render(request, template, {'form': form})
 
 

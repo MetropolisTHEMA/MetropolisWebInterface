@@ -1,15 +1,23 @@
 .success{
   list-style: none;
-  background-color: #2e6da4;
+  background-color: #40ff00;
   color: white;
-  box-shadow: 12px 12 px 12px #e61c66;
+  box-shadow: 12px 12px 12px #ffff00;
   text-align: center;
 }
 
 .warning{
   list-style: none;
-  background-color: #2e6da4;
+  background-color: #ffbf00;
   color: white;
-  box-shadow: 12px 12 px 12px #e61c66;
+  box-shadow: 12px 12px 12px #ffff00;
+  text-align: center;
+}
+
+.error{
+  list-style: none;
+  background-color: #ff0000;
+  color: white;
+  box-shadow: 12px 12px 12px #ffff00;
   text-align: center;
 }
