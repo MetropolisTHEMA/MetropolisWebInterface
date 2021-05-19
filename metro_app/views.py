@@ -106,15 +106,15 @@ Django Views Modules
 from django.shortcuts import render, redirect
 # from django.contrib import messages
 from django.contrib.auth.models import User
-from .forms import ProjectForm, RoadTypeForm, RoadNetWorkForm
-from .models import Node, Edge, Project, RoadNetWork, RoadType
+from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
+from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
 
 
 # Create your views here.
 def index(request):
     projects = Project.objects.all()
-    roadnetworks = RoadNetWork.objects.all()
+    roadnetworks = RoadNetwork.objects.all()
     users = User.objects.all()
 
     total_projects = projects.count()
@@ -140,7 +140,10 @@ def create_project(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
-            form.save()
+            project = form.save(commit=False)
+            # Set the project owner to the user who made the request.
+            project.owner = request.user
+            project.save()
             return redirect('home')
 
     form = ProjectForm()
@@ -193,10 +196,10 @@ def create_network(request, pk):
      must be created inside the project"""
 
     current_project = Project.objects.get(id=pk)
-    form = RoadNetWorkForm(initial={'project': current_project})
+    form = RoadNetworkForm(initial={'project': current_project})
     if request.method == 'POST':
-        network = RoadNetWork(project=current_project)
-        form = RoadNetWorkForm(request.POST, instance=network)
+        network = RoadNetwork(project=current_project)
+        form = RoadNetworkForm(request.POST, instance=network)
         if form.is_valid():
             form.save()
             return redirect('project_details', current_project.pk)
@@ -207,7 +210,7 @@ def create_network(request, pk):
 
 def network_details(request, pk):
 
-    roadnetwork = RoadNetWork.objects.get(id=pk)
+    roadnetwork = RoadNetwork.objects.get(id=pk)
     total_nodes = Node.objects.filter(network_id=pk).count()
     total_edges = Edge.objects.filter(network_id=pk).count()
 
@@ -221,10 +224,10 @@ def network_details(request, pk):
 
 
 def update_network(request, pk):
-    roadnetwork = RoadNetWork.objects.get(id=pk)
-    form = RoadNetWorkForm(instance=roadnetwork)
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    form = RoadNetworkForm(instance=roadnetwork)
     if request.method == 'POST':
-        form = RoadNetWorkForm(request.POST, instance=roadnetwork)
+        form = RoadNetworkForm(request.POST, instance=roadnetwork)
         if form.is_valid():
             form.save()
             return redirect('project_details', roadnetwork.project.pk)
@@ -234,7 +237,7 @@ def update_network(request, pk):
 
 
 def delete_network(request, pk):
-    network_to_delete = RoadNetWork.objects.get(id=pk)
+    network_to_delete = RoadNetwork.objects.get(id=pk)
     if request.method == 'POST':
         network_to_delete.delete()
         return redirect('project_details', network_to_delete.project.pk)
@@ -244,7 +247,7 @@ def delete_network(request, pk):
 
 
 def visualization(request, pk):
-    roadnetwork = RoadNetWork.objects.get(id=pk)
+    roadnetwork = RoadNetwork.objects.get(id=pk)
     make_network_visualization(pk)
     context = {"roadnetwork": roadnetwork}
     return render(request, 'visualization/visualization.html', context)
@@ -258,7 +261,7 @@ def create_roadtype(request, pk):
     """A roadtype depends on a project. It
      must be created inside the roadnetwork"""
 
-    current_network = RoadNetWork.objects.get(id=pk)
+    current_network = RoadNetwork.objects.get(id=pk)
     form = RoadTypeForm(initial={'roadnetwork': current_network})
     if request.method == 'POST':
         road_type = RoadType(network=current_network)

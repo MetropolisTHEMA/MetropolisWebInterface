@@ -16,13 +16,18 @@ data types. Here is an exellent book about this topic
 https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 """
 
+import os
+import random
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
 from colorfield.fields import ColorField
 
-# class CustomUser(AbstractUser):
-# https://testdriven.io/blog/django-custom-user-model/
-# pass # Create an separate app for users accounts
+
+def get_sentinel_user():
+    return User.objects.get_or_create(username='deleted')[0]
 
 
 class Project(models.Model):
@@ -34,24 +39,83 @@ class Project(models.Model):
     The creator of the project is the owner. He can decide to add or remove
     users to the project.
 
-    :owner CustomUser: The user who created and owns the project.
-    :users set of CustomUser: Set of users who can view and modify the project.
+    :owner User: The user who created and owns the project.
+    :members set of User: Set of users who can view and modify the
+     project.
     :public bool: If True, the project can be viewed (but not modified) by
      anyone (default is False).
     :name str: Name of the project.
     :comment str: Description of the project (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Project.
     """
-    owner = models.ManyToManyField(User)
-    public = models.BooleanField(default=False)
-    name = models.CharField('Project Name', max_length=200, null=False)
-    comment = models.TextField()
-    date_created = models.DateField(auto_now_add=True, null=True)
+    owner = models.ForeignKey(
+        User, related_name='owner', on_delete=models.SET(get_sentinel_user))
+    members = models.ManyToManyField(
+        User, related_name='members', through='Membership')
+    public = models.BooleanField(
+        default=False,
+        help_text='Allow the project to be viewed (not editable) by anyone',
+    )
+    name = models.CharField(max_length=80, help_text='Name of the project')
+    comment = models.CharField(max_length=240, blank=True,
+                               help_text='Additional comment for the project')
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(auto_now_add=True,
+                                    help_text='Creation date of the project')
 
     def __str__(self):
-        return "{}".format(self.name)
+        return self.name
 
     class Meta:
         db_table = 'Project'
+
+
+class Membership(models.Model):
+    """Membership defines a relation between an user and a project.
+
+    This model represents a many-to-many relation between projects and users.
+    An entry indicates that a user is a member of a project. The permissions of
+    the user for this project are stored here.
+
+    :user User: The user who is a member of the project.
+    :project Project: The project for which the user is a member of.
+    :can_add bool: If True, the user can add new input data (default is True).
+    :can_delete bool: If True, the user can delete input data (default is
+     True).
+    :can_run bool: If True, the user can run simulations (default is True).
+    :can_add_members bool: If True, the user can add new members (default is
+     False).
+    :can_manage_perms bool: If True, the user can manage members' permissions
+     (default is False).
+    :can_remove_members bool: If True, the user can remove members (default is
+     False).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    can_add = models.BooleanField(
+        default=True, help_text='The member can add new input data')
+    can_delete = models.BooleanField(
+        default=True, help_text='The member can delete input data')
+    can_run = models.BooleanField(
+        default=True, help_text='The member can run simulations')
+    can_add_members = models.BooleanField(
+        default=False, help_text='The member can add new members')
+    can_manage_perms = models.BooleanField(
+        default=False, help_text='The member can manage permissions')
+    can_remove_members = models.BooleanField(
+        default=False, help_text='The member can remove members')
+
+    def __str__(self):
+        return '{} is a member of {}'.format(self.user, self.project)
+
+    class Meta:
+        db_table = 'Membership'
+
+
+def project_directory_path(instance, filename):
+    return 'project_files/{}/{}'.format(instance.project.id, filename)
 
 
 class File(models.Model):
@@ -61,18 +125,17 @@ class File(models.Model):
     :public bool: if True, the file can be viewed by anyone (only if the
      project is also public.
     :title str: Title of the file, as shown on the interface.
-    :location file: Location of the file on the server.
+    :location FieldFile: Location of the file on the server.
     """
-    project = models.ForeignKey(
-        Project,
-        related_name='file_project',
-        on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
-    title = models.CharField('File Title', max_length=200)
-    location = models.CharField('File Location', max_length=250)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    public = models.BooleanField(
+        default=False, help_text='Allow the file to be viewable by anyone')
+    title = models.CharField(max_length=80, help_text='Title of the file')
+    location = models.FileField(verbose_name='File',
+                                upload_to=project_directory_path)
 
     def __str__(self):
-        return "{}".format(self.title)
+        return self.title
 
     class Meta:
         db_table = 'File'
@@ -87,8 +150,7 @@ class ParameterSet(models.Model):
     :period_interval  timedelta: Interval at which link-specific results are
      recorded.
     :learn_process str: Type of learning process for the day-to-day model.
-     Possible values are 'EX' (exponential model), 'LI' (linear model), 'QU'
-     (quadratic model) and 'GE' (genetic model).
+     Possible values are exponential, linear, quadratic and genetic.
     :learn_param float: Weight of the previous day in the learning process. The
      exact meaning depends on the type of learning process.
     :iter_check bool: If True, the run stops when the maximum number of
@@ -107,116 +169,189 @@ class ParameterSet(models.Model):
     :comment str: Description of the instance.
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
+    :date_created datetime.date: Creation date of the ParameterSet.
     """
-    leraning_process = (
-        ('EX', 'exponential'),
-        ('LI', 'linear'),
-        ('QU', 'quadratic'),
-        ('GE', 'genetic')
+    learning_process = (
+        (0, 'exponential'),
+        (1, 'linear'),
+        (2, 'quadratic'),
+        (3, 'genetic')
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
-    period_start = models.TimeField('Period Start')
-    period_end = models.TimeField('Period Start')
-    period_interval = models.DurationField(default=5)
-    learn_process = models.CharField(
-        max_length=100,
-        null=False,
-        choices=leraning_process)
-    learn_param = models.FloatField(blank=False)
-    iter_check = models.BooleanField(default=False)
-    iter_value = models.SmallIntegerField()
-    converg_check = models.BooleanField(default=False)
-    converg_value = models.FloatField()
-    spillback_enable = models.BooleanField()
-    spillback_value = models.FloatField()
+    period_start = models.TimeField(
+        help_text='Starting time of the simulated period')
+    period_end = models.TimeField(
+        help_text='Ending time of the simulated period')
+    period_interval = models.DurationField(
+        default=timedelta(minutes=5),
+        help_text='Time interval at which results are saved',
+    )
+    learn_process = models.PositiveSmallIntegerField(
+        default=0, choices=learning_process,
+        help_text='Type of learning process')
+    learn_param = models.FloatField(
+        default=.1, help_text='Weight of the previous day')
+    iter_check = models.BooleanField(
+        default=True,
+        help_text=(
+            'Stop the simulation when the maximum number of iterations is'
+            ' exceeded'
+        ),
+    )
+    iter_value = models.SmallIntegerField(
+        default=50, help_text='Maximum number of iterations')
+    converg_check = models.BooleanField(
+        default=True,
+        help_text=(
+            'Stop the simulation when the convergence criteria is reached'
+        ),
+    )
+    converg_value = models.FloatField(
+        default=.01, help_text='Value of the convergence criteria')
+    spillback_enable = models.BooleanField(
+        default=True, help_text='Allow congestion to spread on upstream roads')
+    spillback_value = models.FloatField(
+        default=7.0, help_text='Length of a vehicle in meters')
     locked = models.BooleanField(default=False)
-    name = models.CharField('Name of the instance', max_length=200)
-    comment = models.TextField()
-    tags = models.TextField()
+    name = models.CharField(
+        max_length=80, help_text='Name of the parameter set')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the parameter set',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the parameter set')
 
     def __str__(self):
-        return "{}".format(self.learn_process)
+        return self.name
 
     class Meta:
         db_table = 'ParameterSet'
 
 
-class RoadNetWork(models.Model):
+def get_visualization_directory():
+    return os.path.join(settings.MEDIA_ROOT, 'visualization')
+
+
+class RoadNetwork(models.Model):
     """Container storing the graph-representation of a road network.
     A road network is composed of a set of nodes and of a set of edges
     connecting the nodes.
     Road types are used to describe the congestion model of the roads.
 
-    :project Project: Project the RoadNetWork instance belongs to.
+    :project Project: Project the RoadNetwork instance belongs to.
     :simple bool: If True, the coordinates of the nodes are abstract.
      Otherwise, the coordinates of the nodes are expressed in a real coordinate
      system.
     :locked bool: If True, the instance cannot be modified (default is False).
-    :representation file: Location on the server of the HTML file with the
+    :visualization_path file: Location on the server of the HTML file with the
      Leaflet.js representation of the road network.
+    :nb_road_types int: Total number of roadtypes in the road network.
     :nb_nodes int: Total number of nodes in the road network.
     :nb_edges int: Total number of edges in the road network.
-    :crs str: Coordinate reference system used for the coordinates of the
-     nodes and the geometry of the edges.
+    :srid str: Spatial Reference System Identifier used for the coordinates of
+     the nodes and the geometry of the edges.
     :name str: Name of the instance.
     :comment str: Description of the instance.
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
+    :date_created datetime.date: Creation date of the Road Network.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    abstract = models.BooleanField()
-    visualization_path = models.FileField(upload_to='Downloads/',
-                                          max_length=250)
-    name = models.CharField('Network Name', max_length=200, blank=False)
-    comment = models.TextField()
-    tags = models.TextField()
-    date_created = models.DateField(auto_now_add=True, null=True)
+    simple = models.BooleanField(
+        default=False, verbose_name='Abstract network',
+        help_text=(
+            'Abstract networks are networks that cannot be expressed in a'
+            ' geographic projection'
+        ),
+    )
+    locked = models.BooleanField(default=False)
+    visualization_path = models.FilePathField(
+        path=get_visualization_directory, match='*.html')
+    nb_road_types = models.PositiveIntegerField(default=0)
+    nb_nodes = models.PositiveIntegerField(default=0)
+    nb_edges = models.PositiveIntegerField(default=0)
+    srid = models.PositiveIntegerField(
+        default=4326,
+        help_text=(
+            'Spatial Reference System Identifier used for the coordinates of'
+            ' the network nodes and edges'
+        ),
+    )
+    name = models.CharField(
+        max_length=80, help_text='Name of the road network')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the road network',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the road network')
 
     def __str__(self):
-        return "{}".format(self.name)
+        return self.name
 
     class Meta:
-        db_table = 'RoadNetWork'
+        db_table = 'RoadNetwork'
 
 
 class RoadType(models.Model):
     """Congestion model for a set of edges.
 
-    :network RoadNetWork: RoadNetWork the RoadType instance belongs to.
-    :user_id int: Id of the road type, as used by the users in the import
-     files. Must be unique for a specific RoadNetWork.
+    :network RoadNetwork: RoadNetwork the RoadType instance belongs to.
+    :road_type_id int: Id of the road type, as used by the users in the import
+     files. Must be unique for a specific RoadNetwork.
     :name str: Name of the road type (default is '').
     :congestion str: Congestion model used to compute the travel time of the
-     edges. Possible values are 'FF' (free-flow), 'BN' (bottleneck), 'LD' (log
-     density) and 'BP' (bureau of public roads function).
+     edges. Possible values are free flow, bottleneck, log-density, bureau of
+     public roads function and linear.
     :default_speed float: Default free-flow speed of the edges for this road
      type, in kilometers per hour.
+    :default_lanes int: Default number of lanes for this road type.
     :default_param1 float: Default value for the first parameter used in the
      congestion model. The exact meaning depends on the congestion model.
     :default_param2 float: Default value for the second parameter used in the
      congestion model. The exact meaning depends on the congestion model.
     :default_param3 float: Default value for the third parameter used in the
      congestion model. The exact meaning depends on the congestion model.
+    :color Color: Color used to display the edges of this road type on the
+     network visualization.
     """
-    name = models.CharField('Road Type', max_length=200, blank=False)
-    congestion_choices = (
-        (1, 'Free flow'),
-        (2, 'Congestion'),
-        (3, 'bottleneck')
+    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    road_type_id = models.PositiveIntegerField(
+        db_index=True, help_text='Id of the road type (must be unique)')
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the road type')
+    BOTTLENECK = 0
+    FREEFLOW = 1
+    LOGDENSITY = 2
+    BPR = 3
+    LINEAR = 4
+    CONGESTION_CHOICES = (
+        (BOTTLENECK, 'Bottleneck'),
+        (FREEFLOW, 'Free flow'),
+        (LOGDENSITY, 'Log-density'),
+        (BPR, 'Bureau of public roads'),
+        (LINEAR, 'Linear'),
     )
+<<<<<<< HEAD
     road_type_id = models.SmallIntegerField()
     network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
     congestion = models.IntegerField(choices=congestion_choices)
+=======
+    congestion = models.SmallIntegerField(
+        default=0, choices=CONGESTION_CHOICES)
+>>>>>>> ef01188da09490d7d164ce14ac0a4b02f013619d
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
     default_param1 = models.FloatField(null=True, blank=True)
     default_param2 = models.FloatField(null=True, blank=True)
     default_param3 = models.FloatField(null=True, blank=True)
-    color = ColorField(default='#FF0000')
+    color = ColorField(null=True, blank=True)
 
     def __str__(self):
-        return "{} - ({})".format(self.name, self.congestion)
+        return self.name or 'Roadtype {}'.format(self.road_type_id)
 
     class Meta:
         db_table = 'RoadType'
@@ -226,22 +361,23 @@ class Node(models.Model):
     """A Node is an element of the road-network graph, representing an
     intersection or an origin / destination point.
 
-    :network: RoadNetWork instance the Node belongs to.
-     The first argument "RoadNetWork" indicate the relationship model.
-    :user_id int: Id of the node, as used by the users in the import files.
-     Must be unique for a specific RoadNetWork.
+    :network: RoadNetwork instance the Node belongs to.
+     The first argument "RoadNetwork" indicate the relationship model.
+    :node_id int: Id of the node, as used by the users in the import files.
+     Must be unique for a specific RoadNetwork.
     :name str: Name of the node (default is '').
     :location Point: Point representing the location of the node on the
      network, in EPSG:4326.
     """
-    id = models.BigAutoField(primary_key=True)
-    network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
-    node_id = models.BigIntegerField()
-    name = models.CharField('Node Name', max_length=200)
+    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    node_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the node (must be unique)')
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the node')
     location = models.PointField()
 
     def __str__(self):
-        return "Node : {} of ( Network {} )".format(self.name, self.network)
+        return self.name or 'Node {}'.format(self.node_id)
 
     class Meta:
         db_table = 'Node'
@@ -251,13 +387,13 @@ class Edge(models.Model):
     """An Edge is an element of the road-network graph, representing road
     sections or connectors (between an origin / destination and the network).
 
-    :network RoadNetWork: RoadNetWork the Node instance belongs to.
+    :network RoadNetwork: RoadNetwork the Node instance belongs to.
     :source Node: Node representing the starting point of the edge.
     :target Node: Node representing the ending point of the edge.
-    :roadtype RoadType: Road type representing the congestion model of the
+    :road_type RoadType: Road type representing the congestion model of the
      edge.
-    :user_id int: Id of the edge, as used by the users in the import files.
-     Must be unique for a specific RoadNetWork.
+    :edge_id int: Id of the edge, as used by the users in the import files.
+     Must be unique for a specific RoadNetwork.
     :name str: Name of the edge (default is '').
     :geometry LineString: Exact or approximate representation of the geometry
      of the edge as a sequence of points, in EPSG:4326 (default is a straight
@@ -277,29 +413,38 @@ class Edge(models.Model):
      exact meaning depends on the congestion model. The default value for the
      given road type is used if empty.
     """
-    # capacity = models.FloatField()
+    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    source = models.ForeignKey(
+        Node, related_name='source', on_delete=models.CASCADE,
+        help_text='Source node of the edge',
+    )
+    target = models.ForeignKey(
+        Node, related_name='target', on_delete=models.CASCADE,
+        help_text='Target node of the edge',
+    )
+    road_type = models.ForeignKey(
+        RoadType, on_delete=models.CASCADE, help_text='Roadtype of the edge')
+    edge_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the edge (must be unique)')
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the edge')
+    geometry = models.LineStringField()
+    length = models.FloatField()
+    speed = models.FloatField(null=True, blank=True)
+    lanes = models.SmallIntegerField(null=True, blank=True)
     param1 = models.FloatField(null=True, blank=True)
     param2 = models.FloatField(null=True, blank=True)
     param3 = models.FloatField(null=True, blank=True)
-    speed = models.FloatField(null=True)
-    length = models.FloatField(null=False)
-    lanes = models.SmallIntegerField(null=True)
-    geometry = models.LineStringField(null=True)
-    name = models.CharField('Edge Name', max_length=200, blank=False)
-    road_type = models.ForeignKey(RoadType, related_name='edges_road_type',
-                                  on_delete=models.CASCADE)
-    target = models.ForeignKey(Node, related_name='edges_target',
-                               on_delete=models.CASCADE)
-    source = models.ForeignKey(Node, related_name='edges_source',
-                               on_delete=models.CASCADE)
-    network = models.ForeignKey(RoadNetWork, related_name='edges_network',
-                                on_delete=models.CASCADE)
 
     def __str__(self):
-        return "Edge : {} ({})".format(self.name, self.network)
+        return self.name or 'Edge {}'.format(self.edge_id)
 
     class Meta:
         db_table = 'Edge'
+
+
+def get_random_seed():
+    return random.randint(0, 1000)
 
 
 class Population(models.Model):
@@ -317,12 +462,26 @@ class Population(models.Model):
     :locked bool: If True, the instance cannot be modified (default is False).
     :random_seed int: Seed for the random number generator used to generate the
      agents (default is a random integer).
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Population.
     """
-    generated = models.BooleanField(blank=False)
-    random_seed = models.IntegerField()
+    generated = models.BooleanField(default=False)
+    locked = models.BooleanField(default=False)
+    random_seed = models.PositiveIntegerField(get_random_seed)
+    name = models.CharField(max_length=80, help_text='Name of the Population')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the Population',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the population')
 
     def __str__(self):
-        return "Population - random vaule: ({})".format(self.random_seed)
+        return self.name
 
     class Meta:
         db_table = 'Population'
@@ -335,24 +494,60 @@ class ODMatrix(models.Model):
     :project Project: Project the ODMatrix instance belongs to.
     :size int: Total number of agents in the origin-destination matrix.
     :locked bool: If True, the instance cannot be modified (default is False).
-    :name str: Name of the instance (default is '').
+    :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
+    :date_created datetime.date: Creation date of the ODMatrix.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
-    size = models.IntegerField(null=False)
+    size = models.PositiveIntegerField(
+        default=0, help_text='Total number of agents in the OD matrix')
     locked = models.BooleanField(default=False)
-    name = models.CharField('Name of the instance', max_length=200)
-    comment = models.TextField()
-    tags = models.TextField()
+    name = models.CharField(max_length=80, help_text='Name of the O-D matrix')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the O-D matrix',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the O-D matrix')
 
     def __str__(self):
-        pass
+        return self.name
 
     class Meta:
         db_table = 'ODMatrix'
+
+
+class Preferences(models.Model):
+    """Distribution of preferences describing a set of agents.
+
+    :project Project: Project the Preferences instance belongs to.
+    ...
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Preferences.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    locked = models.BooleanField(default=False)
+    name = models.CharField(max_length=80, help_text='Name of the Preferences')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the Preferences',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the preferences')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'Preferences'
 
 
 class PopulationSegment(models.Model):
@@ -364,45 +559,30 @@ class PopulationSegment(models.Model):
      distribution of preferences for this population segment.
     :od_matrix ODMatrix: ODMatrix instance representing the origin-destination
      matrix for this population segment.
-    """
-    population = models.ForeignKey(Population,
-                                   on_delete=models.CASCADE)
-    preferences = models.IntegerField(blank=False)
-    od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "Population segment - ({})".format(self.population)
-
-    class Meta:
-        db_table = 'PopulationSegment'
-
-
-class Preferences(models.Model):
-    """Distribution of preferences describing a set of agents.
-
-    :project Project: Project the Preferences instance belongs to.
-    ...
-    :locked bool: If True, the instance cannot be modified (default is False).
-    :name str: Name of the instance (default is '').
+    :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
+    :date_created datetime.date: Creation date of the PopulationSegment.
     """
-    project = models.ForeignKey(
-        Project,
-        related_name='preferences_project',
-        on_delete=models.CASCADE)
-    public = models.BooleanField(default=False)
-    locked = models.BooleanField(default=False)
-    name = models.CharField('Name of the instance', max_length=200)
-    comment = models.TextField()
-    tags = models.TextField()
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    preferences = models.ForeignKey(Preferences, on_delete=models.CASCADE)
+    od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
+    name = models.CharField(
+        max_length=80, help_text='Name of the population segment')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the population segment',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the population segment')
 
     def __str__(self):
-        return "Preferences - ({})".format(self.project)
+        return self.name
 
     class Meta:
-        db_table = 'Preferences'
+        db_table = 'PopulationSegment'
 
 
 class Zone(models.Model):
@@ -412,18 +592,23 @@ class Zone(models.Model):
     - As a circle, with a given center and radius (zero for points).
     - As an area defined by a polygon.
 
+    :zone_id int: Id of the zone, as used by the users in the import files.
+     Must be unique for a specific ODMatrix.
     :centroid Point: Center point of the circle or centroid of the area.
     :geometry Polygon: Polygon representing the zone, if it is an area.
     :radius float: Radius of the zone in meters, if it is a circle.
     :name str: Name of the zone (default is '').
     """
+    zone_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the zone')
     centroid = models.PointField()
-    geometry = models.PolygonField()
-    radius = models.FloatField(null=False)
-    name = models.CharField('Zone Name', max_length=200)
+    geometry = models.PolygonField(null=True, blank=True)
+    radius = models.FloatField(null=True, blank=True)
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the zone')
 
     def __str__(self):
-        return 'Zone name: ({})'.format(self.name)
+        return self.name or 'Zone {}'.format(self.zone_id)
 
     class Meta:
         db_table = 'Zone'
@@ -437,29 +622,15 @@ class ODPair(models.Model):
     :destination Zone: Destination zone for the OD pair.
     :size int: Number of agents with the given origin and destination.
     """
-    matrix = models.ForeignKey(
-        ODMatrix,
-        related_name='odpairs_matrix',
-        on_delete=models.CASCADE)
+    matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
     origin = models.ForeignKey(
-        Zone,
-        related_name='odpairs_origin',
-        on_delete=models.CASCADE)
+        Zone, related_name='origin', on_delete=models.CASCADE)
     destination = models.ForeignKey(
-        Zone,
-        related_name='odpairs_destination',
-        on_delete=models.CASCADE)
-    size = models.IntegerField(null=False)
-
-    def __str(self):
-        pass
+        Zone, related_name='destination', on_delete=models.CASCADE)
+    size = models.PositiveIntegerField()
 
     class Meta:
         db_table = 'ODPair'
-
-# ........................................................................... #
-#                             Metrosim                                        #
-# ........................................................................... #
 
 
 class Run(models.Model):
@@ -469,21 +640,55 @@ class Run(models.Model):
     :parameter_set ParameterSet: ParameterSet used for the run.
     :population Population: Population used for the run.
     :policy Policy: Policy used for the run.
-    :road_network RoadNetWork: RoadNetWork used for the run.
+    :road_network RoadNetwork: RoadNetwork used for the run.
     :pt_network PTNetwork: PTNetwork used for the run.
-    :status str: Status of the run. Possible values are 'NR' (not ready), 'RY'
-     (ready), 'IP' (in progress), 'FI' (finished), 'AB' (aborted) and 'FA'
-     (failed).
+    :status str: Status of the run. Possible values are 'Not ready', 'Ready',
+     'In progress', 'Finished', 'Aborted' and 'Failed'.
     :name str: Name of the instance (default is '').
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
-    :start_time datetime.datetime: Starting time of the run.
-    :end_time datetime.datetime: Ending time of the run.
+    :start_date datetime.datetime: Starting time of the run.
+    :end_date datetime.datetime: Ending time of the run.
     :time_taken timedelta: Total running time of the run.
     :iterations int: Number of iterations of the run.
+    :date_created datetime.date: Creation date of the Run.
     """
-    pass
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    #  policy = models.ForeignKey(
+        #  Policy, on_delete=models.CASCADE, null=True, blank=True)
+    road_network = models.ForeignKey(
+        RoadNetwork, on_delete=models.CASCADE, null=True, blank=True)
+    #  pt_network = models.ForeignKey(
+        #  PTNetwork, on_delete=models.CASCADE, null=True, blank=True)
+    status_choices = (
+        (0, 'Not ready'),
+        (1, 'Ready'),
+        (2, 'In progress'),
+        (3, 'Finished'),
+        (4, 'Aborted'),
+        (5, 'Failed'),
+    )
+    status = models.PositiveSmallIntegerField(
+        default=0, choices=status_choices)
+    name = models.CharField(
+        max_length=80, help_text='Name of the run')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the run',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    time_taken = models.DurationField(null=True, blank=True)
+    iterations = models.PositiveSmallIntegerField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True,
+                                    help_text='Creation date of the run')
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         db_table = 'Run'
@@ -492,6 +697,8 @@ class Run(models.Model):
 class Agent(models.Model):
     """Generated agent ready to be used by MetroSim.
 
+    :agent_id int: Id of the agent, as used by the users in the import files.
+     Must be unique for a specific Population.
     :population Population: Population instance the Agent belongs to.
     :origin_node Node: Node of the road network used as the origin of the
      agent for car trips.
@@ -503,7 +710,31 @@ class Agent(models.Model):
      destination of the agent for public-transit trips.
     ...
     """
-    pass
+    agent_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the agent')
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    origin_node = models.ForeignKey(
+        Node, related_name='origin_node', on_delete=models.CASCADE,
+        help_text='Origin node of the agent',
+    )
+    destination_node = models.ForeignKey(
+        Node, related_name='destination_node', on_delete=models.CASCADE,
+        help_text='Destination node of the agent',
+    )
+    #  origin_stop = models.ForeignKey(
+        #  PTStop, related_name='origin_stop', on_delete=models.CASCADE,
+        #  help_text='Origin stop of the agent',
+    #  )
+    #  destination_stop = models.ForeignKey(
+        #  PTStop, related_name='destination_stop', on_delete=models.CASCADE,
+        #  help_text='Destination stop of the agent',
+    #  )
+
+    def __str__(self):
+        return 'Agent {}'.format(self.agent_id)
+
+    class Meta:
+        db_table = 'Agent'
 
 
 class AgentResults(models.Model):
@@ -512,7 +743,7 @@ class AgentResults(models.Model):
     :agent Agent: Agent instance for which the AgentResults is created.
     :run Run: Run instance from which the results are coming.
     :mode str: Mode chosen by the agent for the last iteration. Possible values
-     are 'PV' (private vehicle), 'PT' (public transit) and 'WA' (walking).
+     are private vehicle, public transit and walking.
     :departure_time datetime.time: Departure time of the agent for the last
      iteration.
     :arrival_time datetime.time: Arrival time of the agent for the last
@@ -521,7 +752,19 @@ class AgentResults(models.Model):
     :utility float: Utility level obtained by the agent for the last iteration.
     :real_cost float: Cost paid by the agent for the last iteration.
     """
-    pass
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    mode_choices = (
+        (0, 'Private vehicle'),
+        (1, 'Public transit'),
+        (2, 'Walking'),
+    )
+    mode = models.PositiveSmallIntegerField()
+    departure_time = models.TimeField()
+    arrival_time = models.TimeField()
+    travel_time = models.DurationField()
+    utility = models.FloatField()
+    real_cost = models.FloatField()
 
     class Meta:
         db_table = 'AgentResults'
@@ -539,7 +782,11 @@ class AgentRoadPath(models.Model):
     :time datetime.time: Time at which the edge was taken.
     :travel_time timedelta: Travel time on the edge.
     """
-    pass
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
+    time = models.TimeField()
+    travel_time = models.DurationField()
 
     class Meta:
         db_table = 'AgentRoadPath'
@@ -560,7 +807,15 @@ class NodeResults(models.Model):
     :crossing_time timedelta: Average crossing time of the vehicles during the
      time window.
     """
-    pass
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    upstream = models.ForeignKey(
+        Edge, related_name='upstream', on_delete=models.CASCADE)
+    downstream = models.ForeignKey(
+        Edge, related_name='downstream', on_delete=models.CASCADE)
+    time = models.TimeField()
+    vehicles = models.IntegerField()
+    crossing_time = models.DurationField()
 
     class Meta:
         db_table = 'NodeResults'
@@ -581,7 +836,12 @@ class EdgeResults(models.Model):
     :speed real: Average speed on the edge during the time window, in
      kilometers per hour.
     """
-    pass
+    edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    time = models.TimeField()
+    congestion = models.FloatField()
+    travel_time = models.DurationField()
+    speed = models.FloatField()
 
     class Meta:
-        db_table = 'EdgesResutls'
+        db_table = 'EdgesResults'
