@@ -167,9 +167,7 @@ STATICFILES_DIRS = [
 # Location where django collect all static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
-
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 MEDIA_URL = '/images/'

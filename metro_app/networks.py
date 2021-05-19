@@ -42,15 +42,18 @@ def upload_road_type(request, pk):
             datafile = csv.DictReader(datafile,
                                       delimiter=',', quoting=csv.QUOTE_NONE)
             for row in datafile:
-                row = {k: 0 if not v else v for k, v in row.items()}
+                row = {k: None if not v else v for k, v in row.items()}
                 roadtype = RoadType(
-                    road_type_id=row['id'],
+                    road_type_id=row['id'],  # check si colonnes id, congestion
+                    # default(speed, lanes) sont présentes sinon renvoyer
+                    # un message d'erreur et break out.
                     name=row['name'],
                     congestion=row['congestion'],
-                    default_speed=row.get('default_speed', 50),
-                    default_param1=row.get('default_param1', 1.0),
-                    default_param2=row.get('default_param2', 1.0),
-                    default_param3=row.get('default_param3', 1.0),
+                    default_speed=row.get('default_speed', None),
+                    default_lanes=row.get('default_lanes', None),
+                    default_param1=row.get('default_param1', None),
+                    default_param2=row.get('default_param2', None),
+                    default_param3=row.get('default_param3', None),
                     network=roadnetwork)
                 list_roadtype_instance.append(roadtype)
             RoadType.objects.bulk_create(list_roadtype_instance)
@@ -62,113 +65,6 @@ def upload_road_type(request, pk):
         form = RoadTypeFileForm()
         return render(request, template, {'form': form})
     return render(request, template, roadnetwork)
-
-
-def upload_edge(request, pk):
-    t1 = time.time()
-    template = "networks/edge.html"
-    roadnetwork = RoadNetWork.objects.get(id=pk)
-    roadtypes = RoadType.objects.select_related('network').filter(
-                                                             network_id=pk)
-    nodes = Node.objects.select_related('network').filter(network_id=pk)
-    edges = Edge.objects.select_related().filter(network_id=pk)
-    node_id_dict = {node.node_id: node for node in nodes}
-    road_type_id_dict = {roadtype.road_type_id: roadtype
-                         for roadtype in roadtypes}
-    list_edge_instance = []
-    edges_count = edges.count()
-    nodes_count = nodes.count()
-    roadtype_count = roadtypes.count()
-    if edges_count > 0:
-        messages.warning(request, "Fail ! Network contains \
-                            already edges data.")
-        return redirect('network_details', roadnetwork.pk)
-
-    if nodes_count == 0 or roadtype_count == 0:
-        messages.warning(request, "Fail ! First import node or road type file \
-                            before importing edge.")
-        return redirect('network_details', roadnetwork.pk)
-    form = EdgeForm()
-    if request.method == 'POST':
-        form = EdgeForm(request.POST, request.FILES)
-        if form.is_valid():
-            datafile = request.FILES['my_file']
-            if datafile.name.endswith('.geojson'):
-                objects = json.load(datafile)
-
-            elif datafile.name.endswith('.csv'):
-                edges = pd.read_csv(datafile,)
-                nodes = Node.objects.filter(network_id=pk).values()
-                nodes = pd.DataFrame(nodes)
-                # merge origin coordonates
-                edges = edges.merge(nodes[['node_id', 'location']],
-                                    left_on='source', right_on='node_id')
-
-                # merge destination coordinates
-                edges = edges.merge(
-                    nodes[['node_id', 'location']], left_on='target',
-                    right_on='node_id')
-                edges['geometry'] = edges.apply(lambda x:
-                                                [x['location_x'],
-                                                 x['location_y']], axis=1)
-                edges.drop(['node_id_x', 'node_id_y', 'location_x',
-                            'location_y'], axis=1, inplace=True)
-                edges['geometry'] = edges['geometry'].apply(geom.LineString)
-                edges = gpd.GeoDataFrame(edges)
-                datafile = edges.to_json()
-                objects = json.loads(datafile)
-
-            else:
-                messages.error(request, 'You file does not respect Metropolis \
-                                format guidelines')
-
-            for object in objects['features']:
-                objet_type = object['geometry']['type']
-                if objet_type == 'LineString':
-                    properties = object['properties']
-                    geometry = object['geometry']
-                    location = GEOSGeometry(
-                        LineString(geometry['coordinates']), srid=4326)
-
-                    target = properties.get('target')
-                    source = properties.get('source')
-                    road_type = properties.get('road_type')
-                    try:
-                        target = node_id_dict[target]
-                        source = node_id_dict[source]
-                        roadtype = road_type_id_dict[road_type]
-                        edge = Edge(
-                                param1=properties.get('param1', 1.0),
-                                param2=properties.get('param2', 0),
-                                param3=properties.get('param3', 0),
-                                speed=properties.get('speed', 0),
-                                length=properties.get('length', 0),
-                                lanes=properties.get('lanes', 0),
-                                geometry=location,
-                                name=properties.get('name', 0),
-                                road_type=roadtype,
-                                target=target,
-                                source=source,
-                                network=roadnetwork)
-                        list_edge_instance.append(edge)
-                    except KeyError:
-                        messages.error(request, "The nodes {} and {} \
-                                        don't exist".format(source, target))
-                else:
-                    messages.error(request, "The uploaded file is not \
-                                   the edge one, please select the good one !")
-                    return render(request, template, {'form': form})
-
-            Edge.objects.bulk_create(list_edge_instance)
-            t2 = time.time()
-            print('Delta', t2-t1)
-            if edges.count() > 0:
-                messages.success(request, 'Your edge file has been \
-                             successfully imported !')
-
-        return redirect('network_details', roadnetwork.pk)
-    else:
-        return render(request, template, {'form': form})
 
 
 def upload_node(request, pk):
@@ -233,6 +129,114 @@ def upload_node(request, pk):
         return render(request, template, {'form': form})
 
 
+def upload_edge(request, pk):
+    t1 = time.time()
+    template = "networks/edge.html"
+    roadnetwork = RoadNetWork.objects.get(id=pk)
+    roadtypes = RoadType.objects.select_related('network').filter(
+                                                             network_id=pk)
+    nodes = Node.objects.select_related('network').filter(network_id=pk)
+    edges = Edge.objects.select_related().filter(network_id=pk)
+    node_id_dict = {node.node_id: node for node in nodes}
+    road_type_id_dict = {roadtype.road_type_id: roadtype
+                         for roadtype in roadtypes}
+    list_edge_instance = []
+    if edges.count() > 0:
+        messages.warning(request, "Fail ! Network contains \
+                            already edges data.")
+        return redirect('network_details', roadnetwork.pk)
+
+    if nodes.count() == 0 or roadtypes.count() == 0:
+        messages.warning(request, "Fail ! First import node or road type file \
+                            before importing edge.")
+        return redirect('network_details', roadnetwork.pk)
+    form = EdgeForm()
+    if request.method == 'POST':
+        form = EdgeForm(request.POST, request.FILES)
+        if form.is_valid():
+            datafile = request.FILES['my_file']
+            if datafile.name.endswith('.geojson'):
+                objects = json.load(datafile)
+
+            elif datafile.name.endswith('.csv'):
+                edges = pd.read_csv(datafile,)
+                nodes = Node.objects.filter(network_id=pk).values()
+                nodes = pd.DataFrame(nodes)
+                # merge origin coordonates
+                edges = edges.merge(nodes[['node_id', 'location']],
+                                    left_on='source', right_on='node_id')
+
+                # merge destination coordinates
+                edges = edges.merge(
+                    nodes[['node_id', 'location']], left_on='target',
+                    right_on='node_id')
+                edges['geometry'] = edges.apply(lambda x:
+                                                [x['location_x'],
+                                                 x['location_y']], axis=1)
+                edges.drop(['node_id_x', 'node_id_y', 'location_x',
+                            'location_y'], axis=1, inplace=True)
+                edges['geometry'] = edges['geometry'].apply(geom.LineString)
+                edges = gpd.GeoDataFrame(edges)
+                datafile = edges.to_json()
+                objects = json.loads(datafile)
+
+            else:
+                messages.error(request, "You file does not respect Metropolis \
+                                format guidelines")
+
+            for object in objects['features']:
+                objet_type = object['geometry']['type']
+                if objet_type == 'LineString':
+                    properties = object['properties']
+                    geometry = object['geometry']
+                    location = GEOSGeometry(
+                        LineString(geometry['coordinates']), srid=4326)
+
+                    target = properties.get('target')
+                    source = properties.get('source')
+                    road_type = properties.get('road_type')
+                    try:
+                        target = node_id_dict[target]
+                        source = node_id_dict[source]
+                        roadtype = road_type_id_dict[road_type]
+                    except KeyError:
+                        pass
+                        # messages.error(request, "There is a problem at this \
+                        #               source_id {}, target_id {} and \
+                        #               roadtype_id {}".format(source,
+                        #                                    target, roadtype))
+                        # return render(request, template, {'form': form})
+                    else:
+                        edge = Edge(
+                                param1=properties.get('param1', 1.0),
+                                param2=properties.get('param2', 0),
+                                param3=properties.get('param3', 0),
+                                speed=properties.get('speed', 0),
+                                length=properties.get('length', 0),
+                                lanes=properties.get('lanes', 0),
+                                geometry=location,
+                                name=properties.get('name', 0),
+                                road_type=roadtype,
+                                target=target,
+                                source=source,
+                                network=roadnetwork)
+                        list_edge_instance.append(edge)
+                else:
+                    messages.error(request, "The uploaded file is not \
+                                   the edge one, please select the good one !")
+                    return render(request, template, {'form': form})
+
+            Edge.objects.bulk_create(list_edge_instance)
+            t2 = time.time()
+            print('Delta', t2-t1)
+            if edges.count() > 0:
+                messages.success(request, "edges successfully imported !")
+
+        return redirect('network_details', roadnetwork.pk)
+    else:
+        return render(request, template, {'form': form})
+
+
 def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
     """Returns a polygon of a given width, representing a road defined by a
     LineString.
@@ -270,9 +274,8 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         return split(polygon, linestring)[-1]
 
 
-def make_network_visualization(road_network_id, node_radius=12,
-                               node_color='lightgray', edge_width_ratio=1,
-                               max_lanes=2):
+def make_network_visualization(road_network_id, node_radius=12, max_lanes=2,
+                               node_color='lightgray', edge_width_ratio=1):
     """Generates an HTML file with the Leaflet.js representation of a network.
 
     :param road_network_id: Id of the road network to represent.
@@ -315,10 +318,10 @@ def make_network_visualization(road_network_id, node_radius=12,
     edges_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
 
     # Retrieve all road types of the road network as a DataFrame.
-    rtypes = RoadType.objects.all()
+    # rtypes = RoadType.objects.all()
     # TODO: remove previous line and uncomment the following line once the road
     # types are properly imported.
-    #  rtypes = RoadType.objects.filter(network=road_network)
+    rtypes = RoadType.objects.filter(network=road_network)
     columns = ['id', 'default_lanes', 'color']
     values = rtypes.values_list(*columns)
     rtypes_df = pd.DataFrame.from_records(values, columns=columns)
@@ -420,6 +423,7 @@ def make_network_visualization(road_network_id, node_radius=12,
     # Add the representation of the edges.
     edges_gdf.drop(
         columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
+    print(edges_gdf)
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
