@@ -335,14 +335,10 @@ class RoadType(models.Model):
         (BPR, 'Bureau of public roads'),
         (LINEAR, 'Linear'),
     )
-<<<<<<< HEAD
     road_type_id = models.SmallIntegerField()
-    network = models.ForeignKey(RoadNetWork, on_delete=models.CASCADE)
-    congestion = models.IntegerField(choices=congestion_choices)
-=======
+    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
     congestion = models.SmallIntegerField(
         default=0, choices=CONGESTION_CHOICES)
->>>>>>> ef01188da09490d7d164ce14ac0a4b02f013619d
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
     default_param1 = models.FloatField(null=True, blank=True)
@@ -658,11 +654,11 @@ class Run(models.Model):
     parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     #  policy = models.ForeignKey(
-        #  Policy, on_delete=models.CASCADE, null=True, blank=True)
+    #      Policy, on_delete=models.CASCADE, null=True, blank=True)
     road_network = models.ForeignKey(
         RoadNetwork, on_delete=models.CASCADE, null=True, blank=True)
     #  pt_network = models.ForeignKey(
-        #  PTNetwork, on_delete=models.CASCADE, null=True, blank=True)
+    #      PTNetwork, on_delete=models.CASCADE, null=True, blank=True)
     status_choices = (
         (0, 'Not ready'),
         (1, 'Ready'),
@@ -722,12 +718,12 @@ class Agent(models.Model):
         help_text='Destination node of the agent',
     )
     #  origin_stop = models.ForeignKey(
-        #  PTStop, related_name='origin_stop', on_delete=models.CASCADE,
-        #  help_text='Origin stop of the agent',
+    #      PTStop, related_name='origin_stop', on_delete=models.CASCADE,
+    #      help_text='Origin stop of the agent',
     #  )
     #  destination_stop = models.ForeignKey(
-        #  PTStop, related_name='destination_stop', on_delete=models.CASCADE,
-        #  help_text='Destination stop of the agent',
+    #      PTStop, related_name='destination_stop', on_delete=models.CASCADE,
+    #      help_text='Destination stop of the agent',
     #  )
 
     def __str__(self):
