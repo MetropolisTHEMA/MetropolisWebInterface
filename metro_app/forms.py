@@ -1,5 +1,5 @@
 from django import forms
-from .models import (Project, RoadType, RoadNetWork)
+from .models import (Project, RoadType, RoadNetwork)
 
 
 class NodeForm(forms.Form):
@@ -25,11 +25,11 @@ class ProjectForm(forms.ModelForm):
         }
 
 
-class RoadNetWorkForm(forms.ModelForm):
+class RoadNetworkForm(forms.ModelForm):
     class Meta:
-        model = RoadNetWork
+        model = RoadNetwork
         fields = [
-            'abstract',
+            'simple',
             'name',
             'comment',
             'tags',
