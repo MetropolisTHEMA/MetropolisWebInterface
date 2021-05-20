@@ -17,7 +17,8 @@ from datetime import datetime
 """
 Street Network
 ==============
-The main task of this function is to draw an interactive web map representing a street network.
+The main task of this function is to draw an interactive web map representing
+a street network.
 
 .. figure:: ../images/idf.png
    :height: 500px
