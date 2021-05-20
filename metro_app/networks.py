@@ -342,7 +342,7 @@ def make_network_visualization(road_network_id, node_radius=12, max_lanes=2,
     values = rtypes.values_list(*columns)
     rtypes_df = pd.DataFrame.from_records(values, columns=columns)
 
-    if (rtypes_df['color'] == '').any():
+    if rtypes_df['color'].isna().any():
         # Set a default color from a matplotlib colormap.
         cmap = plt.get_cmap('Set1')
         for key, row in rtypes_df.iterrows():
@@ -440,8 +440,6 @@ def make_network_visualization(road_network_id, node_radius=12, max_lanes=2,
     # Add the representation of the edges.
     edges_gdf.drop(
         columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
-    import pdb
-    pdb.set_trace()
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
