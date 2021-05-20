@@ -306,17 +306,25 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         return split(polygon, linestring)[-1]
 
 
+<<<<<<< HEAD
 def make_network_visualization(road_network_id, node_radius=12,
                                node_color='lightgray', edge_width_ratio=1,
                                max_lanes=2):
+=======
+def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
+                               node_color='lightgray', edge_width_ratio=1,
+                               max_lanes=5):
+>>>>>>> 89b42a4313382342fc37955fc1549a86added5cb
     """Generates an HTML file with the Leaflet.js representation of a network.
     :param road_network_id: Id of the road network to represent.
     :param node_radius: Radius of the nodes of the road network, in meters. It
        is used only if the road network is not simple.
+    :param lane_width: Width of a road for each of its lane, in meters. It is
+     used only if the road network is not simple.
     :param node_color: HTML color used to display the nodes of the road
        network.
     :param edge_width_ratio: Width of the edges of the road network, as a share
-       of node's diameter.
+       of node's diameter. It is used only if the road network is simple.
     :param max_lanes: All edges whose number of lanes is greater or equal to
        max_lanes are represented with a width equal to edges_width_ratio *
        node_radius / 2. Edges with a number of lanes smaller than max_lanes
@@ -358,7 +366,7 @@ def make_network_visualization(road_network_id, node_radius=12,
     values = rtypes.values_list(*columns)
     rtypes_df = pd.DataFrame.from_records(values, columns=columns)
 
-    if (rtypes_df['color'] == '').any():
+    if rtypes_df['color'].isna().any():
         # Set a default color from a matplotlib colormap.
         cmap = plt.get_cmap('Set1')
         for key, row in rtypes_df.iterrows():
@@ -366,6 +374,12 @@ def make_network_visualization(road_network_id, node_radius=12,
                 rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
 
     edges_gdf = edges_gdf.merge(rtypes_df, left_on='road_type', right_on='id')
+
+    if road_network.simple:
+        # Add a black outline to the edges.
+        edges_gdf['outline_color'] = 'black'
+    else:
+        edges_gdf['outline_color'] = edges_gdf['color']
 
     # Get the number of lanes for edges with NULL values from the default
     # number of lanes of the corresponding road type.
@@ -385,20 +399,20 @@ def make_network_visualization(road_network_id, node_radius=12,
     # Discard NULL geometries.
     edges_gdf = edges_gdf.loc[edges_gdf.geometry.length > 0]
 
+    # Adjust the max_lanes value if it is larger than the maximum number of
+    # lanes in the edges of the road network.
+    max_lanes = min(max_lanes, edges_gdf['lanes'].max())
+    # Constrain edge width by bounding the number of lanes of the edges.
+    edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
+
     if road_network.simple:
         # The node radius is implied from the characteristics of the network,
         # i.e., the more widespread the nodes, the larger the radius.
         node_radius = .1 * edges_gdf.geometry.length.min()
+        lane_width = node_radius * (edge_width_ratio / 2) / max_lanes
 
-    # Adjust the max_lanes value if it is larger than the maximum number of
-    # lanes in the edges of the road network.
-    max_lanes = min(max_lanes, edges_gdf['lanes'].max())
-    # Compute the width of a edge which has max_lanes lanes.
-    max_width = edge_width_ratio * node_radius / 2
-    # Constrain edge width by bounding the number of lanes of the edges.
-    edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
     # The width of the edges is proportional to their number of lanes.
-    edges_gdf['width'] = max_width * edges_gdf['lanes'] / max_lanes
+    edges_gdf['width'] = lane_width * edges_gdf['lanes']
 
     # Identify oneway edges.
     edges_gdf['oneway'] = True
@@ -432,16 +446,21 @@ def make_network_visualization(road_network_id, node_radius=12,
     edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
     # Initialize the map
-    tiles_layer = None if road_network.simple else 'OpenStreetMap'
+    tiles_layer = None if road_network.simple else 'CartoDB positron'
     m = folium.Map(max_zoom=19, prefer_canvas=True, tiles=tiles_layer)
+
+    if not road_network.simple:
+        folium.TileLayer(tiles='CartoDB positron').add_to(m)
+        folium.TileLayer(tiles='CartoDB dark_matter').add_to(m)
+        folium.TileLayer(tiles='OpenStreetMap').add_to(m)
 
     def style_function(feature):
         """Function defining the style of the edges."""
         return dict(
-            color='black',
+            color=feature['properties']['outline_color'],
             weight=.1,
             fillColor=feature['properties']['color'],
-            fillOpacity=.8,
+            fillOpacity=.9,
         )
 
     def highlight_function(feature):
@@ -450,13 +469,18 @@ def make_network_visualization(road_network_id, node_radius=12,
             color='red',
             weight=.1,
             fillColor='yellow',
-            fillOpacity=.8,
+            fillOpacity=.9,
         )
 
     # Add the representation of the edges.
+<<<<<<< HEAD
     edges_gdf.drop(columns=['lanes', 'road_type', 'default_lanes', 'width'],
                    axis=1, inplace=True)
 
+=======
+    edges_gdf.drop(
+        columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
+>>>>>>> 89b42a4313382342fc37955fc1549a86added5cb
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
