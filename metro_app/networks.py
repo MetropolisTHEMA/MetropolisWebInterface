@@ -15,7 +15,8 @@ import folium
 import time
 from .forms import NodeForm, EdgeForm, RoadTypeFileForm
 from .models import Node, Edge, RoadNetwork, RoadType
-from django.db import IntegrityError
+from django.db.utils import IntegrityError
+
 CONGESTION_TYPES = {
     'freeflow': RoadType.FREEFLOW,
     'free-flow': RoadType.FREEFLOW,
@@ -58,18 +59,11 @@ def upload_road_type(request, pk):
                     road_type_id = row['id']
                     name = row['name']
                 except KeyError:
-                    messages.error(request, "road type id or name is\
-                                     missing somewhere !")
-                    return redirect('network_details', roadnetwork.pk)
-                except TypeError:
-                    messages.error(request, "id must be integer\
-                                     not a string !")
-                    return redirect('network_details', roadnetwork.pk)
-
-                except IntegrityError:
-                    messages.error(request, "id must be integer\
-                                     not a string !")
-                    return redirect('network_details', roadnetwork.pk)
+                    message = "There is a problem with either id or name. \
+                              Id filed shouldn't be string.\
+                              Name field shouldn't be empty."
+                    messages.warning(request, message)
+                    return redirect('upload_road', roadnetwork.pk)
 
                 else:
                     roadtype = RoadType(
@@ -86,7 +80,19 @@ def upload_road_type(request, pk):
                         network=roadnetwork)
 
                 list_roadtype_instance.append(roadtype)
-            RoadType.objects.bulk_create(list_roadtype_instance)
+            try:
+                RoadType.objects.bulk_create(list_roadtype_instance)
+            except ValueError:
+                message = "There is a problem Id field. \
+                          It shouldn't a string."
+                messages.warning(request, message)
+                return redirect('upload_road', roadnetwork.pk)
+            except IntegrityError:
+                message = "There is a problem Id field. \
+                          It shouldn't be empty."
+                messages.warning(request, message)
+                return redirect('upload_road', roadnetwork.pk)
+
             messages.success(request, 'Your road type file has been \
                              successfully imported !')
             return redirect('network_details', roadnetwork.pk)
@@ -272,7 +278,6 @@ def upload_edge(request, pk):
 def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
     """Returns a polygon of a given width, representing a road defined by a
     LineString.
-
     :param linestring: Geometry of the road, in EPSG:3857.
     :param width: Width of the road, in meters.
     :param oneway: If True, the polygon is centered on the linestring. If
@@ -306,15 +311,9 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         return split(polygon, linestring)[-1]
 
 
-<<<<<<< HEAD
-def make_network_visualization(road_network_id, node_radius=12,
-                               node_color='lightgray', edge_width_ratio=1,
-                               max_lanes=2):
-=======
 def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
                                node_color='lightgray', edge_width_ratio=1,
                                max_lanes=5):
->>>>>>> 89b42a4313382342fc37955fc1549a86added5cb
     """Generates an HTML file with the Leaflet.js representation of a network.
     :param road_network_id: Id of the road network to represent.
     :param node_radius: Radius of the nodes of the road network, in meters. It
@@ -388,7 +387,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         'lanes'
     ] = edges_gdf['default_lanes']
     edges_gdf.loc[edges_gdf['lanes'].isna(), 'lanes'] = 1
-
+    edges_gdf.loc[edges_gdf['lanes'] <= 0, 'lanes'] = 1
     edges_gdf = edges_gdf.set_index(['source', 'target']).sort_index()
     edges_gdf['geometry'] = gpd.GeoSeries.from_wkt(
         edges_gdf['geometry'].apply(lambda x: x.wkt), crs=degree_crs)
@@ -443,7 +442,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     )
 
     # Convert back to the CRS84 projection, required by Folium.
-    edges_gdf.to_crs(crs=degree_crs, inplace=True)
+    # edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
     # Initialize the map
     tiles_layer = None if road_network.simple else 'CartoDB positron'
@@ -473,14 +472,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         )
 
     # Add the representation of the edges.
-<<<<<<< HEAD
-    edges_gdf.drop(columns=['lanes', 'road_type', 'default_lanes', 'width'],
-                   axis=1, inplace=True)
-
-=======
     edges_gdf.drop(
         columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
->>>>>>> 89b42a4313382342fc37955fc1549a86added5cb
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
@@ -488,7 +481,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         smooth_factor=1,
         name='Roads'
     ).add_to(m)
-
+    print(edges_gdf.columns)
     # Create a FeatureGroup that will hold all the nodes.
     node_group = folium.FeatureGroup(name='Intersections')
     m.add_child(node_group)
