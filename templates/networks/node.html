@@ -6,19 +6,19 @@
 
   <h3>Import node data file </h3>
   <hr>
-<p>A Node is an element of the road-network graph, representing an
-  intersection or an origin / destination point.</p>
+  <p>A Node is an element of the road-network graph, representing an
+    intersection or an origin / destination point.</p>
 
-<h4>Attributes</h4>
-<ul>
-  <li><strong>network</strong> RoadNetwork: RoadNetwork instance the Node belongs to.
-    The first argument "RoadNetwork" indicate the relationship model.</li>
-  <li><strong>user_id</strong> int: Id of the node, as used by the users in the import files.
-    Must be unique for a specific RoadNetwork.</li>
-  <li><strong>name</strong> str: Name of the node (default is '').</li>
-  <li><strong>location</strong> Point: Point representing the location of the node on the
-   network, in EPSG:4326.</li>
-</ul>
+  <h4>Attributes</h4>
+  <ul>
+    <li><strong>network</strong> RoadNetwork: RoadNetwork instance the Node belongs to.
+      The first argument "RoadNetwork" indicate the relationship model.</li>
+    <li><strong>user_id</strong> int: Id of the node, as used by the users in the import files.
+      Must be unique for a specific RoadNetwork.</li>
+    <li><strong>name</strong> str: Name of the node (default is '').</li>
+    <li><strong>location</strong> Point: Point representing the location of the node on the
+     network, in EPSG:4326.</li>
+  </ul>
 
   <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
     <div class="mb-3">
@@ -26,8 +26,13 @@
       <button type="submit" class="btn btn-success" name="button">Upload</button>
       <button type="button" class="btn btn-danger">Cancel</button>
     </div>
-
   </form>
+
+  <div class="progress">
+    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;"
+      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+
+  </div>
 
 
     {% if messages %}
@@ -37,5 +42,5 @@
         {% endfor %}
       </ul>
     {% endif %}
-    
+
 {% endblock %}

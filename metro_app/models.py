@@ -50,14 +50,12 @@ class Project(models.Model):
      the instances.
     :date_created datetime.date: Creation date of the Project.
     """
-    owner = models.ForeignKey(
-        User, related_name='owner', on_delete=models.SET(get_sentinel_user))
-    members = models.ManyToManyField(
-        User, related_name='members', through='Membership')
-    public = models.BooleanField(
-        default=False,
-        help_text='Allow the project to be viewed (not editable) by anyone',
-    )
+    owner = models.ForeignKey(User, related_name='owner',
+                              on_delete=models.SET(get_sentinel_user))
+    members = models.ManyToManyField(User, related_name='members',
+                                     through='Membership')
+    public = models.BooleanField(default=False, help_text='Allow the project \
+                                 to be viewed (not editable) by anyone')
     name = models.CharField(max_length=80, help_text='Name of the project')
     comment = models.CharField(max_length=240, blank=True,
                                help_text='Additional comment for the project')

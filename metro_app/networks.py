@@ -39,8 +39,7 @@ def upload_road_type(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
     roadtypes = RoadType.objects.select_related('network').filter(
                                                              network_id=pk)
-    roadtype_count = roadtypes.count()
-    if roadtype_count > 0:
+    if roadtypes.count() > 0:
         messages.warning(request, "Fail ! Network contains \
                             already road type data.")
         return redirect('network_details', roadnetwork.pk)
@@ -50,36 +49,40 @@ def upload_road_type(request, pk):
         form = RoadTypeFileForm(request.POST, request.FILES)
         if form.is_valid():
             datafile = request.FILES['my_file']
-            datafile = datafile.read().decode('utf-8').splitlines()
-            datafile = csv.DictReader(datafile,
-                                      delimiter=',', quoting=csv.QUOTE_NONE)
-            for row in datafile:
-                row = {k: None if not v else v for k, v in row.items()}
-                try:
-                    road_type_id = row['id']
-                    name = row['name']
-                except KeyError:
-                    message = "There is a problem with either id or name. \
-                              Id filed shouldn't be string.\
-                              Name field shouldn't be empty."
-                    messages.warning(request, message)
-                    return redirect('upload_road', roadnetwork.pk)
+            if datafile.name.endswith('.csv'):
+                datafile = datafile.read().decode('utf-8').splitlines()
+                datafile = csv.DictReader(datafile, delimiter=',')
+                for row in datafile:
+                    row = {k: None if not v else v for k, v in row.items()}
+                    try:
+                        road_type_id = row['id']
+                        name = row['name']
+                    except KeyError:
+                        message = "There is a problem with either id or name. \
+                                  Id filed shouldn't be string.\
+                                  Name field shouldn't be empty."
+                        messages.warning(request, message)
+                        return redirect('upload_road', roadnetwork.pk)
 
-                else:
-                    roadtype = RoadType(
-                        road_type_id=road_type_id,
-                        name=name,
-                        # congestion=row['congestion'],
-                        congestion=CONGESTION_TYPES[row['congestion'].lower()],
-                        default_speed=row.get('default_speed', None),
-                        default_lanes=row.get('default_lanes', None),
-                        default_param1=row.get('default_param1', None),
-                        default_param2=row.get('default_param2', None),
-                        default_param3=row.get('default_param3', None),
-                        color=row.get('color', None),
-                        network=roadnetwork)
+                    else:
+                        roadtype = RoadType(
+                            road_type_id=road_type_id,
+                            name=name,
+                            congestion=CONGESTION_TYPES[
+                                       row['congestion'].lower()],
+                            default_speed=row.get('default_speed', None),
+                            default_lanes=row.get('default_lanes', None),
+                            default_param1=row.get('default_param1', None),
+                            default_param2=row.get('default_param2', None),
+                            default_param3=row.get('default_param3', None),
+                            color=row.get('color', None),
+                            network=roadnetwork)
 
-                list_roadtype_instance.append(roadtype)
+                    list_roadtype_instance.append(roadtype)
+            else:
+                messages.error(request, 'You file does not respect Metropolis \
+                                format guidelines')
+                return render(request, template, {'form': form})
             try:
                 RoadType.objects.bulk_create(list_roadtype_instance)
             except ValueError:
@@ -93,8 +96,9 @@ def upload_road_type(request, pk):
                 messages.warning(request, message)
                 return redirect('upload_road', roadnetwork.pk)
 
-            messages.success(request, 'Your road type file has been \
-                             successfully imported !')
+            if roadtypes.count() > 0:
+                messages.success(request, 'Your road type file has been \
+                                 successfully imported !')
             return redirect('network_details', roadnetwork.pk)
 
     else:
@@ -153,12 +157,12 @@ def upload_node(request, pk):
             else:
                 messages.error(request, 'You file does not respect Metropolis \
                                 format guidelines')
+                return render(request, template, {'form': form})
 
             Node.objects.bulk_create(list_node_instance)
             if nodes.count() > 0:
                 messages.success(request, 'Your node file has been \
                              successfully imported !')
-
         return redirect('network_details', roadnetwork.pk)
     else:
         return render(request, template, {'form': form})
@@ -218,6 +222,7 @@ def upload_edge(request, pk):
             else:
                 messages.error(request, "You file does not respect Metropolis \
                                 format guidelines")
+                return render(request, template, {'form': form})
 
             for object in objects['features']:
                 objet_type = object['geometry']['type']
