@@ -14,7 +14,7 @@ $(document).ready(function() {
 				return xhr;
 			},
 			type : 'POST',
-			url : '/upload',
+			url : '',
 			data : formData,
 			processData : false,
 			contentType : false,
