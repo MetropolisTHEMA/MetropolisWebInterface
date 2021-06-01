@@ -43,11 +43,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Local app
     'metro_app',
     'users',
+    'api',
+
+    # 3rd party app
     'crispy_forms',
     'django.contrib.gis',
     'colorfield',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

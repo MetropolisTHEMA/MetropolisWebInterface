@@ -169,7 +169,6 @@ def upload_node(request, pk):
 
 
 def upload_edge(request, pk):
-    t1 = time.time()
     template = "networks/edge.html"
     roadnetwork = RoadNetwork.objects.get(id=pk)
     roadtypes = RoadType.objects.select_related('network').filter(
@@ -268,8 +267,6 @@ def upload_edge(request, pk):
                     return render(request, template, {'form': form})
 
             Edge.objects.bulk_create(list_edge_instance)
-            t2 = time.time()
-            print('Delta', t2-t1)
 
             if list_edge_instance:
                 messages.success(request, 'Your edge file has been \

@@ -1,0 +1,27 @@
+{% load static %}
+{% block content %}
+  <hr>
+  <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
+    <div class="mb-3">
+      {{form}}
+      <button type="submit" class="btn btn-success" name="button" onclick='progressBar()'>Upload</button>
+      <button type="button" class="btn btn-danger">Cancel</button>
+    </div>
+  </form>
+
+  <div class="progress">
+    <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar"
+      style="width: 50%; margin-right: 100%" aria-valuenow="0"
+      aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <script type="text/javascript" src="{% static '/js/upload.js' %}"></script>
+{% endblock %}

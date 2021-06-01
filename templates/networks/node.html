@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
-
 
 {% block content %}
 
@@ -20,27 +20,5 @@
      network, in EPSG:4326.</li>
   </ul>
 
-  <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
-    <div class="mb-3">
-      {{form}}
-      <button type="submit" class="btn btn-success" name="button">Upload</button>
-      <button type="button" class="btn btn-danger">Cancel</button>
-    </div>
-  </form>
-
-  <div class="progress">
-    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;"
-      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-
-  </div>
-
-
-    {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}
-          <li class="{{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-
+  {% include 'networks/upload.html' %}
 {% endblock %}

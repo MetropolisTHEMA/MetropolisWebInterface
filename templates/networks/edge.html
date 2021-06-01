@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -39,22 +40,6 @@
       The exact meaning depends on the congestion model. <br> The default value
       for the given road type is used if empty.</li>
   </ul>
-  <hr>
 
-  <form class="" action="" method="post" enctype="multipart/form-data"> {% csrf_token %}
-    <div class="mb-3">
-      {{form}}
-      <button type="submit" class="btn btn-success" name="button">Upload</button>
-      <button type="button" class="btn btn-danger">Cancel</button>
-    </div>
-  </form>
-
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-
+  {% include 'networks/upload.html' %}
 {% endblock %}
