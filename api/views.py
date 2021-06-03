@@ -17,7 +17,8 @@ def edge_list(request):
     """
     if request.method == 'GET':
         edges = Edge.objects.all()
-        serializer = EdgeSerializer(edges, many=True)
+        context={'request': request} # for filtering by field in url
+        serializer = EdgeSerializer(edges, context=context, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
@@ -39,7 +40,7 @@ def edge_detail(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = EdgeSerializer(edge)
+        serializer = EdgeSerializer(edge, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'PUT':
@@ -68,7 +69,7 @@ def edges_of_a_network(request, pk):
         edges = Edge.objects.select_related().filter(network=roadnetwork)
 
     if request.method == 'GET':
-        serializer = EdgeSerializer(edges, many=True)
+        serializer = EdgeSerializer(edges, context={'request': request}, many=True)
         return Response(serializer.data)
 
 """

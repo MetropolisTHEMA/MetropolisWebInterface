@@ -4,10 +4,6 @@ from .views import (#EdgeViewSet, NodeViewSet, RoadNetworkViewSet, RoadTypeViewS
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-#router.register('edges', EdgeViewSet)
-#router.register('nodes', NodeViewSet)
-#router.register('roadnetwork', RoadNetworkViewSet)
-#router.register('roadtype', RoadTypeViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'colorfield',
     'rest_framework',
+    'drf_dynamic_fields',
+    'drf_queryfields'
 ]
 
 MIDDLEWARE = [
