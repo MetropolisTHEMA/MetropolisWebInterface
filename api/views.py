@@ -1,24 +1,21 @@
-from django.shortcuts import render
 from rest_framework import viewsets
-from .serializers import (EdgeSerializer,  RoadTypeSerializer,
-                         NodeSerializer, RoadNetworkSerializer)
-from metro_app.models import Edge, Node, RoadNetwork, RoadType
-
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from .serializers import (EdgeSerializer, NodeSerializer)
+from metro_app.models import Edge, Node, RoadNetwork
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-#@csrf_exempt
+
 @api_view(['GET', 'POST'])
 def edge_list(request):
     """
     List all edges of all networks, or create a new edge.
     """
     if request.method == 'GET':
-        edges = Edge.objects.all()
-        context={'request': request} # for filtering by field in url
-        serializer = EdgeSerializer(edges, context=context, many=True)
+        edges = Edge.objects.prefetch_related('network', 'source', 'target',
+                                              'road_type').all()
+        context = {'request': request}  # for filtering by field in url
+        serializer = EdgeSerializer(edges, many=True, context=context)
         return Response(serializer.data)
 
     elif request.method == 'POST':
@@ -28,7 +25,7 @@ def edge_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
 
-#@csrf_exempt
+
 @api_view(['GET', 'PUT', 'DELETE'])
 def edge_detail(request, pk):
     """
@@ -66,15 +63,21 @@ def edges_of_a_network(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     else:
-        edges = Edge.objects.select_related().filter(network=roadnetwork)
+        edges = Edge.objects.select_related('network', 'source', 'target',
+                                            'road_type').filter(
+                                             network=roadnetwork)
 
     if request.method == 'GET':
-        serializer = EdgeSerializer(edges, context={'request': request}, many=True)
+        serializer = EdgeSerializer(edges,
+                                    context={'request': request}, many=True)
         return Response(serializer.data)
+
 
 """
 class EdgeViewSet(viewsets.ModelViewSet):
-    queryset = Edge.objects.all()
+    queryset = Edge.objects.select_related(
+        'network', 'source', 'target', 'road_type'
+        )
     serializer_class = EdgeSerializer
 
 class NodeViewSet(viewsets.ModelViewSet):

@@ -12,7 +12,6 @@ import matplotlib.colors as mcolors
 from shapely import geometry as geom
 from shapely.ops import split
 import folium
-import time
 from .forms import NodeForm, EdgeForm, RoadTypeFileForm
 from .models import Node, Edge, RoadNetwork, RoadType
 from django.db.utils import IntegrityError

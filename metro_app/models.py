@@ -408,16 +408,17 @@ class Edge(models.Model):
      given road type is used if empty.
     """
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    source = models.ForeignKey(
-        Node, related_name='source', on_delete=models.CASCADE,
-        help_text='Source node of the edge',
-    )
-    target = models.ForeignKey(
-        Node, related_name='target', on_delete=models.CASCADE,
-        help_text='Target node of the edge',
-    )
-    road_type = models.ForeignKey(
-        RoadType, on_delete=models.CASCADE, help_text='Roadtype of the edge')
+    source = models.ForeignKey(Node, related_name='source',
+                               on_delete=models.CASCADE,
+                               help_text='Source node of the edge',
+                               )
+    target = models.ForeignKey(Node, related_name='target',
+                               on_delete=models.CASCADE,
+                               help_text='Target node of the edge',
+                               )
+    road_type = models.ForeignKey(RoadType, on_delete=models.CASCADE,
+                                  help_text='Roadtype of the edge'
+                                  )
     edge_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the edge (must be unique)')
     name = models.CharField(

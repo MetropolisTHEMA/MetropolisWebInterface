@@ -1,6 +1,5 @@
 from django.urls import path, include
-from .views import (#EdgeViewSet, NodeViewSet, RoadNetworkViewSet, RoadTypeViewSet,
-                    edge_list, edge_detail, edges_of_a_network)
+from .views import (edge_list, edge_detail, edges_of_a_network)
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -10,7 +9,7 @@ urlpatterns = [
     path('edges/', edge_list),
     path('edges/<int:pk>/', edge_detail),
     path('network/<int:pk>/edges/', edges_of_a_network),
-]
+    ]
 
 """
 
