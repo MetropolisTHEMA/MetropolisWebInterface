@@ -52,13 +52,17 @@ INSTALLED_APPS = [
     # 3rd party app
     'crispy_forms',
     'django.contrib.gis',
-    'colorfield',
+    'colorfield',          # from django-colorfield
     'rest_framework',
     'drf_dynamic_fields',
-    'drf_queryfields'
+    'django_filters',
+    # For javascript api
+    'corsheaders', # pip install django-cors-headers
+                  # Access-Control-Allow-Origin' header
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # django core header
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -67,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'metro_project.urls'
 
@@ -163,6 +168,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+## Cors (django core header)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

@@ -1,0 +1,3 @@
+[console_scripts]
+apidoc = apidoc.command.run:main
+

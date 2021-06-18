@@ -343,7 +343,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     meter_crs = "EPSG:3857"
 
     # Retrieve all nodes of the road network as a GeoDataFrame.
-    nodes = Node.objects.filter(network=road_network)
+    nodes = Node.objects.select_related('network').filter(network=road_network)
     columns = ['id', 'node_id', 'location']
     values = nodes.values_list(*columns)
     nodes_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
@@ -352,7 +352,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     nodes_gdf.set_geometry('location', inplace=True)
 
     # Retrieve all edges of the road network as a GeoDataFrame.
-    edges = Edge.objects.filter(network=road_network)
+    edges = Edge.objects.select_related('road_type', 'source',
+                                        'target').filter(network=road_network)
     columns = ['id', 'lanes', 'road_type', 'source', 'target', 'geometry']
     values = edges.values_list(*columns)
     edges_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
@@ -482,7 +483,6 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         smooth_factor=1,
         name='Roads'
     ).add_to(m)
-    print(edges_gdf.columns)
     # Create a FeatureGroup that will hold all the nodes.
     node_group = folium.FeatureGroup(name='Intersections')
     m.add_child(node_group)

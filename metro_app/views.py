@@ -109,6 +109,7 @@ from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
+from .filters import EdgeFilter
 
 
 # Create your views here.
@@ -248,9 +249,14 @@ def delete_network(request, pk):
 
 def visualization(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
+    edges = Edge.objects.filter(network_id=pk)
+    edges_filter = EdgeFilter(request.GET, queryset = edges)
+    edges_filter = edges_filter
+    context = {"roadnetwork": roadnetwork,
+               "my_filter": edges_filter
+               }
     make_network_visualization(pk)
-    context = {"roadnetwork": roadnetwork}
-    return render(request, 'visualization/visualization.html', context)
+    return render(request, 'visualization/index-visualization.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #

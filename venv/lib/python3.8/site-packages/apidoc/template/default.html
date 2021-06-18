@@ -1,0 +1,90 @@
+{%- extends "layout/" + layout + ".html" -%}
+{%- block header -%}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+    {%- if sources.configuration.title != None -%}
+        {{ sources.configuration.title }}
+    {%- else -%}
+        ApiDoc
+    {%- endif -%}
+</title>
+    {% if config["componants"] == "embedded" %}
+<style type="text/css">
+{% include "resource/css/combined-embedded.css" %}
+</style>
+<script text="application/javascript">
+{% include "resource/js/combined.js" %}
+</script>
+     {% elif config["componants"] == "local" %}
+<link href="./css/combined.css" rel="stylesheet">
+<script type="text/javascript" src="./js/combined.js"></script>
+     {% elif config["componants"] == "remote" %}
+<link href="http://fonts.googleapis.com/css?family=Source+Code+Pro" media="all" rel="stylesheet" type="text/css" />
+<link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
+<link href="./css/combined-embedded.css" rel="stylesheet">
+<script text="application/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script text="application/javascript" src="http://cdn.craig.is/js/mousetrap/mousetrap.min.js?a0717"></script>
+<script type="text/javascript" src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="./js/combined.js"></script>
+    {%- endif %}
+{%- endblock -%}
+
+{%- block body -%}
+<div class="jumbotron">
+    <div class="container">
+        <h1>
+    {%- if sources.configuration.title != None -%}
+        {{ sources.configuration.title }}
+    {%- else -%}
+        ApiDoc
+    {%- endif -%}
+        </h1>
+    {%- if sources.configuration.description != None -%}
+        <p>
+        {{ sources.configuration.description }}
+        </p>
+    {%- endif -%}
+    </div>
+</div>
+
+{%- include "partial/help.html" -%}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="doc-sidebar">
+                {%- include "partial/navigation.html" %}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div id="item-head" class="item">
+                <h4></h4>
+                <div class="diff-header"></div>
+                <div class="stack">
+                    <h5>hello</h5>
+                </div>
+            </div>
+            <div class="page-header">
+                <h2>Methods</h2>
+            </div>
+            <ul class="list-unstyled">
+                {%- include "partial/method_category.html" %}
+            </ul>
+            <div class="page-header">
+                <h2>Types</h2>
+            </div>
+            <ul class="list-unstyled">
+                {%- include "partial/type_category.html" %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="btn-group">
+        <button class="btn btn-default i-previous" type="button"></button>
+        <button class="btn btn-default i-top" type="button"></button>
+        <button class="btn btn-default i-next" type="button"></button>
+    </div>
+</footer>
+{% endblock %}

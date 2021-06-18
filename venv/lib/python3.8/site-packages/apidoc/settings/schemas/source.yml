@@ -1,0 +1,569 @@
+properties:
+  configuration:
+    $ref: "#/definitions/configuration"
+  categories:
+    patternProperties:
+      ".*" :
+        $ref: "#/definitions/category"
+  versions:
+    patternProperties:
+      ".*" :
+        $ref: "#/definitions/version"
+additionalProperties: false
+
+definitions:
+  configuration:
+    properties:
+      title:
+        type: string
+      description:
+        type: string
+      uri:
+        type: string
+    additionalProperties: false
+
+  category:
+    properties:
+      display:
+        type: boolean
+      label:
+        type: string
+      description:
+        type: string
+      order:
+        type: integer
+    additionalProperties: false
+
+  version:
+    properties:
+      display:
+        type: boolean
+      label:
+        type: string
+      uri:
+        type: string
+      major:
+        type: integer
+      minor:
+        type: integer
+      status:
+        enum:
+        - current
+        - beta
+        - deprecated
+        - draft
+      methods:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/method"
+      types:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/type"
+      references:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/object"
+    additionalProperties: false
+
+  method:
+    properties:
+      label:
+        type: string
+      display:
+        type: boolean
+      description:
+        type: string
+      category:
+        type: string
+      uri:
+        type: string
+      method:
+        enum:
+        - get
+        - post
+        - put
+        - delete
+        - head
+        - option
+        - patch
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - HEAD
+        - OPTION
+        - PATCH
+      code:
+        type: integer
+      request_parameters:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/request_parameter"
+      request_headers:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/request_header"
+      request_body:
+        $ref: "#/definitions/object"
+      response_codes:
+        items:
+          $ref: "#/definitions/response_code"
+      response_body:
+        $ref: "#/definitions/object"
+    additionalProperties: false
+
+  type:
+    properties:
+      description:
+        type: string
+      category:
+        type: string
+      item:
+        $ref: "#/definitions/object"
+      format:
+        $ref: "#/definitions/type_format"
+    additionalProperties: false
+    required:
+    - item
+
+  type_format:
+    properties:
+      pretty:
+        type: string
+      advanced:
+        type: string
+    minProperties: 1
+    additionalProperties: false
+
+  request_parameter:
+    $ref: "#/definitions/parameter"
+
+  request_header:
+    $ref: "#/definitions/parameter"
+
+  parameter:
+    properties:
+      type:
+        type: string
+      description:
+        type: string
+      optional:
+        type: boolean
+      sample:
+        type:
+        - string
+        - number
+        - integer
+        - boolean
+      generic:
+        type: boolean
+    additionalProperties: false
+
+  response_code:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      description:
+        type: string
+      generic:
+        type: boolean
+    additionalProperties: false
+
+  object:
+    anyOf:
+    - $ref: "#/definitions/object_object"
+    - $ref: "#/definitions/object_array"
+    - $ref: "#/definitions/object_number"
+    - $ref: "#/definitions/object_integer"
+    - $ref: "#/definitions/object_string"
+    - $ref: "#/definitions/object_boolean"
+    - $ref: "#/definitions/object_reference"
+    - $ref: "#/definitions/object_type"
+    - $ref: "#/definitions/object_none"
+    - $ref: "#/definitions/object_dynamic"
+    - $ref: "#/definitions/object_const"
+    - $ref: "#/definitions/object_enum"
+    - $ref: "#/definitions/object_any"
+
+  object_object:
+    properties:
+      type:
+        enum:
+        - object
+      description:
+        type: string
+      properties:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/object"
+      patternProperties:
+        patternProperties:
+          ".*" :
+            $ref: "#/definitions/object"
+      additionalProperties:
+        type:
+        - boolean
+        - object
+        $ref: "#/definitions/object"
+      optional:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_array:
+    properties:
+      type:
+        enum:
+        - array
+      description:
+        type: string
+      items:
+        $ref: "#/definitions/object"
+      sample_count:
+        type: integer
+      optional:
+        type: boolean
+      maxItems:
+        type: integer
+        minimum: 0
+      minItems:
+        type: integer
+        minimum: 0
+      uniqueItems:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_string:
+    properties:
+      type:
+        enum:
+        - string
+      description:
+        type: string
+      sample:
+        type:
+        - string
+        - number
+        - integer
+      optional:
+        type: boolean
+      maxLength:
+        type: integer
+        minimum: 0
+      minLength:
+        type: integer
+        minimum: 0
+      pattern:
+        type: string
+      format:
+        type: string
+        enum:
+          - date-time
+          - email
+          - hostname
+          - ipv4
+          - ipv6
+          - uri
+      enum:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          type: string
+      default:
+        type: string
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_number:
+    properties:
+      type:
+        enum:
+        - number
+      description:
+        type: string
+      sample:
+        type: number
+      optional:
+        type: boolean
+      multipleOf:
+        type: number
+        minimum: 0
+      maximum:
+        type: number
+        minimum: 0
+      exclusiveMaximum:
+        type: boolean
+      minimum:
+        type: number
+        minimum: 0
+      exclusiveMinimum:
+        type: boolean
+      enum:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          type: number
+      default:
+        type: number
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_integer:
+    properties:
+      type:
+        enum:
+        - integer
+      description:
+        type: string
+      sample:
+        type: integer
+      optional:
+        type: boolean
+      multipleOf:
+        type: integer
+        minimum: 0
+      maximum:
+        type: integer
+        minimum: 0
+      exclusiveMaximum:
+        type: boolean
+      minimum:
+        type: integer
+        minimum: 0
+      exclusiveMinimum:
+        type: boolean
+      enum:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          type: integer
+      default:
+        type: integer
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_boolean:
+    type: object
+    properties:
+      type:
+        enum:
+        - bool
+        - boolean
+      description:
+        type: string
+      sample:
+        type: boolean
+      optional:
+        type: boolean
+      default:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+
+  object_reference:
+    properties:
+      type:
+        enum:
+        - reference
+      description:
+        type: string
+      reference:
+        type: string
+      optional:
+        type: boolean
+    required:
+    - type
+    - reference
+    additionalProperties: false
+
+  object_type:
+    properties:
+      type:
+        not:
+          enum:
+          - object
+          - array
+          - number
+          - integer
+          - string
+          - bool
+          - boolean
+          - reference
+          - none
+          - dynamic
+          - const
+          - enum
+      description:
+        type: string
+      optional:
+        type: boolean
+      sample:
+        type: string
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_none:
+    properties:
+      type:
+        enum:
+        - none
+      description:
+        type: string
+      optional:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    additionalProperties: false
+
+  object_dynamic:
+    properties:
+      type:
+        enum:
+        - dynamic
+      description:
+        type: string
+      items:
+        $ref: "#/definitions/object"
+      sample:
+        type: object
+      optional:
+        type: boolean
+      maxItems:
+        type: integer
+        minimum: 0
+      minItems:
+        type: integer
+        minimum: 0
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    - items
+    additionalProperties: false
+
+  object_const:
+    properties:
+      type:
+        enum:
+        - const
+      description:
+        type: string
+      const_type:
+        enum:
+        - string
+        - number
+        - integer
+        - boolean
+      value:
+        type:
+        - string
+        - number
+        - integer
+        - boolean
+      optional:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    - value
+    additionalProperties: false
+
+  object_enum:
+    properties:
+      type:
+        enum:
+        - enum
+      description:
+        type: string
+      descriptions:
+        patternProperties:
+          ".*" :
+            type: string
+        additionalProperties: false
+      values:
+        type: array
+        items:
+          type:
+          - string
+          - number
+          - integer
+          - boolean
+        minItems: 1
+      optional:
+        type: boolean
+      sample:
+        type:
+          - string
+          - number
+          - integer
+          - boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    required:
+    - type
+    - values
+    additionalProperties: false
+
+  object_any:
+    properties:
+      description:
+        type: string
+      sample:
+        type: object
+      optional:
+        type: boolean
+      constraints:
+        type: object
+        additionalProperties:
+          type: string
+    additionalProperties: false

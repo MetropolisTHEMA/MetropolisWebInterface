@@ -1,0 +1,56 @@
+{%- macro none_to_empty(value) -%}
+    {{ none_to_default(value, "") }}
+{%- endmacro -%}
+
+{%- macro constraints(object) -%}
+    {%- if object.constraints -%}
+    {{ " " }}<i class="i-constraint" data-content="<table class='table table-condensed'>
+        {%- for constraint in object.constraints.values()|sort -%}
+            {%- if constraint.name == "enum" -%}
+                <tr><td>{{ constraint.name }}</td><td>{{ constraint.constraint|sort|join('<br>') }}</td></tr>
+            {%- else -%}
+                <tr><td>{{ constraint.name }}</td><td>{{ constraint.constraint }}</td></tr>
+            {%- endif -%}
+        {%- endfor -%}
+    </table>"></i>
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro none_to_default(value, default) -%}
+    {%- if value != None %}
+        {{- value -}}
+    {%- else %}
+        {{- default -}}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro render_table(cols) -%}
+    <table class="table table-bordered table-hover table-condensed">
+        <colgroup>
+    {%- for col in cols %}
+            <col
+        {%- if "width" in col %} width="{{ col["width"] }}"{% endif -%}
+            ></col>
+    {%- endfor %}
+        </colgroup>
+        <thead>
+            <tr>
+    {%- for col in cols %}
+            <th><span
+            >{{ col["name"] }}</span></th>
+    {%- endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {{ caller() }}
+        </tbody>
+    </table>
+{%- endmacro -%}
+
+{%- macro render_versioned(multi_version, version) -%}
+    {%- for element in multi_version -%}
+        {%- if version in element.versions -%}
+            {{  caller(element.value) }}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro -%}

@@ -1,0 +1,42 @@
+<input type="search" placeholder="search" class="col-md-12 form-control">
+
+{%- if sources.versions|length > 1 %}
+<ul id="nav-versions" class="nav nav-list doc-sidenav">
+    <li class="nav-header"><h5>Versions</h5></li>
+    {%- for version in sources.versions|sort %}
+    <li data-version="{{ version.name }}" data-status="{{ version.status|upper }}">
+        <a href="javascript:navigateTo({version: '{{ version.name }}'}, ['category', 'method', 'category', 'type'])" data-target="#v-{{ version.name }}"><span>{{ version.label }} </span><code>{{ version.status|upper }}</code></a>
+    </li>
+    {%- endfor %}
+</ul>
+{%- endif %}
+<div class="scroll-spyable">
+    <ul class="nav nav-list doc-sidenav">
+        <li class="nav-header"><h5>Methods</h5></li>
+{%- for category in sources.method_categories|sort %}
+    {%- if category.name != None -%}
+        <li class="nav-header" data-group="{{ category.label }}"><a href="javascript:navigateTo({category: '{{ category.name }}'}, ['category', 'method', 'type'])" data-target="#c-{{ category.name }}"><h6>{{ category.label }}</h6></a></li>
+    {%- endif -%}
+    {%- for method in category.methods|sort %}
+        <li data-group="{{ category.name }}"  data-item="{{ method.label|e }}"><a href="javascript:navigateTo({category: '{{ category.name }}', method: '{{ method.name }}'}, ['category', 'method'])" data-target="#m-{{ method.name }}"><span>{{ method.label }}</span></a></li>
+    {%- endfor %}
+    {%- if not loop.last %}
+        <li class="separator"></li>
+    {%- endif %}
+{%- endfor %}
+    </ul>
+    <ul class="nav nav-list doc-sidenav">
+        <li class="nav-header"><h5>Types</h5></li>
+{%- for category in sources.type_categories|sort %}
+    {%- if category.name != None -%}
+        <li class="nav-header" data-group="{{ category.label }}"><a href="javascript:navigateTo({category: '{{ category.name }}'}, ['category', 'method', 'type'])" data-target="#c-{{ category.name }}"><h6>{{ category.label }}</h6></a></li>
+    {%- endif -%}
+    {%- for type in category.types|sort %}
+        <li data-group="{{ category.name }}" data-item="{{ type.name|e }}"><a href="javascript:navigateTo({category: '{{ category.name }}', type: '{{ type.name }}'}, ['category', 'method'])" data-target="#t-{{ type.name }}"><span>{{ type.name }}</span></a></li>
+    {%- endfor %}
+    {%- if not loop.last %}
+        <li class="separator"></li>
+    {%- endif %}
+{%- endfor %}
+    </ul>
+</div>

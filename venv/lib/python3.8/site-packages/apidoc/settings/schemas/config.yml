@@ -1,0 +1,63 @@
+properties:
+  input:
+    properties:
+      locations:
+        items:
+          type: string
+        minItems: 1
+      validate:
+        type: boolean
+      arguments:
+        patternProperties:
+          ".*" :
+            type:
+            - string
+            - number
+            - integer
+            - boolean
+    additionalProperties: false
+  filter:
+    properties:
+      versions:
+        properties:
+          excludes:
+            items:
+              type: string
+          includes:
+            items:
+              type: string
+        additionalProperties: false
+      categories:
+        properties:
+          excludes:
+            items:
+              type: string
+          includes:
+            items:
+              type: string
+        additionalProperties: false
+    additionalProperties: false
+  output:
+    properties:
+      location:
+        oneOf:
+        - enum:
+          - stdout
+        - type: string
+      template:
+        oneOf:
+        - enum:
+          - default
+        - type: string
+      componants:
+        enum:
+        - local
+        - embedded
+        - remote
+        - without
+      layout:
+        enum:
+        - default
+        - content-only
+    additionalProperties: false
+additionalProperties: false
