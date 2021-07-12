@@ -255,6 +255,12 @@ def visualization(request, pk):
     context = {"roadnetwork": roadnetwork,
                "my_filter": edges_filter
                }
+
+    # Si le fichier du reseau existe, ne pas executer la fonction
+    # exéciter directement sinon afficher la fonction
+    #Pour index.html, plutot de lire le fichier visualization,
+    #on lit un argument qui coorespond au non du fichier du reseau
+
     make_network_visualization(pk)
     return render(request, 'visualization/index-visualization.html', context)
 

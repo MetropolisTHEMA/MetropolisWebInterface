@@ -8,16 +8,28 @@ function fetchData(){
         return response.json();
         }).
         then(data => {
-          //console.log(data)
-          const html = data.map(edge => {
-            return `<p>Name: ${edge.name} <br> Lanes: ${edge.lanes} <br> Speed: ${edge.speed}</p>`
+
+          const network_attributes= data.map(edges => {
+
+              var linkSelector = document.getElementById('linkSelector')
+            switch (linkSelector.value) {
+              case "Lanes(input)":
+                if ${edge.lanes} ==1){
+
+
+                }
+
+                break;
+              default:
+            }
+            return ${edge.lanes}
           }).join("");
-          document
-            .querySelector("#root")
-            .insertAdjacentHTML("afterbegin", html);
+
         }).
         catch(error => {
           console.log(error);
         });
 }
 fetchData();
+
+

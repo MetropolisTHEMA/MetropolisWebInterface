@@ -299,6 +299,7 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         width *= 2
     # Compute a polygon from the linestring by increasing its width.
     polygon = linestring.buffer(width, join_style=2, cap_style=2)
+
     if oneway:
         # The polygon is centered and has the correct width, returns it.
         return polygon
@@ -354,19 +355,15 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     # Retrieve all edges of the road network as a GeoDataFrame.
     edges = Edge.objects.select_related('road_type', 'source',
                                         'target').filter(network=road_network)
-    columns = ['id', 'lanes', 'road_type', 'source', 'target', 'geometry']
+    columns = ['edge_id', 'lanes', 'road_type', 'source', 'target', 'geometry']
     values = edges.values_list(*columns)
     edges_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
 
-    # Retrieve all road types of the road network as a DataFrame.
-    # rtypes = RoadType.objects.all()
-    # TODO: remove previous line and uncomment the following line once the road
-    # types are properly imported.
+    # Retrieve all Road type of a network as DataFrame
     rtypes = RoadType.objects.filter(network=road_network)
     columns = ['id', 'default_lanes', 'color']
     values = rtypes.values_list(*columns)
     rtypes_df = pd.DataFrame.from_records(values, columns=columns)
-
     if rtypes_df['color'].isna().any():
         # Set a default color from a matplotlib colormap.
         cmap = plt.get_cmap('Set1')
@@ -426,9 +423,6 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
             keys.add(key)
 
     drive_right = True
-    # TODO: remove previous line and uncomment the following line once the
-    # drive_right attribute of road networks is added.
-    #  drive_right = road_network.drive_right
 
     # Replace the geometry of the edges with an offset polygon of corresponding
     # width.
@@ -475,7 +469,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     # Add the representation of the edges.
     edges_gdf.drop(
-        columns=['lanes', 'road_type', 'default_lanes', 'width'], inplace=True)
+        columns=['lanes','road_type', 'default_lanes', 'width'], inplace=True)
+
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
