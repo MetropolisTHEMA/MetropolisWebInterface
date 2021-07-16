@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework import status
-from .serializers import EdgeSerializer, NodeSerializer, serialize_edge
+from .serializers import (EdgeSerializer, NodeSerializer)
 from metro_app.models import Edge, Node, RoadNetwork
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -68,8 +68,9 @@ def edges_of_a_network(request, pk):
                                              network=roadnetwork)
 
     if request.method == 'GET':
-        data = [serialize_edge(edge) for edge in edges.values()]
-        return Response(data)
+        serializer = EdgeSerializer(edges,
+                                    context={'request': request}, many=True)
+        return Response(serializer.data)
 
 
 """

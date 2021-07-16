@@ -26,91 +26,27 @@ for (var name in this) {
 };
 
 // Define colorscale arrays
-/*
-var colorscale_lanes = ['#00e600', '#b3ffb3', '#e6ffe6']
-var colorscale_length = ['#8080ff', '#b3b3ff', '#ccccff', '#e6e6ff']
-var colorscale_speed = ['#666600', '#b3b300', '#ffff1a', '#ffffcc']
-*/
-//colorscale_lucas
-// return colorscale_lucas(d/m)
-/*
+/*var colorscale_lanes = ['#e6ffe6', '#00e600', '#b3ffb3', '#004405']
+
 function getColor_by_lanes(d) {
-    return d > 2  ? colorscale_lanes[0]:
-           d > 1  ? colorscale_lanes[1] :
-           d > 0  ? colorscale_lanes[2] :
+    return d > 4  ? colorscale_lanes[0]:
+           d > 3  ? colorscale_lanes[1]:
+           d > 2  ? colorscale_lanes[2]:
+           d > 1  ? colorscale_lanes[3] :
+           d > 0  ? colorscale_lanes[4] :
                     ''
 }
-
-function getColor_by_length(d){
-    return d > 10 ? colorscale_length[0] :
-           d > 5  ? colorscale_length[1] :
-           d > 2  ? colorscale_length[2] :
-           d > 0  ? colorscale_length[3]:
-                    '';
-    }
-
-
-function getColor_by_speed(d){
-    return d > 110 ? colorscale_speed[0] :
-           d > 80  ? colorscale_speed[1] :
-           d > 50  ? colorscale_speed[2] :
-           d > 10  ? colorscale_speed[3] :
-                     '';
-}
-
-function getColor_by_capacity(d){
-    return d > 110  ? '#800026' :
-           d > 80  ? '#BD0026' :
-           d > 50  ? '#E31A1C' :
-           d > 10  ? '#FC4E2A' :
-                      '#FFEDA0';
-}
-
-// Create a legendLanes
+// Create lanes legend
 var legendLanes = L.control({position: 'bottomright'});
 legendLanes.onAdd = function (map) {
 
     var div = L.DomUtil.create('div', 'info legend'),
-        grades = [0, 1, 2],
+        grades = [0, 1, 2, 3, 4],
         labels = [];
 
     for (var i = 0; i < grades.length; i++) {
         div.innerHTML +=
             '<i style="background:' + getColor_by_lanes(grades[i] + 1) + '"></i> ' +
-            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
-    }
-
-    return div;
-};
-
-// Create a legendLength
-var legendLength = L.control({position: 'bottomright'});
-legendLength.onAdd = function (map) {
-
-    var div = L.DomUtil.create('div', 'info legend'),
-        grades = [0, 2, 5, 10],
-        labels = [];
-
-    for (var i = 0; i < grades.length; i++) {
-        div.innerHTML +=
-            '<i style="background:' + getColor_by_length(grades[i] + 1) + '"></i> ' +
-            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
-    }
-
-    return div;
-};
-
-// Create a legendSpeed
-var legendSpeed = L.control({position: 'bottomright'});
-legendSpeed.onAdd = function (map) {
-
-    var div = L.DomUtil.create('div', 'info legend'),
-        grades = [10, 50, 80, 110],
-        labels = [];
-
-    for (var i = 0; i < grades.length; i++) {
-        div.innerHTML +=
-            '<i style="background:' + getColor_by_speed(grades[i] + 1) + '"></i> ' +
             grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
     }
 
@@ -129,45 +65,6 @@ legendSpeed.onAdd = function (map) {
         })
         .then((data) => edges_from_api=data)
         //.then(() => data_from_api)
-/*
-function drawLinkLegend(dataset, colorscale, min, max) {
-            // Show label+
-    linkLabel.style.display = 'block'
-
-    var legendWidth = 100
-        legendMargin = 10
-        legendLength = document.getElementById('legend-links-container').offsetHeight - 2*legendMargin
-        legendIntervals = Object.keys(colorscale).length
-        legendScale = legendLength/legendIntervals
-
-            // Add legend
-
-    var legendSvg = d3.select('#legend-links-svg')
-          .append('g')
-          .attr("id", "linkLegendSvg");
-
-    var bars = legendSvg.selectAll(".bars")
-        //.data(d3.range(legendIntervals), function(d) { return d})
-        .data(dataset)
-        .enter().append("rect")
-        .attr("class", "bars")
-        .attr("x", 0)
-        .attr("y", function(d, i) { return legendMargin + legendScale * (legendIntervals - i-1); })
-        .attr("height", legendScale)
-        .attr("width", legendWidth-50)
-        .style("fill", function(d) { return colorscale(d) })
-
-  // create a scale and axis for the legend
-  var legendAxis = d3.scaleLinear()
-      .domain([min, max])
-      .range([legendLength, 0]);
-
-  legendSvg.append("g")
-           .attr("class", "legend axis")
-           .attr("transform", "translate(" + (legendWidth - 50) + ", " + legendMargin + ")")
-           .call(d3.axisRight().scale(legendAxis).ticks(10))
-}
-*/
 
 function drawLinkLegend(dataset, colorscale, min, max) {
     // Show label
@@ -182,8 +79,6 @@ function drawLinkLegend(dataset, colorscale, min, max) {
     var legendSvg = d3.select('#legend-links-svg')
                 .append('g')
                 .attr("id", "linkLegendSvg");
-
-
 
     var dif = colorscale.domain()[1] - colorscale.domain()[0];
     var intervals = d3.range(200).map(function(d,i) {
@@ -218,6 +113,9 @@ function drawLinkLegend(dataset, colorscale, min, max) {
 
 
 function linkDropDown(){
+  // Remove any previous legend
+  d3.select('#linkLegendSvg').remove();
+
   Roads.eachLayer(function (layer) {
       let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
       layer.bindTooltip("name: "+mydata.name + "<br>"+
@@ -226,9 +124,6 @@ function linkDropDown(){
                         "speed: "+mydata.speed + "<br>"+
                         "length: "+mydata.length.toFixed(2))
     });
-
-  // Remove any previous legend
-    d3.select('#linkLegendSvg').remove();
     dataset = Roads.toGeoJSON().features
     var linkSelector = document.getElementById('linkSelector')
 
@@ -249,28 +144,29 @@ function linkDropDown(){
       let colorscale = d3.scaleSequential()
           .domain(d3.extent(arrayObject))
           .interpolator(d3.interpolateOranges);
-    /*  let colorscale = d3.scaleLinear()
-          .domain([min, max])
-          .range(['#c1e3c1', '#e6ffe6', '#94e094', '#97FF33', '#C1FF33', '#4CFF33', '#33FFE6', '#33D1FF', '#3398FF', '#FF33E1', '#FF3387']);
-      */
       drawLinkLegend(arrayObject, colorscale, min, max);
       Roads.eachLayer(function (layer) {
             //layer.feature.properties.lanes = data_from_api.find(data.edge_id===layer.feature.properties.edge_id)
           let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
           layer.setStyle({fillColor:colorscale(mydata.lanes)})
+          //layer.setStyle({fillColor: getColor_by_lanes(mydata.lanes)})
           layer.on('mouseout', function(){
               layer.setStyle({fillColor: colorscale(mydata.lanes)})
           })
         });
+        //legendLanes.addTo(map)
     }
 
     else if (linkSelector.value === "length"){
       let arrayObject = edges_from_api.map(object => object.length);
       let max = d3.max(arrayObject);
       let min = d3.min(arrayObject);
-      let colorscale = d3.scaleLinear()
+      /*let colorscale = d3.scaleLinear()
           .domain([min, max])
-          .range(['#c1e3c1', '#e6ffe6', '#94e094', '#97FF33', '#C1FF33', '#4CFF33', '#33FFE6', '#33D1FF']);
+          .range(['#c1e3c1', '#e6ffe6', '#94e094', '#97FF33', '#C1FF33', '#4CFF33', '#33FFE6', '#33D1FF']);*/
+          let colorscale = d3.scaleSequential()
+              .domain(d3.extent(arrayObject))
+              .interpolator(d3.interpolateGreys);
       drawLinkLegend(arrayObject, colorscale, min, max);
       Roads.eachLayer(function (layer) {
             let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
@@ -284,9 +180,6 @@ function linkDropDown(){
       let arrayObject = edges_from_api.map(object => object.speed);
       let max = d3.max(arrayObject);
       let min = d3.min(arrayObject);
-      /*let colorscale = d3.scaleLinear()
-          .domain([min, max])
-          .range(['#c1e3c1', '#e6ffe6', '#94e094', '#97FF33', '#C1FF33', '#4CFF33', '#33FFE6', '#33D1FF']);*/
           let colorscale = d3.scaleSequential()
               .domain(d3.extent(arrayObject))
               .interpolator(d3.interpolateGreys);

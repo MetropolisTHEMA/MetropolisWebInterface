@@ -109,8 +109,6 @@ from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
-from .filters import EdgeFilter
-
 
 # Create your views here.
 def index(request):
@@ -248,21 +246,23 @@ def delete_network(request, pk):
 
 
 def visualization(request, pk):
+    import os
+    from django.conf import settings
+
     roadnetwork = RoadNetwork.objects.get(id=pk)
-    edges = Edge.objects.filter(network_id=pk)
-    edges_filter = EdgeFilter(request.GET, queryset = edges)
-    edges_filter = edges_filter
     context = {"roadnetwork": roadnetwork,
-               "my_filter": edges_filter
                }
 
-    # Si le fichier du reseau existe, ne pas executer la fonction
-    # exéciter directement sinon afficher la fonction
-    #Pour index.html, plutot de lire le fichier visualization,
-    #on lit un argument qui coorespond au non du fichier du reseau
-
-    make_network_visualization(pk)
-    return render(request, 'visualization/index-visualization.html', context)
+    directory = os.path.join(
+        settings.TEMPLATES[0]['DIRS'][0],
+            'visualization') +"/"+ roadnetwork.name
+    template_full_path = directory + "/map.html"
+    if os.path.exists(template_full_path):
+        return render(request, str(template_full_path), context)
+    else:
+        make_network_visualization(pk)
+        return render(request, 'visualization' +"/"+ roadnetwork.name + "/map.html", context)
+    #return render(request, 'visualization/index-visualization.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #

@@ -87,17 +87,3 @@ class EdgeSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         else:
             return instance.lanes
     """
-
-
-def serialize_edge(edge):
-    return {
-        'id': edge.pk,
-        'edge_id': edge.edge_id,
-        'name': edge.name,
-        'length': edge.length,
-        'speed': edge.speed,
-        'lanes': edge.lanes,
-        'param1': edge.param1,
-        'param2': edge.param2,
-        'param3': edge.param3,
-    }

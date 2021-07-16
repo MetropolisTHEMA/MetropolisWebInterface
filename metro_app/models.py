@@ -19,7 +19,6 @@ https://www.webforefront.com/django/setuprelationshipsdjangomodels.html
 import os
 import random
 from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
@@ -229,7 +228,7 @@ class ParameterSet(models.Model):
 
 
 def get_visualization_directory():
-    return os.path.join(settings.MEDIA_ROOT, 'visualization')
+    return os.path.join(settings.TEMPLATES[0]['DIRS'][0], 'visualization')
 
 
 class RoadNetwork(models.Model):
@@ -316,11 +315,6 @@ class RoadType(models.Model):
     :color Color: Color used to display the edges of this road type on the
      network visualization.
     """
-    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    road_type_id = models.PositiveIntegerField(
-        db_index=True, help_text='Id of the road type (must be unique)')
-    name = models.CharField(
-        max_length=80, blank=True, help_text='Name of the road type')
     BOTTLENECK = 0
     FREEFLOW = 1
     LOGDENSITY = 2
@@ -333,8 +327,11 @@ class RoadType(models.Model):
         (BPR, 'Bureau of public roads'),
         (LINEAR, 'Linear'),
     )
-    road_type_id = models.SmallIntegerField()
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    road_type_id = models.PositiveIntegerField(db_index=True,
+                            help_text='Id of the road type (must be unique)')
+    name = models.CharField(max_length=80, blank=True,
+                            help_text='Name of the road type')
     congestion = models.SmallIntegerField(
         default=0, choices=CONGESTION_CHOICES)
     default_speed = models.FloatField(default=50)
