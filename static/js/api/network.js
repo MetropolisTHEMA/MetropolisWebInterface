@@ -54,7 +54,7 @@ legendLanes.onAdd = function (map) {
 };
 */
 // Fetch data from api.
-    var edges_from_api;
+/*    var edges_from_api;
     // Get the current url
     current_url  = window.location.href // document.url
     // Get networ id
@@ -63,10 +63,9 @@ legendLanes.onAdd = function (map) {
         .then((response) => {
             return response.json()
         })
-        .then((data) => edges_from_api=data)
-        //.then(() => data_from_api)
+        .then((data) => edges_from_api=data) */
 
-function drawLinkLegend(dataset, colorscale, min, max) {
+function drawLinkLegend(colorscale, min, max) {
     // Show label
     linkLabel.style.display = 'block'
 
@@ -74,15 +73,14 @@ function drawLinkLegend(dataset, colorscale, min, max) {
         legendMargin = 10
         legendLength = document.getElementById('legend-links-container').offsetHeight - 2*legendMargin
 
-
     // Add legend
     var legendSvg = d3.select('#legend-links-svg')
                 .append('g')
                 .attr("id", "linkLegendSvg");
 
     var dif = colorscale.domain()[1] - colorscale.domain()[0];
-    var intervals = d3.range(200).map(function(d,i) {
-        return dif * i / 200 + colorscale.domain()[0]
+    var intervals = d3.range(400).map(function(d,i) {
+        return dif * i / 400 + colorscale.domain()[0]
     })
     intervals.push(colorscale.domain()[1]);
     var intervalHeight = legendLength / intervals.length;
@@ -94,8 +92,10 @@ function drawLinkLegend(dataset, colorscale, min, max) {
       .enter().append("rect")
         .attr("class", "bars")
         .attr("x", 0)
-        .attr("y", function(d, i) { return Math.round((intervals.length - 1 - i)  * intervalHeight) + legendMargin; })
-        .attr("height", intervalHeight)
+        //.attr("y", function(d, i) { return Math.round((intervals.length - 1 - i)  * intervalHeight) + legendMargin; })
+        .attr("y", function(d, i) { return ((intervals.length - 1 - i)  * intervalHeight) + legendMargin; })
+        //.attr("height", intervalHeight)
+        .attr("height", Math.ceil(intervalHeight))
         .attr("width", legendWidth-50)
         .style("fill", function(d, i) { return colorscale(d) })
         .attr("stroke-width",0)
@@ -112,22 +112,57 @@ function drawLinkLegend(dataset, colorscale, min, max) {
 }
 
 
+var dataset = Roads.toGeoJSON().features
+let subset_attributes = dataset.map(subset => [{lanes: subset.properties.lanes,
+                                               length: subset.properties.length,
+                                               speed:  subset.properties.speed,
+                                             }]);
+console.log(subset_attributes)
+
+var max_lanes = d3.max(dataset, function(d, attribute){
+    return d.properties.lanes;
+  });
+var min_lanes = d3.min(dataset, function(d){
+    return d.properties.lanes;
+  });
+var lanes_array = dataset.map(object => object.properties.lanes);
+
+/* Get length min, max and array */
+var length_max = d3.max(dataset, function(d){
+    return d.properties.length;
+  });
+var length_min = d3.min(dataset, function(d){
+    return d.properties.length;
+  });
+var length_array = dataset.map(object => object.properties.length);
+var length_colorscale = d3.scaleLinear()
+    .domain(d3.extent(length_array))
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb("#FFF500"), d3.rgb("#00ff00")]);
+
+/* Get speed min, max and array  */
+var speed_max = d3.max(dataset, function(d){return d.properties.speed});
+var speed_min = d3.min(dataset, function(d){return d.properties.speed});
+var speed_array = dataset.map(object => object.properties.speed);
+var speed_colorscale = d3.scaleLinear().domain(d3.extent(speed_array))
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb("#FFF500"), d3.rgb("#000066")]);
+
+
+Roads.eachLayer(function (layer) {
+  /*let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)*/
+  layer.bindTooltip(
+    "lanes: "+subset_attributes[layer.feature.id][0].lanes +"<br>"+
+    "speed: "+subset_attributes[layer.feature.id][0].speed + "<br>"+
+    "length: "+subset_attributes[layer.feature.id][0].length.toFixed(2))
+  });
+  
 function linkDropDown(){
   // Remove any previous legend
   d3.select('#linkLegendSvg').remove();
+  var linkSelector = document.getElementById('linkSelector')
 
-  Roads.eachLayer(function (layer) {
-      let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
-      layer.bindTooltip("name: "+mydata.name + "<br>"+
-                        "id: "+mydata.edge_id +"<br>"+
-                        "lanes: "+mydata.lanes +"<br>"+
-                        "speed: "+mydata.speed + "<br>"+
-                        "length: "+mydata.length.toFixed(2))
-    });
-    dataset = Roads.toGeoJSON().features
-    var linkSelector = document.getElementById('linkSelector')
-
-    if (linkSelector.value ==="default"){
+    if (linkSelector.value =="default"){
         Roads.eachLayer(function (layer) {
             layer.setStyle({fillColor: layer.feature.properties.color})
             layer.on('mouseout', function(){
@@ -136,47 +171,60 @@ function linkDropDown(){
         });
     }
 
-    else if (linkSelector.value ==="lanes"){
-      let arrayObject = edges_from_api.map(object => object.lanes);
-      //Get min and max values
-      let max = d3.max(arrayObject);
-      let min = d3.min(arrayObject);
-      let colorscale = d3.scaleSequential()
+    else if (linkSelector.value =="lanes"){
+
+      /*let colorscale = d3.scaleSequential()
           .domain(d3.extent(arrayObject))
-          .interpolator(d3.interpolateOranges);
-      drawLinkLegend(arrayObject, colorscale, min, max);
+          .interpolator(d3.interpolateHot);*/
+      let colorscale = d3.scaleLinear().domain(d3.extent(lanes_array))
+          .interpolate(d3.interpolateHcl)
+          .range([d3.rgb('#FFF500'), d3.rgb("#FF0000")]);
+      drawLinkLegend(colorscale, min_lanes, max_lanes);
+
       Roads.eachLayer(function (layer) {
-            //layer.feature.properties.lanes = data_from_api.find(data.edge_id===layer.feature.properties.edge_id)
-          let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
-          layer.setStyle({fillColor:colorscale(mydata.lanes)})
-          //layer.setStyle({fillColor: getColor_by_lanes(mydata.lanes)})
+        //console.log(layer.feature.id)
+        let lanes_color = colorscale(layer.feature.properties.lanes)
+        layer.setStyle({
+          fillColor: lanes_color,
+        })
           layer.on('mouseout', function(){
-              layer.setStyle({fillColor: colorscale(mydata.lanes)})
+              layer.setStyle({
+                fillColor: lanes_color
+              })
           })
         });
-        //legendLanes.addTo(map)
     }
-
-    else if (linkSelector.value === "length"){
-      let arrayObject = edges_from_api.map(object => object.length);
-      let max = d3.max(arrayObject);
-      let min = d3.min(arrayObject);
-      /*let colorscale = d3.scaleLinear()
-          .domain([min, max])
-          .range(['#c1e3c1', '#e6ffe6', '#94e094', '#97FF33', '#C1FF33', '#4CFF33', '#33FFE6', '#33D1FF']);*/
-          let colorscale = d3.scaleSequential()
+    else if (linkSelector.value == "length"){
+      /*let colorscale = d3.scaleSequential()
               .domain(d3.extent(arrayObject))
-              .interpolator(d3.interpolateGreys);
-      drawLinkLegend(arrayObject, colorscale, min, max);
+              .interpolator(d3.interpolateGreys);*/
+      drawLinkLegend(length_colorscale, length_min,length_max);
       Roads.eachLayer(function (layer) {
-            let mydata = edges_from_api.find(element => element.edge_id===layer.feature.properties.edge_id)
-            layer.setStyle({fillColor: colorscale(mydata.length)})
-            layer.on('mouseout', function(){
-            layer.setStyle({fillColor: colorscale(mydata.length)})
-            })
+        let length_color = length_colorscale(layer.feature.properties.length)
+        layer.setStyle({
+          fillColor: length_color,
+        })
+        layer.on('mouseout', function(){
+            layer.setStyle({fillColor: length_color})
+          })
         });
     }
-    else if (linkSelector.value === "speed"){
+    else if (linkSelector.value =="speed"){
+      drawLinkLegend(speed_colorscale, speed_min, speed_max);
+      Roads.eachLayer(function (layer) {
+        let speed_color = speed_colorscale(layer.feature.properties.speed)
+        layer.setStyle({
+          fillColor: speed_color,
+        })
+        layer.on('mouseout', function(){
+          layer.setStyle({
+            fillColor: speed_color
+              })
+          })
+        });
+    }
+}
+  /*  else if (linkSelector.value == "speed"){
       let arrayObject = edges_from_api.map(object => object.speed);
       let max = d3.max(arrayObject);
       let min = d3.min(arrayObject);
@@ -191,8 +239,4 @@ function linkDropDown(){
             layer.setStyle({fillColor: colorscale(mydata.speed)})
           })
         });
-        /*legendSpeed.addTo(map)
-        map.removeControl(legendLength)
-        map.removeControl(legendLanes)*/
-    }
-}
+    }*/

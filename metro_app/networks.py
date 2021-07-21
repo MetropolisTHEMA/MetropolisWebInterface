@@ -348,7 +348,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     def get_visualization_directory():
         directory = os.path.join(
             settings.TEMPLATES[0]['DIRS'][0],
-                'visualization') + "/" + roadnetwork.name
+                'visualization') + "/" + roadnetwork.name # mettre le numero
         template_full_path = directory + "/map.html"
         if not os.path.exists(template_full_path):
             os.makedirs(directory)
@@ -370,7 +370,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     # Retrieve all edges of the road network as a GeoDataFrame.
     edges = Edge.objects.select_related('road_type', 'source',
                                         'target').filter(network=roadnetwork)
-    columns = ['edge_id', 'lanes', 'road_type', 'source', 'target', 'geometry']
+    columns = ['edge_id', 'lanes', 'length', 'speed', 'road_type', 'source', 'target', 'geometry']
     values = edges.values_list(*columns)
     edges_df = pd.DataFrame.from_records(values, columns=columns)
 
@@ -441,8 +441,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     # Identify oneway edges.
     edges_gdf[['source', 'target']] = edges_gdf[['source', 'target']].astype(str)
-    edges_gdf['oneway'] = (edges_gdf.source + edges_gdf.target).isin(
-                        edges_gdf.target + edges_gdf.source)
+    edges_gdf['oneway'] = (edges_gdf.source +'_'+ edges_gdf.target).isin(
+                        edges_gdf.target + '_' + edges_gdf.source)
 
     drive_right = True
 
@@ -459,26 +459,27 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         ),
         axis=1,
     )
-    edges_gdf.drop(
-        columns=['lanes','road_type', 'default_lanes', 'width'], inplace=True)
+
+    edges_gdf = edges_gdf.sort_values(by="source", ascending=True,
+                                      ignore_index=True)
 
     # Convert back to the CRS84 projection, required by Folium.
     edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
     # Initialize the map
-    tiles_layer = None if roadnetwork.simple else 'CartoDB positron'
+    tiles_layer = None if roadnetwork.simple else 'CartoDB dark_matter'
     m = folium.Map(max_zoom=19, prefer_canvas=True, tiles=tiles_layer)
 
     if not roadnetwork.simple:
         folium.TileLayer(tiles='CartoDB positron').add_to(m)
         folium.TileLayer(tiles='CartoDB dark_matter').add_to(m)
-        folium.TileLayer(tiles='OpenStreetMap').add_to(m)
+        #folium.TileLayer(tiles='OpenStreetMap').add_to(m)
 
     def style_function(feature):
         #Function defining the style of the edges.
         return dict(
             color=feature['properties']['outline_color'],
-            weight=.1,
+            weight=.9,
             fillColor=feature['properties']['color'],
             fillOpacity=.9,
         )
@@ -487,12 +488,16 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         #Function defining the style of the edges on mouse hover.
         return dict(
             color='red',
-            weight=.1,
+            weight=.9,
             fillColor='yellow',
             fillOpacity=.9,
         )
 
     # Add the representation of the edges. time: +25s
+    edges_gdf.drop(
+        columns=['source', 'target', 'id','road_type',
+                'default_lanes', 'width', 'oneway'], inplace=True)
+    print(edges_gdf.head())
     layer = folium.GeoJson(
         edges_gdf,
         style_function=style_function,
@@ -502,7 +507,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     ).add_to(m)
 
     # Create a FeatureGroup that will hold all the nodes.
-    node_group = folium.FeatureGroup(name='Intersections')
+    node_group = folium.FeatureGroup(name='Intersections', show=False)
     m.add_child(node_group)
 
     # Add the representation of the nodes. time: +2s
