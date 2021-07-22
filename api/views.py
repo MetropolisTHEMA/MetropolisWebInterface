@@ -69,12 +69,22 @@ def edges_of_a_network(request, pk):
     else:
         edges = Edge.objects.filter(network=roadnetwork)
         # the JSON object must be str, bytes or bytearray, not QuerySet
-        edges = str(edges.values("edge_id", "name", "length", "speed", "lanes"))
-        edges = json.dumps(edges, indent=2).replace("'",'"')
-        print(edges)
-    if request.method == 'GET':
-        return HttpResponse(edges)
+        edges = str(list(edges.values("edge_id", "name",
+            "length", "speed", "lanes"))).replace(
+                ", '",', "').replace(
+                "':", '":').replace(
+                ": '", ': "').replace(
+                "',", '",').replace("{'", '{"').replace('None', "null")
+                
+        """I you want to pretify the json format, please add the following
+           commented code. But the api's performance will decrease. """
 
+        # Create Python object from JSON string data
+        # edges = json.loads(edges)
+        # Pretty JSON
+        #edges = json.dumps(edges)
+    if request.method == 'GET':
+        return HttpResponse(edges)# content_type="application/json")
         """serializer = EdgeSerializer(edges,
                     context={'request': request}, many=True)
         return Response(serializer.data)"""
