@@ -422,7 +422,7 @@ class Edge(models.Model):
     edge_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the edge (must be unique)')
     name = models.CharField(
-        max_length=80, blank=True, help_text='Name of the edge')
+        max_length=80, blank=True, null=True, help_text='Name of the edge')
     geometry = models.LineStringField()
     length = models.FloatField()
     speed = models.FloatField(null=True, blank=True)
