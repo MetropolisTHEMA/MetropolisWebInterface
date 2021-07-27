@@ -33,12 +33,18 @@ class EdgeSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Edge
+        fields =(
+            'edge_id', 'name', 'length', 'speed', 'lanes',
+        )
+
+    """class Meta:
+        model = Edge
         fields = (
             'id', 'edge_id', 'name', 'length', 'speed',
             'lanes', 'param1', 'param2', 'param3',  # 'network',
             'road_type', 'source', 'target'
             )
-    """
+
     def get_road_type_id(self, instance):
         return {
                 "id": instance.road_type.road_type_id,
@@ -87,17 +93,3 @@ class EdgeSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         else:
             return instance.lanes
     """
-
-
-def serialize_edge(edge):
-    return {
-        'id': edge.pk,
-        'edge_id': edge.edge_id,
-        'name': edge.name,
-        'length': edge.length,
-        'speed': edge.speed,
-        'lanes': edge.lanes,
-        'param1': edge.param1,
-        'param2': edge.param2,
-        'param3': edge.param3,
-    }

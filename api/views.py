@@ -1,9 +1,13 @@
 from rest_framework import viewsets
 from rest_framework import status
-from .serializers import EdgeSerializer, NodeSerializer, serialize_edge
+from .serializers import (EdgeSerializer, NodeSerializer)
 from metro_app.models import Edge, Node, RoadNetwork
 from rest_framework.response import Response
+from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
+import datetime
+from datetime import datetime
+import json
 
 
 @api_view(['GET', 'POST'])
@@ -63,31 +67,24 @@ def edges_of_a_network(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     else:
-        edges = Edge.objects.select_related('network', 'source', 'target',
-                                            'road_type').filter(
-                                             network=roadnetwork)
+        edges = Edge.objects.filter(network=roadnetwork)
+        # the JSON object must be str, bytes or bytearray, not QuerySet
+        edges = str(list(edges.values("edge_id", "name",
+            "length", "speed", "lanes"))).replace(
+                ", '",', "').replace(
+                "':", '":').replace(
+                ": '", ': "').replace(
+                "',", '",').replace("{'", '{"').replace('None', "null")
+                
+        """I you want to pretify the json format, please add the following
+           commented code. But the api's performance will decrease. """
 
+        # Create Python object from JSON string data
+        # edges = json.loads(edges)
+        # Pretty JSON
+        #edges = json.dumps(edges)
     if request.method == 'GET':
-        data = [serialize_edge(edge) for edge in edges.values()]
-        return Response(data)
-
-
-"""
-class EdgeViewSet(viewsets.ModelViewSet):
-    queryset = Edge.objects.select_related(
-        'network', 'source', 'target', 'road_type'
-        )
-    serializer_class = EdgeSerializer
-
-class NodeViewSet(viewsets.ModelViewSet):
-    queryset = Node.objects.all()
-    serializer_class = NodeSerializer
-
-class RoadNetworkViewSet(viewsets.ModelViewSet):
-    queryset = RoadNetwork.objects.all()
-    serializer_class = RoadNetworkSerializer
-
-class RoadTypeViewSet(viewsets.ModelViewSet):
-    queryset = RoadType.objects.all()
-    serializer_class = RoadTypeSerializer
-"""
+        return HttpResponse(edges)# content_type="application/json")
+        """serializer = EdgeSerializer(edges,
+                    context={'request': request}, many=True)
+        return Response(serializer.data)"""

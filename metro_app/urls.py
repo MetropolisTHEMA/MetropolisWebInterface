@@ -19,7 +19,7 @@ urlpatterns = [
     path('network/<str:pk>/details/', network_details, name='network_details'),
     path('network/<str:pk>/upload_node/', upload_node, name='upload_node'),
     path('network/<str:pk>/upload_edge/', upload_edge, name='upload_edge'),
-    path('visualization/<str:pk>/', visualization, name='network_visualization'
+    path('visualization/network/<str:pk>/', visualization, name='network_visualization'
          ),
     path('network/<str:pk>/upload_road/', upload_road_type, name='upload_road'
          ),

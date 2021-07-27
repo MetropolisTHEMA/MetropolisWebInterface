@@ -109,7 +109,8 @@ from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
-
+import os
+from django.conf import settings
 
 # Create your views here.
 def index(request):
@@ -247,10 +248,25 @@ def delete_network(request, pk):
 
 
 def visualization(request, pk):
+    template = 'visualization/index-visualization.html'
     roadnetwork = RoadNetwork.objects.get(id=pk)
-    make_network_visualization(pk)
-    context = {"roadnetwork": roadnetwork}
-    return render(request, 'visualization/visualization.html', context)
+    context = {"roadnetwork": roadnetwork,
+               }
+    directory = os.path.join(
+        settings.TEMPLATES[0]['DIRS'][0],
+            'visualization') +"/"+ roadnetwork.name
+    template_full_path = directory + "/map.html"
+    if os.path.exists(template_full_path):
+        context.update({'template': template_full_path})
+        #return render(request, str(template_full_path), context)
+        return render(request, template, context)
+    else:
+        make_network_visualization(pk)
+        template_full_path = directory + "/map.html"
+        context.update({'template': template_full_path})
+        #return render(request, str(template_full_path), context)
+        return render(request, template, context)
+    #return render(request, 'visualization/index-visualization.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #
