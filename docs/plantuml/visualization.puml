@@ -1,0 +1,24 @@
+@startuml
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+ContainerDb(db, "Database", "PostgreSQL")
+ContainerDb(html, "Basic Visualization", "HTML")
+ContainerDb(main_html, "Webpage", "HTML")
+
+Container(gen_visu, "Generate Visualization", "Python / Folium", "Generate basic network visualization")
+Container(js_func, "Dynamic Functions", "JavaScript / Leaflet.js", "Request data and display it on the visualization (e.g., informations on an edge, edge data as color, agent's itinerary)")
+Container(api, "Django API", "Django REST Framework", "Call a Django function to get data, format it and return it")
+Container(django_func, "I/O Functions", "Django", "Read data from the database")
+Container(view, "Show Network View", "Django", "Return a visualization of a network to a user")
+
+Rel(gen_visu, html, "Generates")
+Rel(gen_visu, db, "Reads")
+Rel(js_func, api, "Calls and gets data")
+Rel(api, django_func, "Executes and gets data")
+Rel(django_func, db, "Reads")
+Rel(html, main_html, "Embedded")
+Rel(js_func, main_html, "Embedded")
+Rel_Up(view, main_html, "Writes and sends")
+
+@enduml
