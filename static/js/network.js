@@ -54,16 +54,16 @@ legendLanes.onAdd = function (map) {
 };
 */
 // Fetch data from api.
-/*    var edges_from_api;
-    // Get the current url
-    current_url  = window.location.href // document.url
-    // Get networ id
-    network_id = parseInt(current_url.split('/')[5])
-    fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`)
-        .then((response) => {
-            return response.json()
-        })
-        .then((data) => edges_from_api=data) */
+/* var edges_from_api;
+// Get the current url
+current_url  = window.location.href // document.url
+// Get networ id
+network_id = parseInt(current_url.split('/')[5])
+fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`)
+  .then((response) => {
+    return response.json()
+  })
+  .then((data) => edges_from_api=data) */
 
 function drawLinkLegend(colorscale, min, max) {
     // Show label
@@ -117,7 +117,6 @@ let subset_attributes = dataset.map(subset => [{lanes: subset.properties.lanes,
                                                length: subset.properties.length,
                                                speed:  subset.properties.speed,
                                              }]);
-console.log(subset_attributes)
 
 var max_lanes = d3.max(dataset, function(d, attribute){
     return d.properties.lanes;

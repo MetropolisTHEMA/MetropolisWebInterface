@@ -5,9 +5,7 @@ from metro_app.models import Edge, Node, RoadNetwork
 from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
-import datetime
-from datetime import datetime
-import json
+
 
 
 @api_view(['GET', 'POST'])
@@ -69,13 +67,17 @@ def edges_of_a_network(request, pk):
     else:
         edges = Edge.objects.filter(network=roadnetwork)
         # the JSON object must be str, bytes or bytearray, not QuerySet
+        # a valid Json valid format is ("key":"value") and not ('key': 'value')
+        # That why we are replacing all '' in key, value.
         edges = str(list(edges.values("edge_id", "name",
             "length", "speed", "lanes"))).replace(
                 ", '",', "').replace(
                 "':", '":').replace(
                 ": '", ': "').replace(
-                "',", '",').replace("{'", '{"').replace('None', "null")
-                
+                "',", '",').replace(
+                "{'", '{"').replace(
+                'None', "null")
+
         """I you want to pretify the json format, please add the following
            commented code. But the api's performance will decrease. """
 

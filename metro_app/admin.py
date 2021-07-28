@@ -52,3 +52,11 @@ class ZoneAdmin(admin.OSMGeoAdmin):
 @admin.register(ODPair)
 class ODPairAdmin(admin.OSMGeoAdmin):
     pass
+
+@admin.register(Run)
+class RunAdmin(admin.OSMGeoAdmin):
+    pass
+
+@admin.register(EdgeResults)
+class EdgeResultsAdmin(admin.OSMGeoAdmin):
+    pass

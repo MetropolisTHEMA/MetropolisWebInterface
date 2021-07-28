@@ -41,8 +41,9 @@ CONGESTION_TYPES = {
 def upload_road_type(request, pk):
     template = "networks/roadtype.html"
     roadnetwork = RoadNetwork.objects.get(id=pk)
-    roadtypes = RoadType.objects.select_related('network').filter(
-                                                             network_id=pk)
+    roadtypes = RoadType.objects.select_related(
+        'network').filter(network_id=pk)
+    
     if roadtypes.count() > 0:
         messages.warning(request, "Fail ! Network contains \
                             already road type data.")
@@ -56,7 +57,7 @@ def upload_road_type(request, pk):
             if datafile.name.endswith('.csv'):
                 datafile = datafile.read().decode('utf-8').splitlines()
                 datafile = csv.DictReader(datafile, delimiter=',')
-                for row in datafile:
+                for row in datafile: # each row is dictionary
                     row = {k: None if not v else v for k, v in row.items()}
                     try:
                         road_type_id = row['id']
@@ -359,7 +360,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     # Retrieve all nodes of the road network as a GeoDataFrame.
     nodes = Node.objects.select_related('network').filter(network=roadnetwork)
-    columns = ['id', 'node_id', 'location']
+    columns = ['node_id', 'location']
     values = nodes.values_list(*columns)
 
     nodes_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
@@ -370,7 +371,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     # Retrieve all edges of the road network as a GeoDataFrame.
     edges = Edge.objects.select_related('road_type', 'source',
                                         'target').filter(network=roadnetwork)
-    columns = ['edge_id', 'lanes', 'length', 'speed', 'road_type', 'source', 'target', 'geometry']
+    columns = ['edge_id', 'lanes', 'road_type', 'source', 'target', 'geometry']
     values = edges.values_list(*columns)
     edges_df = pd.DataFrame.from_records(values, columns=columns)
 
@@ -389,11 +390,11 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     edges_df = edges_df.merge(rtypes_df, left_on='road_type', right_on='id')
 
-    if roadnetwork.simple:
+    """if roadnetwork.simple:
         # Add a black outline to the edges.
         edges_df['outline_color'] = 'black'
     else:
-        edges_df['outline_color'] = edges_df['color']
+        edges_df['outline_color'] = edges_df['color']"""
 
     # Get the number of lanes for edges with NULL values from the default
     # number of lanes of the corresponding road type.
@@ -404,17 +405,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = 1
     edges_df.loc[edges_df['lanes'] <= 0, 'lanes'] = 1
     #edges_gdf = edges_gdf.set_index(['source', 'target']).sort_index()
-
-    t1 = datetime.now()
-    print(t1)
-
     edges_df['geometry'] = gpd.GeoSeries.from_wkt(edges_df['geometry'].apply(lambda x: x.wkt))
-
     edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=degree_crs)
-
-    t2 = datetime.now()
-    print(t2)
-    print("Delta time: ", t2-t1)
 
     # As node radius and edge width are expressed in meters, we need to convert
     # the geometries in a metric projection.
@@ -459,68 +451,14 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         ),
         axis=1,
     )
+    edges_gdf = edges_gdf.sort_values(
+        by="source", ascending=True, ignore_index=True)
 
-    edges_gdf = edges_gdf.sort_values(by="source", ascending=True,
-                                      ignore_index=True)
+    edges_gdf.drop(
+        columns=['source', 'target', 'id','road_type','lanes',
+                'default_lanes', 'width', 'oneway'], inplace=True)
 
     # Convert back to the CRS84 projection, required by Folium.
     edges_gdf.to_crs(crs=degree_crs, inplace=True)
-
-    # Initialize the map
-    tiles_layer = None if roadnetwork.simple else 'CartoDB dark_matter'
-    m = folium.Map(max_zoom=19, prefer_canvas=True, tiles=tiles_layer)
-
-    if not roadnetwork.simple:
-        folium.TileLayer(tiles='CartoDB positron').add_to(m)
-        folium.TileLayer(tiles='CartoDB dark_matter').add_to(m)
-        #folium.TileLayer(tiles='OpenStreetMap').add_to(m)
-
-    def style_function(feature):
-        #Function defining the style of the edges.
-        return dict(
-            color=feature['properties']['outline_color'],
-            weight=.9,
-            fillColor=feature['properties']['color'],
-            fillOpacity=.9,
-        )
-
-    def highlight_function(feature):
-        #Function defining the style of the edges on mouse hover.
-        return dict(
-            color='red',
-            weight=.9,
-            fillColor='yellow',
-            fillOpacity=.9,
-        )
-
     # Add the representation of the edges. time: +25s
-    edges_gdf.drop(
-        columns=['source', 'target', 'id','road_type',
-                'default_lanes', 'width', 'oneway'], inplace=True)
-    print(edges_gdf.head())
-    layer = folium.GeoJson(
-        edges_gdf,
-        style_function=style_function,
-        highlight_function=highlight_function,
-        smooth_factor=1,
-        name='Roads'
-    ).add_to(m)
-
-    # Create a FeatureGroup that will hold all the nodes.
-    node_group = folium.FeatureGroup(name='Intersections', show=False)
-    m.add_child(node_group)
-
-    # Add the representation of the nodes. time: +2s
-    for lon, lat in zip(nodes_gdf.geometry.x, nodes_gdf.geometry.y):
-        folium.Circle(
-            location=[lat, lon], color=node_color, opacity=1, fill=True,
-            fill_opacity=.8, radius=node_radius,
-        ).add_to(node_group)
-
-    # Add a LayerControl to toggle FeatureGroups.
-    folium.LayerControl(position='topright').add_to(m)
-
-    # Bound the map such that the network is centered and entirely visible.
-    m.fit_bounds(layer.get_bounds())
-    #m.save('templates/visualization/visualization.html') # Time: 27 s
-    m.save(get_visualization_directory()+"/map.html")
+    edges_gdf.to_file(get_visualization_directory()+"/edges.geojson", driver='GeoJSON')

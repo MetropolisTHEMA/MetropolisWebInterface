@@ -1,0 +1,90 @@
+{% load static %}
+{% block content %}
+ <script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="{% static '/css/legend.css' %}">
+
+<!--- folium output -->
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <script src='https://cdn.plot.ly/plotly-2.1.0.min.js'></script> <!-- Load plotly.js into the DOM -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--- end folium output -->
+
+<style type="text/css">
+  #map{
+  position: relative;
+  width: 100.0%;
+  height: 100.0%;
+  left: 0.0%;
+  top: 0.0%;
+  }
+</style>
+
+<div class="row-100">
+    <div class="col-md-1 h-100" id="destinationDiv">
+        <div id="divToMove">
+            <h5><a href="">Go Back</a></h5>
+            <hr>
+            <div class="form-group w-75 mx-auto">
+              <label for="zoneSelector" class="sr-only">Zones</label>
+              <select id="zoneSelector" class="form-control">
+                <option value="none">Zones</option>
+                <option value="departures">Departures</option>
+                <option value="arrivals">Arrivals</option>
+                <option value="averages">Average</option>
+              </select>
+            </div>
+
+            <div class="form-group w-75 mx-auto">
+                <label for="linkSelector" class="sr-only">Links</label>
+                <select id="linkSelector" class="form-control" onchange="linkDropDown();">
+                    <option value="default">Road type</option>
+                    <option value="lanes">Lanes</option>
+                    <option value="length">Length</option>
+                    <option value="speed">Speed</option>
+                    <option value="capacity">Capacity</option>
+                    <hr>
+                    <option value="default">Congestion</option>
+                    <option value="lanes">Speed</option>
+                    <option value="lanes">Travel Time</option>
+                </select>
+            </div>
+            <hr>
+            <div class="form-group w-75 mx-auto">
+                  <div id="linkLabel" style="height:30px;display:none">
+                    <label for="legend-links-svg">Legend</label>
+                  </div>
+                  <div id="legend-links-container">
+                    <svg id="legend-links-svg" class="h-100 w-100"></svg>
+                  </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-11">
+        <!---  {% if template %}{% include template %}{% endif %} -->
+        <div class="" id="map"></div>
+
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src = "{% static '/js/metro-leaflet.js' %}"></script>
+
+
+{% endblock %}

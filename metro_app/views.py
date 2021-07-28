@@ -104,6 +104,7 @@ Django Views Modules
 """
 
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 # from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
@@ -111,6 +112,7 @@ from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
 import os
 from django.conf import settings
+import json
 
 # Create your views here.
 def index(request):
@@ -252,7 +254,7 @@ def visualization(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
     context = {"roadnetwork": roadnetwork,
                }
-    directory = os.path.join(
+    """directory = os.path.join(
         settings.TEMPLATES[0]['DIRS'][0],
             'visualization') +"/"+ roadnetwork.name
     template_full_path = directory + "/map.html"
@@ -265,8 +267,8 @@ def visualization(request, pk):
         template_full_path = directory + "/map.html"
         context.update({'template': template_full_path})
         #return render(request, str(template_full_path), context)
-        return render(request, template, context)
-    #return render(request, 'visualization/index-visualization.html', context)
+        return render(request, template, context)"""
+    return render(request, 'index-visualization.html', context)
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #
@@ -287,3 +289,13 @@ def create_roadtype(request, pk):
             return redirect('home')
 
     return render(request, 'views/roadtype.html', {'form': form})
+
+# ........................................................................... #
+#             VIEW OF RETURNIGNG EDGES GeoJSON FILE                           #
+# ............................................................................#
+
+def edges_point_geojson(request):
+    with open("/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Circular City/edges.geojson") as edges:
+        #edges = json.load(edges)
+        #edges=json.dumps(edges)
+        return HttpResponse(edges, content_type="application/json")
