@@ -57,7 +57,7 @@ legendLanes.onAdd = function (map) {
 /* var edges_from_api;
 // Get the current url
 current_url  = window.location.href // document.url
-// Get networ id
+// Get network id
 network_id = parseInt(current_url.split('/')[5])
 fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`)
   .then((response) => {
@@ -239,3 +239,32 @@ function linkDropDown(){
           })
         });
     }*/
+
+
+
+    Roads.eachLayer(function (layer) {
+    console.log(Roads.toGeoJSON().features)
+
+    var subset_data = edges_data_api.find(element => element.edge_id==layer.feature.properties.edge_id)
+    layer.bindTooltip(
+      "lanes: "+subset_data[layer.feature.id][0].lanes +"<br>"+
+      "speed: "+subset_data[layer.feature.id][0].speed + "<br>"+
+      "legendLength: "+subset_data[layer.feature.id][0].length.toFixed(2))
+  });
+
+
+    layer.on('mouseover', function(e){
+      layer.setStyle({
+        fillColor: 'yellow'
+      })
+    });
+    layer.on('mouseout', function(e){
+      layer.setStyle({
+        fillColor: lanes_color
+      })
+    });
+
+
+    
+/*split_time = currentLayer.travel_time.split(':')
+        var seconds = (+split_time[0]) * 3600 + (+split_time[1]) * 60 + (+split_time[2]);

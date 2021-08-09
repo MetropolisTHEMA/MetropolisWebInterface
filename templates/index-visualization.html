@@ -34,7 +34,7 @@
 </style>
 
 <div class="row-100">
-    <div class="col-md-1 h-100" id="destinationDiv">
+    <div class="col-md-2 h-100" id="destinationDiv">
         <div id="divToMove">
             <h5><a href="">Go Back</a></h5>
             <hr>
@@ -52,14 +52,18 @@
                 <label for="linkSelector" class="sr-only">Links</label>
                 <select id="linkSelector" class="form-control" onchange="linkDropDown();">
                     <option value="default">Road type</option>
+                    <optgroup label="Input">
                     <option value="lanes">Lanes</option>
                     <option value="length">Length</option>
                     <option value="speed">Speed</option>
                     <option value="capacity">Capacity</option>
-                    <hr>
-                    <option value="default">Congestion</option>
-                    <option value="lanes">Speed</option>
-                    <option value="lanes">Travel Time</option>
+                    </optgroup>
+
+                    <optgroup label="Ouput">
+                    <option value="congestion">Congestion</option>
+                    <option value="speed_output">Speed</option>
+                    <option value="travel_time">Travel Time</option>
+                    </optgroup>
                 </select>
             </div>
             <hr>
@@ -75,7 +79,7 @@
 
     </div>
 
-    <div class="col-md-11">
+    <div class="col-md-10">
         <!---  {% if template %}{% include template %}{% endif %} -->
         <div class="" id="map"></div>
 
@@ -84,7 +88,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script src = "{% static '/js/metro-leaflet.js' %}"></script>
+
+    <script type="text/javascript" src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.min.js"></script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/iso8601-js-period@0.2.1/iso8601.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet-timedimension@1.1.1/dist/leaflet.timedimension.min.js"></script>
+
+<script src = "{% static '/js/test.js' %}"></script>
 
 
 {% endblock %}

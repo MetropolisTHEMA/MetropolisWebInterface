@@ -1,6 +1,15 @@
 from rest_framework import serializers
 from drf_dynamic_fields import DynamicFieldsMixin
-from metro_app.models import Edge, Node, RoadNetwork, RoadType
+from metro_app.models import Edge, Node, RoadNetwork, RoadType, EdgeResults
+
+
+class EdgeResultsSerializer(serializers.ModelSerializer):
+    time = serializers.TimeField(format='%H:%M')
+    
+    class Meta:
+        model = EdgeResults
+        fields = '__all__'
+        #exclude = ('id')
 
 
 class NodeSerializer(serializers.ModelSerializer):

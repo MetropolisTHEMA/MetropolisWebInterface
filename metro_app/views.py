@@ -295,7 +295,9 @@ def create_roadtype(request, pk):
 # ............................................................................#
 
 def edges_point_geojson(request):
-    with open("/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Circular City/edges.geojson") as edges:
+    url = "/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Circular City/edges.geojson"
+    #url = "/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Ile De France/edges.geojson"
+    with open(url) as edges:
         #edges = json.load(edges)
         #edges=json.dumps(edges)
         return HttpResponse(edges, content_type="application/json")

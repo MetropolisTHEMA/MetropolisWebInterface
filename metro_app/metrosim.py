@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from .models import EdgeResults, Edge, Run
 import csv
+from django.contrib import messages
 
 """Uploading edges results from metrosim to metro app database"""
 def upload_edges_results(request):
@@ -8,8 +9,6 @@ def upload_edges_results(request):
 	run = Run.objects.get(id=1)
 	edges = Edge.objects.select_related().filter(network_id=1)
 	edges_instance_dict = {edge.edge_id: edge for edge in edges}
-	print(edges_instance_dict)
-	print(len(edges_instance_dict))
 	
 	with open("/home/andiaye/Bureau/metroweb/Metropolis/edges_results/IDF/edge_results.csv") as edges_results:
 		edges_results = edges_results.read().splitlines() #.decode('utf-8').splitlines()
@@ -23,15 +22,16 @@ def upload_edges_results(request):
 			except KeyError:
 				pass
 
-			edge = EdgeResults(
-				time=row["time"],
-				congestion=row["congestion"],
-				travel_time=row["travel_time"],
-				speed=row["speed"],
-				edge_id=edge_id,
-				run_id=run.id
-				)
-			list_edges_results.append(edge)
+			else:
+				edge = EdgeResults(
+					time=row["time"],
+					congestion=row["congestion"],
+					travel_time=row["travel_time"],
+					speed=row["speed"],
+					edge_id=edge_id,
+					run_id=run.id
+					)
+				list_edges_results.append(edge)
 
 		EdgeResults.objects.bulk_create(list_edges_results)
 		

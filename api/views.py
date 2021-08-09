@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework import status
-from .serializers import (EdgeSerializer, NodeSerializer)
-from metro_app.models import Edge, Node, RoadNetwork
+from .serializers import (EdgeSerializer, NodeSerializer, EdgeResultsSerializer)
+from metro_app.models import Edge, Node, RoadNetwork, EdgeResults
 from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
@@ -90,3 +90,20 @@ def edges_of_a_network(request, pk):
         """serializer = EdgeSerializer(edges,
                     context={'request': request}, many=True)
         return Response(serializer.data)"""
+
+@api_view(['GET'])
+def edges_results(request):
+    edges = EdgeResults.objects.all()
+    """edges = str(list(edges.values())).replace(
+                ", '",', "').replace(
+                "':", '":').replace(
+                ": '", ': "').replace(
+                "',", '",').replace(
+                "{'", '{"').replace(
+                'None', "null")"""
+    if request.method == 'GET':
+        #return HttpResponse(edges, content_type="application/json")
+        serializer = EdgeResultsSerializer(edges,
+                    context={'request': request}, many=True)
+        return Response(serializer.data)
+
