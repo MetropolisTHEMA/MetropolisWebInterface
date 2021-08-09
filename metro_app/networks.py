@@ -354,6 +354,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
             os.makedirs(directory)
         return directory
 
+    data_crs = "EPSG:{}".format(roadnetwork.srid)
     degree_crs = "EPSG:4326"
     meter_crs = "EPSG:3857"
 
@@ -364,7 +365,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     nodes_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
     nodes_gdf['location'] = gpd.GeoSeries.from_wkt(
-        nodes_gdf['location'].apply(lambda x: x.wkt), crs=degree_crs)    # a optimiser
+        nodes_gdf['location'].apply(lambda x: x.wkt), crs=data_crs)    # a optimiser
     nodes_gdf.set_geometry('location', inplace=True)
 
     # Retrieve all edges of the road network as a GeoDataFrame.
@@ -410,7 +411,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     edges_df['geometry'] = gpd.GeoSeries.from_wkt(edges_df['geometry'].apply(lambda x: x.wkt))
 
-    edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=degree_crs)
+    edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
 
     t2 = datetime.now()
     print(t2)
