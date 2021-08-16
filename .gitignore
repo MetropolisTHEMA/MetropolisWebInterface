@@ -16,8 +16,5 @@ templates/visualization/
 **/__pycache__/
 docs/build/
 venv
-edges_results
-<<<<<<< HEAD
+edges_results/
 README.md
-=======
->>>>>>> 5a75b3134a88a8a90942042ddf757464c03a849e

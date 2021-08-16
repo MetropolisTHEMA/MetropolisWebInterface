@@ -9,14 +9,10 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from shapely import geometry, wkt
 from shapely.ops import split
-import folium
 from .forms import NodeForm, EdgeForm, RoadTypeFileForm
 from .models import Node, Edge, RoadNetwork, RoadType
 from django.db.utils import IntegrityError
-import datetime
-from datetime import datetime
 import os
 from django.conf import settings
 
@@ -43,7 +39,7 @@ def upload_road_type(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
     roadtypes = RoadType.objects.select_related(
         'network').filter(network_id=pk)
-    
+
     if roadtypes.count() > 0:
         messages.warning(request, "Fail ! Network contains \
                             already road type data.")
@@ -57,7 +53,7 @@ def upload_road_type(request, pk):
             if datafile.name.endswith('.csv'):
                 datafile = datafile.read().decode('utf-8').splitlines()
                 datafile = csv.DictReader(datafile, delimiter=',')
-                for row in datafile: # each row is dictionary
+                for row in datafile:  # each row is dictionary
                     row = {k: None if not v else v for k, v in row.items()}
                     try:
                         road_type_id = row['id']
@@ -346,15 +342,6 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     """
     roadnetwork = RoadNetwork.objects.get(pk=road_network_id)
 
-    def get_visualization_directory():
-        directory = os.path.join(
-            settings.TEMPLATES[0]['DIRS'][0],
-                'visualization') + "/" + roadnetwork.name # mettre le numero
-        template_full_path = directory + "/map.html"
-        if not os.path.exists(template_full_path):
-            os.makedirs(directory)
-        return directory
-
     data_crs = "EPSG:{}".format(roadnetwork.srid)
     degree_crs = "EPSG:4326"
     meter_crs = "EPSG:3857"
@@ -365,8 +352,9 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     values = nodes.values_list(*columns)
 
     nodes_gdf = gpd.GeoDataFrame.from_records(values, columns=columns)
+    # The following line is to OPTIMIZE
     nodes_gdf['location'] = gpd.GeoSeries.from_wkt(
-        nodes_gdf['location'].apply(lambda x: x.wkt), crs=data_crs)    # a optimiser
+        nodes_gdf['location'].apply(lambda x: x.wkt), crs=data_crs)
     nodes_gdf.set_geometry('location', inplace=True)
 
     # Retrieve all edges of the road network as a GeoDataFrame.
@@ -390,38 +378,27 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
                 rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
 
     edges_df = edges_df.merge(rtypes_df, left_on='road_type', right_on='id')
-
-    """if roadnetwork.simple:
-        # Add a black outline to the edges.
-        edges_df['outline_color'] = 'black'
-    else:
-        edges_df['outline_color'] = edges_df['color']"""
-
     # Get the number of lanes for edges with NULL values from the default
     # number of lanes of the corresponding road type.
-
-    edges_df.loc[edges_df['lanes'].isna(), 'lanes'
-                ] = edges_df['default_lanes']
-
+    edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = edges_df['default_lanes']
     edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = 1
     edges_df.loc[edges_df['lanes'] <= 0, 'lanes'] = 1
-    #edges_gdf = edges_gdf.set_index(['source', 'target']).sort_index()
-    edges_df['geometry'] = gpd.GeoSeries.from_wkt(edges_df['geometry'].apply(lambda x: x.wkt))
-    edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
 
+    edges_df['geometry'] = gpd.GeoSeries.from_wkt(
+        edges_df['geometry'].apply(lambda x: x.wkt))
+
+    edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
     # As node radius and edge width are expressed in meters, we need to convert
     # the geometries in a metric projection.
     edges_gdf.to_crs(crs=meter_crs, inplace=True)
 
     # Discard NULL geometries.
     edges_gdf = edges_gdf.loc[edges_gdf.geometry.length > 0]
-
     # Adjust the max_lanes value if it is larger than the maximum number of
     # lanes in the edges of the road network.
-    max_lanes =  min(max_lanes, edges_gdf['lanes'].max())
+    max_lanes = min(max_lanes, edges_gdf['lanes'].max())
     # Constrain edge width by bounding the number of lanes of the edges.
     edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
-
 
     if roadnetwork.simple:
         # The node radius is implied from the characteristics of the network,
@@ -433,11 +410,10 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     edges_gdf['width'] = lane_width * edges_gdf['lanes']
 
     # Identify oneway edges.
-    edges_gdf[['source', 'target']] = edges_gdf[['source', 'target']].astype(str)
-    edges_gdf['oneway'] = (edges_gdf.source +'_'+ edges_gdf.target).isin(
+    edges_gdf[['source', 'target']] = edges_gdf[
+        ['source', 'target']].astype(str)
+    edges_gdf['oneway'] = (edges_gdf.source + '_' + edges_gdf.target).isin(
                         edges_gdf.target + '_' + edges_gdf.source)
-
-    drive_right = True
 
     # Replace the geometry of the edges with an offset polygon of corresponding
     # width. time : +16s
@@ -447,7 +423,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         lambda row: get_offset_polygon(
             linestring=row['geometry'],
             width=row['width'],
-            drive_right=drive_right,
+            drive_right=True,
             oneway=row['oneway']
         ),
         axis=1,
@@ -456,10 +432,15 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         by="source", ascending=True, ignore_index=True)
 
     edges_gdf.drop(
-        columns=['source', 'target', 'id','road_type','lanes',
-                'default_lanes', 'width', 'oneway'], inplace=True)
+        columns=['source', 'target', 'id', 'road_type', 'lanes',
+                 'default_lanes', 'width', 'oneway'], inplace=True)
 
     # Convert back to the CRS84 projection, required by Folium.
     edges_gdf.to_crs(crs=degree_crs, inplace=True)
-    # Add the representation of the edges. time: +25s
-    edges_gdf.to_file(get_visualization_directory()+"/edges.geojson", driver='GeoJSON')
+    print(edges_gdf.head())
+    directory = os.path.join(
+        settings.TEMPLATES[0]['DIRS'][0],
+        'visualization') + "/" + roadnetwork.name
+    edges_gdf.to_file(directory + "/edges.geojson",
+                      driver='GeoJSON')
+    print("Finish")

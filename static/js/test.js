@@ -8,7 +8,7 @@ fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`)
 }).then((data) => edges_data_api=data)
 
 var edges_results;
-fetch(`http://127.0.0.1:8000/api/metrosim/edges_results/`)
+fetch(`http://127.0.0.1:8000/api/run/1/edges_results/`)
   .then((response) => {
     return response.json()
 }).then((edges) => edges_results=edges)
@@ -19,8 +19,9 @@ function drawLinkLegend(colorscale, min, max) {
     linkLabel.style.display = 'block'
 
     var legendWidth = 100
-        legendMargin = 10
-        legendLength = document.getElementById('legend-links-container').offsetHeight - 2*legendMargin
+      legendMargin = 10
+      legendLength = document.getElementById(
+        'legend-links-container').offsetHeight - 2*legendMargin
 
     // Add legend
     var legendSvg = d3.select('#legend-links-svg')
@@ -115,7 +116,7 @@ var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { // LIGNE
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         });
-    
+
 //map.addLayer(osmLayer);
 
 var style = {
@@ -141,7 +142,7 @@ fetch('http://127.0.0.1:8000/edges.geojson/')
 */
 
 const request = async () => {
-  const response = await fetch('http://127.0.0.1:8000/edges.geojson/');
+  const response = await fetch('http://127.0.0.1:8000/network/1/edges.geojson/');
   const data = await response.json();
   geojsonLayer = L.geoJSON(data["features"], {
     style: style,
@@ -160,7 +161,7 @@ request();
     minZoom: 0,
     label: 'Toner Lite'  // Libellé pour le tooltip en option
     });
-        
+
 let stamenToner = L.tileLayer('//{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
     attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> — Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
     subdomains: 'abcd',
@@ -176,8 +177,8 @@ let stamenColor = L.tileLayer('//{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png'
     minZoom: 1,
     label: 'Watercolor'
 });
-    
-         
+
+
 var baseLayers = {
 	"stamenLite": stamenLite,
 	"stamenToner": stamenToner,
@@ -193,8 +194,8 @@ L.control.layers(
 	baseLayers,
 	overlays,
 	{
-		"autoZIndex": true, 
-		"collapsed": true, 
+		"autoZIndex": true,
+		"collapsed": true,
 		"position": "topright"
 	}).addTo(map);
 
@@ -210,7 +211,7 @@ L.control.layers(
 map.timeDimension = timeDimension;
 
 var player = new L.TimeDimension.Player({
-    transitionTime: 100, 
+    transitionTime: 100,
     loop: false,
     startOver:true
 }, timeDimension);
@@ -241,7 +242,7 @@ function style(feature) {
 
 /* ----------------------------------------------------------------------------*/
 
-  
+
 function linkDropDown(){
  // Remove any previous legend
   d3.select('#linkLegendSvg').remove();
@@ -283,7 +284,7 @@ function linkDropDown(){
       });
     }
     else if (linkSelector.value == "length"){
- 
+
       var length_array = edges_data_api.map(object => object.length);
       var length_colorscale = d3.scaleLinear()
           .domain(d3.extent(length_array))
@@ -311,7 +312,7 @@ function linkDropDown(){
            color: length_color,
            fillColor: length_color
           })
-        });        
+        });
       });
     }
     else if (linkSelector.value == "speed"){
@@ -340,7 +341,7 @@ function linkDropDown(){
            color: speed_color,
            fillColor: speed_color
           })
-        }); 
+        });
       });
     }
 
@@ -356,7 +357,7 @@ function linkDropDown(){
         tv = (+tv[0]) * 3600 + (+tv[1]) * 60 + (+tv[2]);
         copie.push(tv)
       })
-      
+
       var travel_time_colorscale = d3.scaleLinear().domain(d3.extent(copie))
           .interpolate(d3.interpolateHcl)
           .range([d3.rgb("#FFF500"), d3.rgb("#000066")]);
@@ -389,7 +390,7 @@ function linkDropDown(){
            color: travel_time_color,
            fillColor: travel_time_color
           })
-        }); 
+        });
       });
     }
     else if (linkSelector.value == "speed_output"){
@@ -423,11 +424,9 @@ function linkDropDown(){
            color: speed_output_color,
            fillColor: speed_output_color
           })
-        }); 
+        });
       });
     }
 
 
 }
-
-

@@ -651,7 +651,7 @@ class Run(models.Model):
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     #  policy = models.ForeignKey(
     #      Policy, on_delete=models.CASCADE, null=True, blank=True)
-    road_network = models.ForeignKey(
+    network = models.ForeignKey(
         RoadNetwork, on_delete=models.CASCADE, null=True, blank=True)
     #  pt_network = models.ForeignKey(
     #      PTNetwork, on_delete=models.CASCADE, null=True, blank=True)

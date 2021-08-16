@@ -250,24 +250,15 @@ def delete_network(request, pk):
 
 
 def visualization(request, pk):
-    template = 'visualization/index-visualization.html'
     roadnetwork = RoadNetwork.objects.get(id=pk)
     context = {"roadnetwork": roadnetwork,
                }
-    """directory = os.path.join(
+    directory = os.path.join(
         settings.TEMPLATES[0]['DIRS'][0],
-            'visualization') +"/"+ roadnetwork.name
-    template_full_path = directory + "/map.html"
-    if os.path.exists(template_full_path):
-        context.update({'template': template_full_path})
-        #return render(request, str(template_full_path), context)
-        return render(request, template, context)
-    else:
+        'visualization') + "/" + roadnetwork.name
+    data_full_path = directory + "/edges.geojson"
+    if not os.path.exists(data_full_path):
         make_network_visualization(pk)
-        template_full_path = directory + "/map.html"
-        context.update({'template': template_full_path})
-        #return render(request, str(template_full_path), context)
-        return render(request, template, context)"""
     return render(request, 'index-visualization.html', context)
 
 # ........................................................................... #
@@ -294,10 +285,13 @@ def create_roadtype(request, pk):
 #             VIEW OF RETURNIGNG EDGES GeoJSON FILE                           #
 # ............................................................................#
 
-def edges_point_geojson(request):
-    url = "/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Circular City/edges.geojson"
-    #url = "/home/andiaye/Bureau/metroweb/Metropolis/templates/visualization/Ile De France/edges.geojson"
+
+def edges_point_geojson(request, pk):
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    directory = os.path.join(settings.TEMPLATES[0]['DIRS'][0],
+                             'visualization') + "/" + roadnetwork.name
+    url = directory + "/edges.geojson"
     with open(url) as edges:
-        #edges = json.load(edges)
-        #edges=json.dumps(edges)
+        # edges = json.load(edges)
+        # edges=json.dumps(edges)
         return HttpResponse(edges, content_type="application/json")

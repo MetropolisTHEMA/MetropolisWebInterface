@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import (edge_list, edge_detail, edges_of_a_network,edges_results)
+from .views import (edge_list, edge_detail, edges_of_a_network, edges_results)
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -9,7 +9,7 @@ urlpatterns = [
     path('edges/', edge_list),
     path('edges/<int:pk>/', edge_detail),
     path('network/<int:pk>/edges/', edges_of_a_network),
-    path('metrosim/edges_results/', edges_results),
+    path('run/<str:pk>/edges_results/', edges_results),
     ]
 
 """

@@ -1,11 +1,10 @@
-from rest_framework import viewsets
+# from rest_framework import viewsets
 from rest_framework import status
-from .serializers import (EdgeSerializer, NodeSerializer, EdgeResultsSerializer)
-from metro_app.models import Edge, Node, RoadNetwork, EdgeResults
+from .serializers import (EdgeSerializer, EdgeResultsSerializer)
+from metro_app.models import Edge, RoadNetwork, EdgeResults, Run
 from rest_framework.response import Response
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse  # JsonResponse
 from rest_framework.decorators import api_view
-
 
 
 @api_view(['GET', 'POST'])
@@ -69,9 +68,9 @@ def edges_of_a_network(request, pk):
         # the JSON object must be str, bytes or bytearray, not QuerySet
         # a valid Json valid format is ("key":"value") and not ('key': 'value')
         # That why we are replacing all '' in key, value.
-        edges = str(list(edges.values("edge_id", "name",
-            "length", "speed", "lanes"))).replace(
-                ", '",', "').replace(
+        edges = str(list(edges.values("edge_id", "name", "length", "speed",
+                                      "lanes"))).replace(
+                ", '", ', "').replace(
                 "':", '":').replace(
                 ": '", ': "').replace(
                 "',", '",').replace(
@@ -84,16 +83,21 @@ def edges_of_a_network(request, pk):
         # Create Python object from JSON string data
         # edges = json.loads(edges)
         # Pretty JSON
-        #edges = json.dumps(edges)
+        # edges = json.dumps(edges)
     if request.method == 'GET':
-        return HttpResponse(edges)# content_type="application/json")
+        return HttpResponse(edges)  # content_type="application/json")
         """serializer = EdgeSerializer(edges,
                     context={'request': request}, many=True)
         return Response(serializer.data)"""
 
+
 @api_view(['GET'])
-def edges_results(request):
-    edges = EdgeResults.objects.all()
+def edges_results(request, pk):
+    """Return edges results data """
+    run = Run.objects.get(id=pk)
+    # network_id = run.road_network_id
+    edges = EdgeResults.objects.select_related(
+        'run').filter(run=run)
     """edges = str(list(edges.values())).replace(
                 ", '",', "').replace(
                 "':", '":').replace(
@@ -102,8 +106,7 @@ def edges_results(request):
                 "{'", '{"').replace(
                 'None', "null")"""
     if request.method == 'GET':
-        #return HttpResponse(edges, content_type="application/json")
-        serializer = EdgeResultsSerializer(edges,
-                    context={'request': request}, many=True)
+        # return HttpResponse(edges, content_type="application/json")
+        serializer = EdgeResultsSerializer(edges, context={'request': request},
+                                           many=True)
         return Response(serializer.data)
-
