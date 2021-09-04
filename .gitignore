@@ -17,7 +17,8 @@ docs/build/
 venv
 edges_results/
 README.md
-static/time_dimension.js/
-static/aucasou.js/
+static/js/time_dimension.js/
+static/js/aucasou.js/
 static/test.js/
-static/timedimension_brouillon.js/
+static/js/timedimension_brouillon.js/
+static/js/network.js/
