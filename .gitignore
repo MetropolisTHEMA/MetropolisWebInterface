@@ -2,7 +2,6 @@
 .empty
 .git
 db.sqlite3
-metro_project/settings.py
 metro_app/migrations
 metro_project/.DS_Store
 settings.json
@@ -18,3 +17,7 @@ docs/build/
 venv
 edges_results/
 README.md
+static/time_dimension.js
+static/aucasou.js
+static/test.js
+static/timedimension_brouillon.js

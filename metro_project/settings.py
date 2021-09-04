@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'api',
 
     # 3rd party app
-    'crispy_forms',
+    'crispy_forms', # pip install django-crispy-forms
     'django.contrib.gis',
     'colorfield',          # from django-colorfield
     'rest_framework',

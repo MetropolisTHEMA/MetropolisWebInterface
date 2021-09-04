@@ -94,8 +94,10 @@ def edges_of_a_network(request, pk):
 @api_view(['GET'])
 def edges_results(request, pk):
     """Return edges results data """
+    # roadnetwork = RoadNetwork.objects.get(pk=pk)
+
     run = Run.objects.get(id=pk)
-    # network_id = run.road_network_id
+    # network_id = run.network_id
     edges = EdgeResults.objects.select_related(
         'run').filter(run=run)
     """edges = str(list(edges.values())).replace(

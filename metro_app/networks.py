@@ -437,10 +437,12 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
     # Convert back to the CRS84 projection, required by Folium.
     edges_gdf.to_crs(crs=degree_crs, inplace=True)
-    print(edges_gdf.head())
+
+    # Create and save edges.geojson file
     directory = os.path.join(
         settings.TEMPLATES[0]['DIRS'][0],
         'visualization') + "/" + roadnetwork.name
+    os.makedirs(directory)
     edges_gdf.to_file(directory + "/edges.geojson",
                       driver='GeoJSON')
     print("Finish")
