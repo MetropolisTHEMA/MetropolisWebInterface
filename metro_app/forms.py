@@ -43,7 +43,7 @@ class RoadNetworkForm(forms.ModelForm):
 class RoadTypeForm(forms.ModelForm):
     class Meta:
         model = RoadType
-        fields = '__all__'
+        exclude = ('network', )  # added comma to make this a tuple
         widgets = {
             'color': forms.TextInput(attrs={'type': 'color'}),
         }

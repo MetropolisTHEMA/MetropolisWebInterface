@@ -328,8 +328,8 @@ class RoadType(models.Model):
         (LINEAR, 'Linear'),
     )
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    road_type_id = models.PositiveIntegerField(db_index=True,
-                            help_text='Id of the road type (must be unique)')
+    road_type_id = models.PositiveIntegerField(
+        db_index=True, help_text='Id of the road type (must be unique)')
     name = models.CharField(max_length=80, blank=True,
                             help_text='Name of the road type')
     congestion = models.SmallIntegerField(

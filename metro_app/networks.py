@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.gis.geos import fromstr
 from django.contrib.gis.geos import GEOSGeometry, LineString
+from shapely import geometry as geom
 from django.shortcuts import render, redirect
 import json
 import csv

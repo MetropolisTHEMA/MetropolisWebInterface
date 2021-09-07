@@ -48,7 +48,7 @@
 <div class="row-100">
   <div class="col-md-2 h-100" id="destinationDiv">
     <div id="divToMove">
-      <h5><a href="">Go Back</a></h5>
+      <h5><a href="{% url 'network_details' roadnetwork.pk %}">Go Back</a></h5>
       <hr>
       <div class="form-group w-75 mx-auto">
         <label for="zoneSelector" class="sr-only">Zones</label>
@@ -63,12 +63,11 @@
       <div class="form-group w-75 mx-auto">
         <label for="linkSelector" class="sr-only">Links</label>
         <select id="linkSelector" class="form-control" onchange="linkDropDown();">
-          <option value="default">Road type</option>
           <optgroup label="Input">
+            <option value="default">Road type</option>
             <option value="lanes">Lanes</option>
             <option value="length">Length</option>
             <option value="speed">Speed</option>
-            <option value="capacity">Capacity</option>
           </optgroup>
 
           <optgroup label="Ouput">
@@ -96,6 +95,12 @@
   </div>
 </div>
 
+/* The follow code is for getting a network type. ie abstract or real*/
+{{ roadnetwork.simple|json_script:'networktype' }}
+<script>
+const network_type = JSON.parse(document.getElementById('networktype').textContent);
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 
@@ -112,6 +117,5 @@
 <script src="{% static '/js/map.js' %}"></script>
 <script src="{% static '/js/linklegend.js' %}"></script>
 <script src="{% static '/js/dropdown.js' %}"></script>
-<!--- script src="{% static '/js/time_dimension.js' %}"></script --->
 
 {% endblock %}

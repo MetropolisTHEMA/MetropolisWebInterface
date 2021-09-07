@@ -112,7 +112,8 @@ from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
 import os
 from django.conf import settings
-import json
+# import json
+
 
 # Create your views here.
 def index(request):

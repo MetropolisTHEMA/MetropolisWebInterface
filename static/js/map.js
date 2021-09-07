@@ -47,9 +47,13 @@ var map = L.map('map', {
   preferCanvas: true
 }).setView([48.833, 2.333], 9);
 
-L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+var darkMatter = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
   attribution: 'Dark matter'
-}).addTo(map);
+})
+
+if(network_type==false){
+  map.addLayer(darkMatter)
+}
 
 var cartoDBLayer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors, © CartoDB'
