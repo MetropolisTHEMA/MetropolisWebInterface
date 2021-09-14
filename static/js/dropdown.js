@@ -33,9 +33,10 @@ function linkDropDown() {
     var currentLayer = edges_data_api.find(
       element => element.edge_id === layer.feature.properties.edge_id)
     layer.bindTooltip(
+      "name: " +currentLayer.name + "<br>" +
       "lanes: " + currentLayer.lanes + "<br>" +
       "speed: " + currentLayer.speed + "<br>" +
-      "length: " + currentLayer.length
+      "length: " + currentLayer.length.toFixed(2)
     )
   });
 
@@ -45,6 +46,15 @@ function linkDropDown() {
       layer.setStyle({
         fillColor: layer.feature.properties.color,
         color: layer.feature.properties.color
+      })
+      layer.on('mouseover', function(e) {
+        layer.setStyle({
+          color: 'blue',
+          fillColor: 'blue'
+        })
+      })
+      layer.on('mouseout', function(e){
+        geojsonLayer.resetStyle(e.target)
       })
     }) // End geojson.eachLayer
   }
@@ -65,14 +75,14 @@ function linkDropDown() {
           color: 'green',
           fillColor: 'green'
         })
-      });
+      })
       layer.on('mouseout', function(e) {
         layer.setStyle({
           color: lanes_color,
           fillColor: lanes_color
         })
-      });
-    });
+      })
+    })
   }
 
   else if (linkSelector.value == "length") {

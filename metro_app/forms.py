@@ -29,6 +29,7 @@ class RoadNetworkForm(forms.ModelForm):
     class Meta:
         model = RoadNetwork
         fields = [
+            'srid',
             'simple',
             'name',
             'comment',

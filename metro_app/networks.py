@@ -365,85 +365,85 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
     values = edges.values_list(*columns)
     edges_df = pd.DataFrame.from_records(values, columns=columns)
 
-    # Retrieve all Road type of a network as DataFrame
-    rtypes = RoadType.objects.filter(network=roadnetwork)
-    columns = ['id', 'default_lanes', 'color']
-    values = rtypes.values_list(*columns)
-    rtypes_df = pd.DataFrame.from_records(values, columns=columns)
+    if edges.count() == 0 or nodes.count() == 0:
+        return redirect('network_details', roadnetwork.pk)
+    else:
+        # Retrieve all Road type of a network as DataFrame
+        rtypes = RoadType.objects.filter(network=roadnetwork)
+        columns = ['id', 'default_lanes', 'color']
+        values = rtypes.values_list(*columns)
+        rtypes_df = pd.DataFrame.from_records(values, columns=columns)
 
-    if rtypes_df['color'].isna().any():
-        # Set a default color from a matplotlib colormap.
-        cmap = plt.get_cmap('Set1')
-        for key, row in rtypes_df.iterrows():
-            if not row['color']:
-                rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
+        if rtypes_df['color'].isna().any():
+            # Set a default color from a matplotlib colormap.
+            cmap = plt.get_cmap('Set1')
+            for key, row in rtypes_df.iterrows():
+                if not row['color']:
+                    rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
 
-    edges_df = edges_df.merge(rtypes_df, left_on='road_type', right_on='id')
-    # Get the number of lanes for edges with NULL values from the default
-    # number of lanes of the corresponding road type.
-    edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = edges_df['default_lanes']
-    edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = 1
-    edges_df.loc[edges_df['lanes'] <= 0, 'lanes'] = 1
+        edges_df = edges_df.merge(rtypes_df, left_on='road_type', right_on='id')
+        # Get the number of lanes for edges with NULL values from the default
+        # number of lanes of the corresponding road type.
+        edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = edges_df['default_lanes']
+        edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = 1
+        edges_df.loc[edges_df['lanes'] <= 0, 'lanes'] = 1
 
-    edges_df['geometry'] = gpd.GeoSeries.from_wkt(
-        edges_df['geometry'].apply(lambda x: x.wkt))
+        edges_df['geometry'] = gpd.GeoSeries.from_wkt(
+            edges_df['geometry'].apply(lambda x: x.wkt))
 
-    edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
-    # As node radius and edge width are expressed in meters, we need to convert
-    # the geometries in a metric projection.
-    edges_gdf.to_crs(crs=meter_crs, inplace=True)
+        edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
+        # As node radius and edge width are expressed in meters, we need to convert
+        # the geometries in a metric projection.
+        edges_gdf.to_crs(crs=meter_crs, inplace=True)
 
-    # Discard NULL geometries.
-    edges_gdf = edges_gdf.loc[edges_gdf.geometry.length > 0]
-    # Adjust the max_lanes value if it is larger than the maximum number of
-    # lanes in the edges of the road network.
-    max_lanes = min(max_lanes, edges_gdf['lanes'].max())
-    # Constrain edge width by bounding the number of lanes of the edges.
-    edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
+        # Discard NULL geometries.
+        edges_gdf = edges_gdf.loc[edges_gdf.geometry.length > 0]
+        # Adjust the max_lanes value if it is larger than the maximum number of
+        # lanes in the edges of the road network.
+        max_lanes = min(max_lanes, edges_gdf['lanes'].max())
+        # Constrain edge width by bounding the number of lanes of the edges.
+        edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
 
-    if roadnetwork.simple:
-        # The node radius is implied from the characteristics of the network,
-        # i.e., the more widespread the nodes, the larger the radius.
-        node_radius = .1 * edges_gdf.geometry.length.min()
-        lane_width = node_radius * (edge_width_ratio / 2) / max_lanes
+        if roadnetwork.simple:
+            # The node radius is implied from the characteristics of the network,
+            # i.e., the more widespread the nodes, the larger the radius.
+            node_radius = .1 * edges_gdf.geometry.length.min()
+            lane_width = node_radius * (edge_width_ratio / 2) / max_lanes
 
-    # The width of the edges is proportional to their number of lanes.
-    edges_gdf['width'] = lane_width * edges_gdf['lanes']
+        # The width of the edges is proportional to their number of lanes.
+        edges_gdf['width'] = lane_width * edges_gdf['lanes']
 
-    # Identify oneway edges.
-    edges_gdf[['source', 'target']] = edges_gdf[
-        ['source', 'target']].astype(str)
-    edges_gdf['oneway'] = (edges_gdf.source + '_' + edges_gdf.target).isin(
-                        edges_gdf.target + '_' + edges_gdf.source)
+        # Identify oneway edges.
+        edges_gdf[['source', 'target']] = edges_gdf[
+            ['source', 'target']].astype(str)
+        edges_gdf['oneway'] = (edges_gdf.source + '_' + edges_gdf.target).isin(
+                            edges_gdf.target + '_' + edges_gdf.source)
 
-    # Replace the geometry of the edges with an offset polygon of corresponding
-    # width. time : +16s
+        # Replace the geometry of the edges with an offset polygon of corresponding
+        # width. time : +16s
+        col_list = ['geometry', 'oneway', 'width']
+        edges_gdf['geometry'] = edges_gdf[col_list].apply(
+            lambda row: get_offset_polygon(
+                linestring=row['geometry'],
+                width=row['width'],
+                drive_right=True,
+                oneway=row['oneway']
+            ),
+            axis=1,
+        )
+        edges_gdf = edges_gdf.sort_values(
+            by="source", ascending=True, ignore_index=True)
 
-    col_list = ['geometry', 'oneway', 'width']
-    edges_gdf['geometry'] = edges_gdf[col_list].apply(
-        lambda row: get_offset_polygon(
-            linestring=row['geometry'],
-            width=row['width'],
-            drive_right=True,
-            oneway=row['oneway']
-        ),
-        axis=1,
-    )
-    edges_gdf = edges_gdf.sort_values(
-        by="source", ascending=True, ignore_index=True)
+        edges_gdf.drop(
+            columns=['source', 'target', 'id', 'road_type', 'lanes',
+                     'default_lanes', 'width', 'oneway'], inplace=True)
 
-    edges_gdf.drop(
-        columns=['source', 'target', 'id', 'road_type', 'lanes',
-                 'default_lanes', 'width', 'oneway'], inplace=True)
+        # Convert back to the CRS84 projection, required by Folium.
+        edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
-    # Convert back to the CRS84 projection, required by Folium.
-    edges_gdf.to_crs(crs=degree_crs, inplace=True)
-
-    # Create and save edges.geojson file
-    directory = os.path.join(
-        settings.TEMPLATES[0]['DIRS'][0],
-        'visualization') + "/" + roadnetwork.name
-    os.makedirs(directory)
-    edges_gdf.to_file(directory + "/edges.geojson",
-                      driver='GeoJSON')
-    print("Finish")
+        # Create and save edges.geojson file
+        directory = os.path.join(
+            settings.TEMPLATES[0]['DIRS'][0],
+            'visualization') + "/" + roadnetwork.name
+        os.makedirs(directory)
+        edges_gdf.to_file(directory + "/edges.geojson", driver='GeoJSON')

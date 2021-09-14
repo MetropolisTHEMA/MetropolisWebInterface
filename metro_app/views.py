@@ -105,13 +105,15 @@ Django Views Modules
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-# from django.contrib import messages
+from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization
 import os
 from django.conf import settings
+from pyproj import CRS
+from pyproj.exceptions import CRSError
 # import json
 
 
@@ -202,11 +204,18 @@ def create_network(request, pk):
     current_project = Project.objects.get(id=pk)
     form = RoadNetworkForm(initial={'project': current_project})
     if request.method == 'POST':
-        network = RoadNetwork(project=current_project)
-        form = RoadNetworkForm(request.POST, instance=network)
-        if form.is_valid():
-            form.save()
-            return redirect('project_details', current_project.pk)
+        srid = int(request.POST.get('srid'))
+        try:
+            CRS.from_user_input(srid)
+        except CRSError:
+            messages.warning(request, 'Invalid Coordinates Reference System')
+            return redirect('create_network', current_project.pk)
+        else:
+            network = RoadNetwork(project=current_project)
+            form = RoadNetworkForm(request.POST, instance=network)
+            if form.is_valid():
+                form.save()
+                return redirect('project_details', current_project.pk)
 
     context = {'form': form}
     return render(request, 'views/roadnetwork_form.html', context)
@@ -215,8 +224,10 @@ def create_network(request, pk):
 def network_details(request, pk):
 
     roadnetwork = RoadNetwork.objects.get(id=pk)
-    total_nodes = Node.objects.filter(network_id=pk).count()
-    total_edges = Edge.objects.filter(network_id=pk).count()
+    total_nodes = Node.objects.select_related(
+        'network)').filter(network_id=pk).count()
+    total_edges = Edge.objects.select_related(
+        'network').filter(network_id=pk).count()
 
     context = {
         'roadnetwork': roadnetwork,
@@ -232,9 +243,16 @@ def update_network(request, pk):
     form = RoadNetworkForm(instance=roadnetwork)
     if request.method == 'POST':
         form = RoadNetworkForm(request.POST, instance=roadnetwork)
-        if form.is_valid():
-            form.save()
-            return redirect('project_details', roadnetwork.project.pk)
+        srid = int(request.POST.get('srid'))
+        try:
+            CRS.from_user_input(srid)
+        except CRSError:
+            messages.warning(request, 'Invalid Coordinates Reference System')
+            return redirect('update_network', roadnetwork.pk)
+        else:
+            if form.is_valid():
+                form.save()
+                return redirect('project_details', roadnetwork.project.pk)
 
     context = {'form': form}
     return render(request, 'update_network.html', context)
@@ -252,6 +270,10 @@ def delete_network(request, pk):
 
 def visualization(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
+    total_nodes = Node.objects.select_related(
+        'network)').filter(network_id=pk).count()
+    total_edges = Edge.objects.select_related(
+        'network').filter(network_id=pk).count()
     context = {"roadnetwork": roadnetwork,
                }
     directory = os.path.join(
@@ -260,7 +282,13 @@ def visualization(request, pk):
     data_full_path = directory + "/edges.geojson"
     if not os.path.exists(data_full_path):
         make_network_visualization(pk)
-    return render(request, 'index-visualization.html', context)
+
+    if total_edges == 0 or total_nodes == 0:
+        messages.warning(request, "Edges are not uploaded !")
+        return redirect('network_details', roadnetwork.pk)
+    else:
+        return render(request, 'index-visualization.html', context)
+
 
 # ........................................................................... #
 #                      VIEW OF CREATING A ROAD TYPE                           #

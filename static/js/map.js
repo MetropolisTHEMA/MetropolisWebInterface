@@ -6,9 +6,6 @@ function highlightFeature(e) {
     weight: 2,
     color: 'yellow',
     fillColor: 'yellow',
-    dashArray: '',
-    opacity: 0.5,
-    fillOpacity: 3
   });
 
   if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
@@ -17,15 +14,8 @@ function highlightFeature(e) {
 }
 
 function resetHighlight(e) {
-  //geojson.resetStyle(e.target);
-  let layer = e.target;
-  layer.setStyle({
-    color: "#ff7800",
-    fillColor: "#ff7800",
-    weight: 3,
-    opacity: 0.5,
-    fillOpacity: 0.5
-  });
+  geojsonLayer.resetStyle(e.target);
+
 }
 
 function onEachFeature(feature, layer) {
@@ -42,9 +32,11 @@ geojsonLayer = L.geoJSON();
 function zoomToFeature(e) {
   map.fitBounds(e.target.getBounds());
 }
+var roads = L.layerGroup();
 
 var map = L.map('map', {
-  preferCanvas: true
+  preferCanvas: true,
+  layers: roads
 }).setView([48.833, 2.333], 9);
 
 var darkMatter = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
@@ -54,22 +46,13 @@ var darkMatter = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/
 if(network_type==false){
   map.addLayer(darkMatter)
 }
-
-var cartoDBLayer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors, © CartoDB'
-});
-
-var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors',
-  maxZoom: 20
-});
 //map.addLayer(osmLayer);
 //map.addLayer(CartoDBLayer)
 
 function style(feature) {
   return {
-    color: feature.properties.color, // "#ff7800",
-    fillColor: feature.properties.color, // "#ff7800",
+    color: feature.properties.color,
+    fillColor: feature.properties.color,
     weight: 3,
     opacity: 0.5,
     fillOpacity: 0.5
@@ -81,16 +64,9 @@ function style(feature) {
     maxZoom: 20,
     tolerance: 3,
     debug: 0,
-    style: {
-      color: "#ff7800",
-      fillColor: "#ff7800",
-      weight: 3,
-      opacity: 0.5,
-      fillOpacity: 0.5
-    },
+    style: style
   };
 
-Roads = L.layerGroup();
 
 /*current_url  = window.location.href // document.url
 network_id = parseInt(current_url.split('/')[5]) // Get networ id
@@ -109,12 +85,14 @@ const request = async () => {
     onEachFeature: onEachFeature
   }).addTo(map)
   map.fitBounds(geojsonLayer.getBounds())
-  geojsonLayer.addTo(Roads)
+  geojsonLayer.addTo(roads)
 
   /*geojsonLayer = L.geoJSON.vt(data, options).addTo(map);
   geojsonLayer.addTo(Roads)*/
+  return data
 }
 request();
+//request().then(data => console.log(data))
 
 let stamenLite = L.tileLayer('//{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png', {
   attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> — Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
@@ -140,22 +118,33 @@ let stamenColor = L.tileLayer('//{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png'
   label: 'Watercolor'
 });
 
+var cartoDBLayer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors, © CartoDB'
+});
+
+var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 20
+});
+
+var darkTheme = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+  attribution: 'Dark matter'
+})
+
 var baseLayers = {
   "cartoDBLayer": cartoDBLayer,
   "osmLayer": osmLayer,
   "stamenLite": stamenLite,
   "stamenToner": stamenToner,
   "stamenColor": stamenColor,
-
+  "darkTheme": darkTheme
 }
-
 var overlays = {
-  "Roads": Roads
+  "Roads": roads,
 };
 
-L.control.layers(
-  baseLayers,
-  overlays, {
+L.control.layers(  baseLayers,  overlays,
+  {
     "autoZIndex": true,
     "collapsed": true,
     "position": "topright"

@@ -50,19 +50,19 @@ INSTALLED_APPS = [
     'api',
 
     # 3rd party app
-    'crispy_forms', # pip install django-crispy-forms
+    'crispy_forms',  # pip install django-crispy-forms
     'django.contrib.gis',
     'colorfield',          # from django-colorfield
     'rest_framework',
     'drf_dynamic_fields',
     'django_filters',
     # For javascript api
-    'corsheaders', # pip install django-cors-headers
-                  # Access-Control-Allow-Origin' header
+    'corsheaders',  # pip install django-cors-headers
+    # Access-Control-Allow-Origin' header
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # django core header
+    'corsheaders.middleware.CorsMiddleware',  # django core header
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -168,7 +168,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-## Cors (django core header)
+# Cors (django core header)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
 ]
