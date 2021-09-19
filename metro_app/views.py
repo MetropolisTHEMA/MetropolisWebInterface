@@ -109,7 +109,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
-from .networks import make_network_visualization
+from .networks import make_network_visualization, get_network_directory
 import os
 from django.conf import settings
 from pyproj import CRS
@@ -276,10 +276,8 @@ def visualization(request, pk):
         'network').filter(network_id=pk).count()
     context = {"roadnetwork": roadnetwork,
                }
-    directory = os.path.join(
-        settings.TEMPLATES[0]['DIRS'][0],
-        'visualization') + "/" + roadnetwork.name
-    data_full_path = directory + "/edges.geojson"
+    directory = get_network_directory(roadnetwork)
+    data_full_path = os.path.join(directory, "edges.geojson")
     if not os.path.exists(data_full_path):
         make_network_visualization(pk)
 
@@ -317,10 +315,9 @@ def create_roadtype(request, pk):
 
 def edges_point_geojson(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
-    directory = os.path.join(settings.TEMPLATES[0]['DIRS'][0],
-                             'visualization') + "/" + roadnetwork.name
-    url = directory + "/edges.geojson"
-    with open(url) as edges:
+    directory = get_network_directory(roadnetwork)
+    filename = os.path.join(directory, "edges.geojson")
+    with open(filename) as edges:
         # edges = json.load(edges)
         # edges=json.dumps(edges)
         return HttpResponse(edges, content_type="application/json")
