@@ -30,6 +30,11 @@ CONGESTION_TYPES = {
     'linear': RoadType.LINEAR,
 }
 
+
+def get_network_directory(roadnetwork):
+    return os.path.join(
+        settings.BASE_DIR, 'visualization', str(roadnetwork.id))
+
 # ............................................................................#
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 # ............................................................................#
@@ -419,7 +424,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         # Identify oneway edges.
         edges_gdf[['source', 'target']] = edges_gdf[
             ['source', 'target']].astype(str)
-        edges_gdf['oneway'] = (edges_gdf.source + '_' + edges_gdf.target).isin(
+        edges_gdf['oneway'] = ~(edges_gdf.source + '_' + edges_gdf.target).isin(
                             edges_gdf.target + '_' + edges_gdf.source)
 
         # Replace the geometry of the edges with an offset polygon of
@@ -445,8 +450,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
         # Create and save edges.geojson file
-        directory = os.path.join(
-            settings.TEMPLATES[0]['DIRS'][0],
-            'visualization') + "/" + roadnetwork.name
-        os.makedirs(directory)
-        edges_gdf.to_file(directory + "/edges.geojson", driver='GeoJSON')
+        directory = get_network_directory(roadnetwork)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        edges_gdf.to_file(
+            os.path.join(directory, "edges.geojson"), driver='GeoJSON')
