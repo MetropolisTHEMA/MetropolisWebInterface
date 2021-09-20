@@ -1,7 +1,12 @@
-function linkDropDown() {
+// Displaying layers (links) information whem mouse hover
+var edges_data_api;
+
+async function linkDropDown() {
   // Remove any previous legend
   d3.select('#linkLegendSvg').remove();
 
+  const edges_data_api = await request()
+  
   /* Lanes contants variables*/
   var lanes_array = edges_data_api.map(element => element.lanes);
   var lanes_max = d3.max(lanes_array);
@@ -9,7 +14,6 @@ function linkDropDown() {
   var lanes_colorscale = d3.scaleLinear().domain(d3.extent(lanes_array))
     .interpolate(d3.interpolateHcl)
     .range([d3.rgb('#FFF500'), d3.rgb("#FF0000")]);
-
 
   /* Length constants variables*/
   var length_array = edges_data_api.map(element => element.length);
@@ -28,18 +32,6 @@ function linkDropDown() {
   var speed_max = d3.max(speed_array);
   var speed_min = d3.min(speed_array);
 
-// Displaying layers (links) information whem mouse hover
-  geojsonLayer.eachLayer(function(layer) {
-    var currentLayer = edges_data_api.find(
-      element => element.edge_id === layer.feature.properties.edge_id)
-    layer.bindTooltip(
-      "name: " +currentLayer.name + "<br>" +
-      "lanes: " + currentLayer.lanes + "<br>" +
-      "speed: " + currentLayer.speed + "<br>" +
-      "length: " + currentLayer.length.toFixed(2)
-    )
-  });
-
   var linkSelector = document.getElementById('linkSelector')
   if (linkSelector.value == "default") {
     geojsonLayer.eachLayer(function(layer) {
@@ -49,17 +41,15 @@ function linkDropDown() {
       })
       layer.on('mouseover', function(e) {
         layer.setStyle({
-          color: 'blue',
-          fillColor: 'blue'
+          color: 'cyan',
+          fillColor: 'cyan'
         })
       })
-      layer.on('mouseout', function(e){
+      layer.on('mouseout', function(e) {
         geojsonLayer.resetStyle(e.target)
       })
     }) // End geojson.eachLayer
-  }
-
-  else if (linkSelector.value == "lanes") {
+  } else if (linkSelector.value == "lanes") {
     drawLinkLegend(lanes_colorscale, lanes_min, lanes_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -72,8 +62,8 @@ function linkDropDown() {
 
       layer.on('mouseover', function(e) {
         layer.setStyle({
-          color: 'green',
-          fillColor: 'green'
+          color: 'cyan',
+          fillColor: 'cyan'
         })
       })
       layer.on('mouseout', function(e) {
@@ -83,9 +73,7 @@ function linkDropDown() {
         })
       })
     })
-  }
-
-  else if (linkSelector.value == "length") {
+  } else if (linkSelector.value == "length") {
     drawLinkLegend(length_colorscale, length_min, length_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -97,8 +85,8 @@ function linkDropDown() {
       });
       layer.on('mouseover', function(e) {
         layer.setStyle({
-          color: 'red',
-          fillColor: 'red'
+          color: 'cyan',
+          fillColor: 'cyan'
         })
       });
       layer.on('mouseout', function(e) {
@@ -108,9 +96,7 @@ function linkDropDown() {
         })
       });
     });
-  }
-
-  else if (linkSelector.value == "speed") {
+  } else if (linkSelector.value == "speed") {
     drawLinkLegend(speed_colorscale, speed_min, speed_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -122,8 +108,8 @@ function linkDropDown() {
       })
       layer.on('mouseover', function(e) {
         layer.setStyle({
-          color: 'red',
-          fillColor: 'red'
+          color: 'cyan',
+          fillColor: 'cyan'
         })
       });
       layer.on('mouseout', function(e) {
@@ -217,9 +203,7 @@ function linkDropDown() {
     var geojson = L.timeDimension.layer.geoJson(geojsonLayer);
     geojson.addTo(map);
     /*---  End Leaflet TimeDimension      ---*/
-  }
-
-  else if (linkSelector.value == "speed_output") {
+  } else if (linkSelector.value == "speed_output") {
     var currentLayer_speed_output;
     var speed_output_array = edges_results.map(object => object.speed);
     var speed_output_colorscale = d3.scaleLinear().domain(d3.extent(speed_output_array))

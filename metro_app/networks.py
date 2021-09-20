@@ -381,19 +381,22 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
                 if not row['color']:
                     rtypes_df.loc[key, 'color'] = mcolors.to_hex(cmap(key))
 
-        edges_df = edges_df.merge(rtypes_df, left_on='road_type', right_on='id')
+        edges_df = edges_df.merge(rtypes_df,
+                                  left_on='road_type', right_on='id')
         # Get the number of lanes for edges with NULL values from the default
         # number of lanes of the corresponding road type.
-        edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = edges_df['default_lanes']
+        edges_df.loc[
+            edges_df['lanes'].isna(), 'lanes'] = edges_df['default_lanes']
         edges_df.loc[edges_df['lanes'].isna(), 'lanes'] = 1
         edges_df.loc[edges_df['lanes'] <= 0, 'lanes'] = 1
 
         edges_df['geometry'] = gpd.GeoSeries.from_wkt(
             edges_df['geometry'].apply(lambda x: x.wkt))
 
-        edges_gdf = gpd.GeoDataFrame(edges_df, geometry='geometry', crs=data_crs)
-        # As node radius and edge width are expressed in meters, we need to convert
-        # the geometries in a metric projection.
+        edges_gdf = gpd.GeoDataFrame(edges_df,
+                                     geometry='geometry', crs=data_crs)
+        # As node radius and edge width are expressed in meters,
+        # we need to convert the geometries in a metric projection.
         edges_gdf.to_crs(crs=meter_crs, inplace=True)
 
         # Discard NULL geometries.
@@ -405,8 +408,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         edges_gdf['lanes'] = np.minimum(max_lanes, edges_gdf['lanes'])
 
         if roadnetwork.simple:
-            # The node radius is implied from the characteristics of the network,
-            # i.e., the more widespread the nodes, the larger the radius.
+            # The node radius is implied from the characteristics of the
+            # network i.e the more widespread the nodes, the larger the radius.
             node_radius = .1 * edges_gdf.geometry.length.min()
             lane_width = node_radius * (edge_width_ratio / 2) / max_lanes
 
@@ -419,8 +422,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         edges_gdf['oneway'] = (edges_gdf.source + '_' + edges_gdf.target).isin(
                             edges_gdf.target + '_' + edges_gdf.source)
 
-        # Replace the geometry of the edges with an offset polygon of corresponding
-        # width. time : +16s
+        # Replace the geometry of the edges with an offset polygon of
+        # corresponding width. time : +16s
         col_list = ['geometry', 'oneway', 'width']
         edges_gdf['geometry'] = edges_gdf[col_list].apply(
             lambda row: get_offset_polygon(

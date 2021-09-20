@@ -4,8 +4,8 @@ function highlightFeature(e) {
   var layer = e.target;
   layer.setStyle({
     weight: 2,
-    color: 'yellow',
-    fillColor: 'yellow',
+    color: 'cyan',
+    fillColor: 'cyan',
   });
 
   if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
@@ -51,7 +51,7 @@ if(network_type==false){
 
 function style(feature) {
   return {
-    color: feature.properties.color,
+  color: feature.properties.color,
     fillColor: feature.properties.color,
     weight: 3,
     opacity: 0.5,
@@ -73,11 +73,11 @@ network_id = parseInt(current_url.split('/')[5]) // Get networ id
 fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`)*/
 
 /* Fetching the saved file edges.geoson data (from python module
-  make_network_visualization) througth the api. */
-const request = async () => {
-  current_url = window.location.href
-  network_id = parseInt(current_url.split('/')[5])
+   make_network_visualization) througth the api. */
+current_url = window.location.href
+network_id = parseInt(current_url.split('/')[5])
 
+const request = async () => {
   const response = await fetch(`http://127.0.0.1:8000/network/${network_id}/edges.geojson/`);
   const data = await response.json();
   geojsonLayer = L.geoJSON(data["features"], {
@@ -89,10 +89,21 @@ const request = async () => {
 
   /*geojsonLayer = L.geoJSON.vt(data, options).addTo(map);
   geojsonLayer.addTo(Roads)*/
-  return data
+  const links = await fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`);
+  const linksdata = await links.json();
+  geojsonLayer.eachLayer(function(layer) {
+    let currentLayer = linksdata.find(
+      element => element.edge_id === layer.feature.properties.edge_id)
+    layer.bindTooltip(
+      "name: " + currentLayer.name + "<br>" +
+      "lanes: " + currentLayer.lanes + "<br>" +
+      "speed: " + currentLayer.speed + "<br>" +
+      "length: " + currentLayer.length.toFixed(2)
+    )
+  })
+  return linksdata
 }
 request();
-//request().then(data => console.log(data))
 
 let stamenLite = L.tileLayer('//{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png', {
   attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> — Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
