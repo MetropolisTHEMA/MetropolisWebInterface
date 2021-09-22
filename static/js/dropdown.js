@@ -1,12 +1,10 @@
 // Displaying layers (links) information whem mouse hover
-var edges_data_api;
-
 async function linkDropDown() {
   // Remove any previous legend
   d3.select('#linkLegendSvg').remove();
 
   const edges_data_api = await request()
-  
+
   /* Lanes contants variables*/
   var lanes_array = edges_data_api.map(element => element.lanes);
   var lanes_max = d3.max(lanes_array);
@@ -237,6 +235,4 @@ async function linkDropDown() {
       });
     });
   }
-
-
 }

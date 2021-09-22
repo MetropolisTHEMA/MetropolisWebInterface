@@ -368,6 +368,7 @@ class Node(models.Model):
     location = models.PointField()
 
     def __str__(self):
+        #return '{}- ({})'.format(self.name, self.node_id)
         return self.name or 'Node {}'.format(self.node_id)
 
     class Meta:

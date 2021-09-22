@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+
+{% block content %}
+<br>
+<div class="#">
+
+  <form class="form form-inline" method="get" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{filter.form}}
+    <button type="submit">Search</button>
+  </form>
+
+</div>
+<br>
+<div>
+    <!--- render_table prevent us doing a loop --->
+    {% render_table table 'django_tables2/bootstrap4.html' %}
+</div>
+
+{% endblock %}

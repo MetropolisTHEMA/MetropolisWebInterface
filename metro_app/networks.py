@@ -424,7 +424,8 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         # Identify oneway edges.
         edges_gdf[['source', 'target']] = edges_gdf[
             ['source', 'target']].astype(str)
-        edges_gdf['oneway'] = ~(edges_gdf.source + '_' + edges_gdf.target).isin(
+        edges_gdf['oneway'] = ~(edges_gdf.source + '_' +
+                                edges_gdf.target).isin(
                             edges_gdf.target + '_' + edges_gdf.source)
 
         # Replace the geometry of the edges with an offset polygon of

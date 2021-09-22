@@ -110,8 +110,9 @@ from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization, get_network_directory
+from .tables import EdgeTable
+from .filters import EdgeFilter
 import os
-from django.conf import settings
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 # import json
@@ -314,6 +315,10 @@ def create_roadtype(request, pk):
 
 
 def edges_point_geojson(request, pk):
+    """"
+    This module display a saved edge file as an api in order to be
+    able to us it as a javascript variable and map it
+    """
     roadnetwork = RoadNetwork.objects.get(id=pk)
     directory = get_network_directory(roadnetwork)
     filename = os.path.join(directory, "edges.geojson")
@@ -321,3 +326,15 @@ def edges_point_geojson(request, pk):
         # edges = json.load(edges)
         # edges=json.dumps(edges)
         return HttpResponse(edges, content_type="application/json")
+
+
+def edges_table(request, pk):
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    edges = Edge.objects.select_related().filter(network=roadnetwork)
+    filter = EdgeFilter(request.GET, queryset=edges)
+    table = EdgeTable(filter.qs)
+    table.paginate(page=request.GET.get("page", 1), per_page=14)
+    context = {"table": table,
+               "filter": filter,
+               }
+    return render(request, 'views/edges_table.html', context)
