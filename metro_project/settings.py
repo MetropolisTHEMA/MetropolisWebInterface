@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'drf_dynamic_fields',
     'django_filters',
     'django_tables2',
+    'bootstrap4',     # pip install django-bootstrap4
     'corsheaders',  # pip install django-cors-headers
                     # Access-Control-Allow-Origin' header
                     # For javascript api
@@ -196,4 +197,4 @@ LOGOUT_REDIRECT_URL = 'login'
 MESSAGE_LEVEL = message_constants.DEBUG
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 CRISPY_TEMPLATE_PACK = "bootstrap4"
-DJANGO_TABLES2_PAGE_RANGE = 10
+# DJANGO_TABLES2_PAGE_RANGE = 10

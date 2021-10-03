@@ -110,11 +110,12 @@ from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
 from .models import Node, Edge, Project, RoadNetwork, RoadType
 from .networks import make_network_visualization, get_network_directory
-from .tables import EdgeTable
-from .filters import EdgeFilter
+from .tables import EdgeTable, NodeTable, RoadTypeTable
+from .filters import EdgeFilter, NodeFilter, RoadTypeFilter
 import os
 from pyproj import CRS
 from pyproj.exceptions import CRSError
+from django_tables2 import RequestConfig
 # import json
 
 
@@ -329,12 +330,61 @@ def edges_point_geojson(request, pk):
 
 
 def edges_table(request, pk):
+    """
+    This function is for displaying database Edges table in front end UI.
+    Users can sort, filter and paginate through pages
+    """
     roadnetwork = RoadNetwork.objects.get(id=pk)
     edges = Edge.objects.select_related().filter(network=roadnetwork)
     filter = EdgeFilter(request.GET, queryset=edges)
     table = EdgeTable(filter.qs)
-    table.paginate(page=request.GET.get("page", 1), per_page=14)
-    context = {"table": table,
-               "filter": filter,
+    RequestConfig(request).configure(table)  # For sorting table column
+    table.paginate(page=request.GET.get("page", 1), per_page=15)
+
+    context = {
+        "table": table,
+        "filter": filter,
+        "roadnetwork": roadnetwork,
                }
+    return render(request, 'views/edges_table.html', context)
+
+
+def nodes_table(request, pk):
+    """
+    This function is for displaying database Node table in front end UI.
+    Users can sort, filter and paginate through pages
+    """
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    nodes = Node.objects.select_related().filter(network=roadnetwork)
+    filter = NodeFilter(request.GET, queryset=nodes)
+    table = NodeTable(filter.qs)
+    RequestConfig(request).configure(table)
+    # table.paginate(page=request.Get.get("page", 1), per_page=15)
+
+    context = {
+        "table": table,
+        "filter": filter,
+        "roadnetwork": roadnetwork,
+        # "current_path": request.get_full_path
+    }
+    return render(request, 'views/edges_table.html', context)
+
+
+def road_type_table(request, pk):
+    """
+    This function is for displaying database RoadType table in front end UI.
+    Users can sort, filter and paginate through pages
+    """
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    roadtype = RoadType.objects.select_related().filter(network=roadnetwork)
+    filter = RoadTypeFilter(request.GET, queryset=roadtype)
+    table = RoadTypeTable(filter.qs)
+    RequestConfig(request).configure(table)
+    # table.paginate(page=request.Get.get("page", 1), per_page=15)
+
+    context = {
+        "table": table,
+        "filter": filter,
+        "roadnetwork": roadnetwork,
+    }
     return render(request, 'views/edges_table.html', context)

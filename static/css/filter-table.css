@@ -1,0 +1,29 @@
+.filter{
+  position: absolute;
+  right: 0px;
+  margin: 10px;
+}
+
+.filter input, button{
+  border: 3px solid #ccc;
+}
+
+.col-2{
+  width: 285px;
+
+}
+
+.table th{
+  background-color: #212F3C;
+  color:white;
+}
+
+.table th a{
+  color:white;
+  text-decoration: none;
+}
+
+h5 a{
+  text-decoration: none;
+  color: black;
+}

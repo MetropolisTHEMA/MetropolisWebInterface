@@ -342,7 +342,8 @@ class RoadType(models.Model):
     color = ColorField(null=True, blank=True)
 
     def __str__(self):
-        return self.name or 'Roadtype {}'.format(self.road_type_id)
+        return '{} - ({})'.format(self.road_type_id, self.name)
+        # return self.name or 'Roadtype {}'.format(self.road_type_id)
 
     class Meta:
         db_table = 'RoadType'
@@ -368,8 +369,8 @@ class Node(models.Model):
     location = models.PointField()
 
     def __str__(self):
-        #return '{}- ({})'.format(self.name, self.node_id)
-        return self.name or 'Node {}'.format(self.node_id)
+        return '{} - ({})'.format(self.node_id, self.name)
+        # return self.name or 'Node {}'.format(self.node_id)
 
     class Meta:
         db_table = 'Node'
@@ -407,10 +408,12 @@ class Edge(models.Model):
     """
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
     source = models.ForeignKey(Node, related_name='source',
+                               verbose_name='from',
                                on_delete=models.CASCADE,
                                help_text='Source node of the edge',
                                )
     target = models.ForeignKey(Node, related_name='target',
+                               verbose_name='to',
                                on_delete=models.CASCADE,
                                help_text='Target node of the edge',
                                )

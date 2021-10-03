@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import (create_project, create_network, create_roadtype,
                     project_details, update_network, update_project,
-                    delete_project, network_details, index, edges_table,
-                    delete_network, visualization, edges_point_geojson)
+                    delete_project, network_details, index,
+                    delete_network, visualization, edges_point_geojson,
+                    edges_table, nodes_table, road_type_table)
 
 from .networks import (upload_edge, upload_node, upload_road_type)
 from .metrosim import upload_edges_results
@@ -26,5 +27,8 @@ urlpatterns = [
          ),
     path('network/<str:pk>/edges.geojson/', edges_point_geojson),
     path('metrosim/<str:pk>/upload_edges_results/', upload_edges_results),
-    path('test/<str:pk>/edges/', edges_table),
+    path('table/network/<str:pk>/edges/', edges_table, name='edges'),
+    path('table/network/<str:pk>/nodes/', nodes_table, name='nodes'),
+    path('table/network/<str:pk>/roadtype/', road_type_table,
+         name='roadtable'),
 ]
