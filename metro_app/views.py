@@ -341,10 +341,14 @@ def edges_table(request, pk):
     RequestConfig(request).configure(table)  # For sorting table column
     table.paginate(page=request.GET.get("page", 1), per_page=15)
 
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
     context = {
         "table": table,
         "filter": filter,
         "roadnetwork": roadnetwork,
+        "network_attribute": network_attribute
                }
     return render(request, 'views/edges_table.html', context)
 
@@ -361,11 +365,14 @@ def nodes_table(request, pk):
     RequestConfig(request).configure(table)
     # table.paginate(page=request.Get.get("page", 1), per_page=15)
 
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
     context = {
         "table": table,
         "filter": filter,
         "roadnetwork": roadnetwork,
-        # "current_path": request.get_full_path
+        "network_attribute": network_attribute
     }
     return render(request, 'views/edges_table.html', context)
 
@@ -382,9 +389,13 @@ def road_type_table(request, pk):
     RequestConfig(request).configure(table)
     # table.paginate(page=request.Get.get("page", 1), per_page=15)
 
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
     context = {
         "table": table,
         "filter": filter,
         "roadnetwork": roadnetwork,
+        "network_attribute": network_attribute
     }
     return render(request, 'views/edges_table.html', context)
