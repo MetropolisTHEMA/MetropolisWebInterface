@@ -41,4 +41,7 @@ class RoadTypeTable(tables.Table):
 
     class Meta:
         model = RoadType
-        fields = ('road_type_id', 'name', 'congestion', 'speed')
+        fields = ('road_type_id', 'name', 'congestion',
+                  'default_speed', 'default_lanes',
+                  'default_param1', 'default_param2',
+                  'default_param3', 'color')
