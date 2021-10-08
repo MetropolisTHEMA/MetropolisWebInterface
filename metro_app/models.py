@@ -483,11 +483,82 @@ class Population(models.Model):
         db_table = 'Population'
 
 
+class ZoneSet(models.Model):
+    """Set of zones.
+
+    :project Project: Project the ZoneSet instance belongs to.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :srid str: Spatial Reference System Identifier used for the coordinates of
+     the zones.
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the ZoneSet.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    locked = models.BooleanField(default=False)
+    srid = models.PositiveIntegerField(
+        default=4326,
+        help_text=(
+            'Spatial Reference System Identifier used for the coordinates of'
+            ' the zones in the ZoneSet'
+        ),
+    )
+    name = models.CharField(max_length=80, help_text='Name of the ZoneSet')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the ZoneSet',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the ZoneSet')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'ZoneSet'
+
+
+class Zone(models.Model):
+    """Point or area representing the origin or destination of agents.
+
+    Zones can be defined in two ways:
+    - As a circle, with a given center and radius (zero for points).
+    - As an area defined by a polygon.
+
+    :zone_id int: Id of the zone, as used by the users in the import files.
+     Must be unique for a specific ODMatrix.
+    :zone_set ZoneSet: ZoneSet instance the zone belongs to.
+    :centroid Point: Center point of the circle or centroid of the area.
+    :geometry Polygon: Polygon representing the zone, if it is an area.
+    :radius float: Radius of the zone in meters, if it is a circle.
+    :name str: Name of the zone (default is '').
+    """
+    zone_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the zone')
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    centroid = models.PointField(null=True, blank=True)
+    geometry = models.PolygonField(null=True, blank=True)
+    radius = models.FloatField(null=True, blank=True)
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the zone')
+
+    def __str__(self):
+        return self.name or 'Zone {}'.format(self.zone_id)
+
+    class Meta:
+        db_table = 'Zone'
+
+
 class ODMatrix(models.Model):
     """Origin-destination matrix representing the origin and destination for a
     set of agents.
 
     :project Project: Project the ODMatrix instance belongs to.
+    :zone_set ZoneSet: ZoneSet used to describe the origins and destinations of
+     the matrix.
     :size int: Total number of agents in the origin-destination matrix.
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
@@ -497,6 +568,7 @@ class ODMatrix(models.Model):
     :date_created datetime.date: Creation date of the ODMatrix.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
     size = models.PositiveIntegerField(
         default=0, help_text='Total number of agents in the OD matrix')
     locked = models.BooleanField(default=False)
@@ -579,35 +651,6 @@ class PopulationSegment(models.Model):
 
     class Meta:
         db_table = 'PopulationSegment'
-
-
-class Zone(models.Model):
-    """Point or area representing the origin or destination of agents.
-
-    Zones can be defined in two ways:
-    - As a circle, with a given center and radius (zero for points).
-    - As an area defined by a polygon.
-
-    :zone_id int: Id of the zone, as used by the users in the import files.
-     Must be unique for a specific ODMatrix.
-    :centroid Point: Center point of the circle or centroid of the area.
-    :geometry Polygon: Polygon representing the zone, if it is an area.
-    :radius float: Radius of the zone in meters, if it is a circle.
-    :name str: Name of the zone (default is '').
-    """
-    zone_id = models.PositiveBigIntegerField(
-        db_index=True, help_text='Id of the zone')
-    centroid = models.PointField()
-    geometry = models.PolygonField(null=True, blank=True)
-    radius = models.FloatField(null=True, blank=True)
-    name = models.CharField(
-        max_length=80, blank=True, help_text='Name of the zone')
-
-    def __str__(self):
-        return self.name or 'Zone {}'.format(self.zone_id)
-
-    class Meta:
-        db_table = 'Zone'
 
 
 class ODPair(models.Model):
@@ -710,12 +753,12 @@ class Agent(models.Model):
         db_index=True, help_text='Id of the agent')
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     origin_node = models.ForeignKey(
-        Node, related_name='origin_node', on_delete=models.CASCADE,
-        help_text='Origin node of the agent',
+        Zone, related_name='origin_zone', on_delete=models.CASCADE,
+        help_text='Origin zone of the agent',
     )
     destination_node = models.ForeignKey(
-        Node, related_name='destination_node', on_delete=models.CASCADE,
-        help_text='Destination node of the agent',
+        Zone, related_name='destination_zone', on_delete=models.CASCADE,
+        help_text='Destination zone of the agent',
     )
     #  origin_stop = models.ForeignKey(
     #      PTStop, related_name='origin_stop', on_delete=models.CASCADE,
