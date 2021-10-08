@@ -87,6 +87,7 @@ entity "ODMatrix" as od_matrix {
   *id : integer
   --
   *project : integer <<FK>>
+  *zone_set : integer <<FK>>
   *size : integer
   *locked : boolean
   name : character
@@ -94,11 +95,23 @@ entity "ODMatrix" as od_matrix {
   tags : character
 }
 
+entity "ZoneSet" as zone_set {
+    *id : integer
+    --
+    *project : integer <<FK>>
+    *locked : boolean
+    *crs : character
+    *name : character
+    comment : character
+    tags : character
+}
+
 entity "Zone" as zone {
   *id : integer
   --
-  *centroid : point
+  *zone_set : integer <<FK>>
   geometry : polygon
+  centroid : point
   radius : real
   name : character
 }
@@ -132,8 +145,8 @@ entity "Agent" as agent {
   *id : integer
   --
   *population : integer <<FK>>
-  origin_node : integer <<FK>>
-  destination_node : integer <<FK>>
+  origin_zone : integer <<FK>>
+  destination_zone : integer <<FK>>
   origin_stop : integer <<FK>>
   destination_stop : integer <<FK>>
   *parameters : TBD
@@ -249,6 +262,7 @@ proj ||--o{ net
 proj ||--o{ param
 proj ||--o{ pref
 proj ||--o{ od_matrix
+proj ||--o{ zone_set
 run }o--o| net
 run }o--|| param
 run }o--|| pop
@@ -256,12 +270,13 @@ pop ||--|{ pop_seg
 pop_seg }o--|| od_matrix
 pop_seg }o--|| pref
 od_matrix ||--o{ od_pair
-od_matrix ||--o{ zone
+od_matrix }o--|| zone_set
+zone_set ||--o{ zone
 od_pair }o--|| zone
 od_pair }o--|| zone
 pop ||--o{ agent
-node ||--o{ agent
-node ||--o{ agent
+zone ||--o{ agent
+zone ||--o{ agent
 a_res }o--|| agent
 a_res }o--|| run
 a_path }o--|| agent
