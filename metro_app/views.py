@@ -107,11 +107,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm
-from .models import Node, Edge, Project, RoadNetwork, RoadType
+from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm
+from .models import Node, Edge, Project, RoadNetwork, RoadType, ZoneSet
 from .networks import make_network_visualization, get_network_directory
 from .tables import EdgeTable, NodeTable, RoadTypeTable
-from .filters import EdgeFilter, NodeFilter, RoadTypeFilter
+from .filters import EdgeFilter, NodeFilter, RoadTypeFilter, RoadNetworkFilter
 import os
 from pyproj import CRS
 from pyproj.exceptions import CRSError
@@ -185,11 +185,15 @@ def project_details(request, pk):
     project = Project.objects.get(id=pk)
     roadnetworks = project.roadnetwork_set.all()
     total_roadnetworks = roadnetworks.count()
+    zonesets = project.zoneset_set.all()
+    total_zonesets = zonesets.count()
 
     context = {
         'project': project,
         'roadnetworks': roadnetworks,
-        'total_roadnetworks': total_roadnetworks
+        'total_roadnetworks': total_roadnetworks,
+        'zonesets': zonesets,
+        'total_zonesets': total_zonesets,
     }
 
     return render(request, 'views/project_details.html', context)
@@ -399,3 +403,67 @@ def road_type_table(request, pk):
         "network_attribute": network_attribute
     }
     return render(request, 'views/edges_table.html', context)
+
+
+def create_zoneset(request, pk):
+    """A roadnetwork depends on a project. It
+     must be created inside the project"""
+
+    current_project = Project.objects.get(id=pk)
+    form = ZoneSetForm(initial={'project': current_project})
+    if request.method == 'POST':
+        srid = int(request.POST.get('srid'))
+        try:
+            CRS.from_user_input(srid)
+        except CRSError:
+            messages.warning(request, 'Invalid Coordinates Reference System')
+            return redirect('create_network', current_project.pk)
+        else:
+            zoneset = ZoneSet(project=current_project)
+            form = ZoneSetForm(request.POST, instance=zoneset)
+            if form.is_valid():
+                form.save()
+                return redirect('project_details', current_project.pk)
+
+    context = {'form': form}
+    return render(request, 'views/zoneset_form.html', context)
+
+
+def zoneset_details(request, pk):
+
+    zoneset = ZoneSet.objects.get(id=pk)
+    context = {
+        'zoneset': zoneset,
+    }
+
+    return render(request, 'views/zoneset_details.html', context)
+
+
+def update_zoneset(request, pk):
+    zoneset = ZoneSet.objects.get(id=pk)
+    form = ZoneSetForm(instance=zoneset)
+    if request.method == 'POST':
+        form = ZoneSetForm(request.POST, instance=zoneset)
+        srid = int(request.POST.get('srid'))
+        try:
+            CRS.from_user_input(srid)
+        except CRSError:
+            messages.warning(request, 'Invalid Coordinates Reference System')
+            return redirect('update_zoneset', zoneset.pk)
+        else:
+            if form.is_valid():
+                form.save()
+                return redirect('project_details', zoneset.project.pk)
+
+    context = {'form': form}
+    return render(request, 'update_network.html', context)
+
+
+def delete_zoneset(request, pk):
+    zoneset_to_delete = ZoneSet.objects.get(id=pk)
+    if request.method == 'POST':
+        zoneset_to_delete.delete()
+        return redirect('project_details', zoneset_to_delete.project.pk)
+
+    context = {'zoneset_to_delete': zoneset_to_delete}
+    return render(request, 'delete_zoneset.html', context)

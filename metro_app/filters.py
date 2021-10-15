@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import CharFilter, NumberFilter
-from .models import Edge, Node, RoadType
+from .models import Edge, Node, RoadType, RoadNetwork
 from django import forms
 
 
@@ -55,3 +55,9 @@ class RoadTypeFilter(django_filters.FilterSet):
     class Meta:
         model = RoadType
         fields = ['congestion', 'name']
+
+
+class RoadNetworkFilter(django_filters.FilterSet):
+    class Meta:
+        model = RoadNetwork
+        fields = ('name',)

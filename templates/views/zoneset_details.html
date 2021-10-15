@@ -1,8 +1,7 @@
-{% extends 'index_project_details.html' %}
+{% extends 'index_project_details.html' %}>
 {% block title %} Network {% endblock title %}
 
 {% block content %}
-
 {% block messages %}
 {% if messages %}
   <ul class="messages">
@@ -16,12 +15,11 @@
 <div class="row">
 	<div class="col-md">
 		<div class="card card-body">
-			<h5>Network name : {{roadnetwork.name}}</h5>
+			<h5>Zone set name : {{zoneset.name}}</h5>
 			<hr>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'roadtype' roadnetwork.pk %}">Create Road Type</a>
-      <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_road' roadnetwork.pk %}">Import Road Type</a>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_node' roadnetwork.pk %}">Import Node</a>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_edge' roadnetwork.pk %}">Import Edge</a>
+			<a class="btn btn-outline-info  btn-sm btn-block"
+        href="{% url 'create_zoneset' zoneset.project.pk %}">Create zone set</a>
+      <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_zone' zoneset.pk %}">Import zone set</a>
 		</div>
 	</div>
 
@@ -36,10 +34,10 @@
 
 	<div class="col-md">
 		<div class="card card-body">
-			<h5>Network attributes</h5>
+			<h5>Zone set attributes</h5>
 			<hr>
-			<p>Number of Nodes : {{total_nodes}}</p>
-			<p>Number of Edges : {{total_edges}} </p>
+			<p>Zone set tag : {{zoneset.tags}}</p>
+			<p>Zone set name : {{zoneset.comment}} </p>
 		</div>
 	</div>
 	<hr>
@@ -49,7 +47,7 @@
 	<p>Results ...</p>
 	<p>Results ...</p>
 	<p>Results ...</p>
-	<a href="{% url 'project_details' roadnetwork.project_id %}">Back</a>
+
 </div>
 
 <br>

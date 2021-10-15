@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+  <h3>Import zoneset file </h3>
+  <hr>
+  <p>Set of zones</p>
+
+  <h4>Attributes</h4>
+  <ul>
+    <li>project Project: Project the ZoneSet instance belongs to. </li>
+    <li>locked bool: If True, the instance cannot be modified (default is False).</li>
+    <li>srid str: Spatial Reference System Identifier used for the coordinates of
+     the zones.</li>
+    <li>name str: Name of the instance.</li>
+    <li>comment str: Description of the instance (default is '').</li>
+    <li>ags set of str: Tags describing the instance, used to search and filter
+     the instances.</li>
+    <li>date_created datetime.date: Creation date of the ZoneSet.</li>
+  </ul>
+
+  {% include 'networks/upload.html' %}
+{% endblock %}
+
+"""Set of zones.
+
+  :
+  """

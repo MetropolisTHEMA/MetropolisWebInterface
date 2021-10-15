@@ -14,7 +14,7 @@
 }
 
 .table th{
-  background-color: #212F3C;
+  background-color: #CC0000;
   color:white;
 }
 
@@ -26,4 +26,17 @@
 h5 a{
   text-decoration: none;
   color: black;
+}
+
+/* RoadNetwork filtering in project details page */
+.roadnetwork-filter input{
+  border: 3px solid #ccc;
+  width: 300px;
+}
+
+.roadnetwork-filter{
+  display: inline;
+}
+label[for="id_name"]{
+  display: none;
 }

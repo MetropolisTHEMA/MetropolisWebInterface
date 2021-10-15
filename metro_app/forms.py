@@ -1,5 +1,5 @@
 from django import forms
-from .models import (Project, RoadType, RoadNetwork)
+from .models import (Project, RoadType, RoadNetwork, ZoneSet)
 
 
 class NodeForm(forms.Form):
@@ -51,4 +51,20 @@ class RoadTypeForm(forms.ModelForm):
 
 
 class RoadTypeFileForm(forms.Form):
+    my_file = forms.FileField()
+
+
+class ZoneSetForm(forms.ModelForm):
+    class Meta:
+        model = ZoneSet
+        fields = [
+            'srid',
+            'name',
+            'comment',
+            'tags',
+            'locked',
+        ]
+
+
+class ZoneFileForm(forms.Form):
     my_file = forms.FileField()

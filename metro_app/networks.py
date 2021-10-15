@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.gis.geos import fromstr
-from django.contrib.gis.geos import GEOSGeometry, LineString
+from django.contrib.gis.geos import GEOSGeometry, LineString, Polygon
 from shapely import geometry as geom
 from django.shortcuts import render, redirect
 import json
@@ -11,8 +11,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from shapely.ops import split
-from .forms import NodeForm, EdgeForm, RoadTypeFileForm
-from .models import Node, Edge, RoadNetwork, RoadType
+from .forms import NodeForm, EdgeForm, RoadTypeFileForm, ZoneFileForm
+from .models import Node, Edge, RoadNetwork, RoadType, ZoneSet, Zone
 from django.db.utils import IntegrityError
 import os
 from django.conf import settings
@@ -456,3 +456,69 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
             os.makedirs(directory)
         edges_gdf.to_file(
             os.path.join(directory, "edges.geojson"), driver='GeoJSON')
+
+
+def upload_zone(request, pk):
+    template = "networks/zoneset.html"
+    list_zone_instance = []
+    zoneset = ZoneSet.objects.get(id=pk)
+    if request.method == 'POST':
+        # File must be included when creating the form
+        form = ZoneFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            # hey, if form is valid, get me back the data from the input form
+            datafile = request.FILES['my_file']  # get by name
+            # IF THE FILE UPLOADED IS A GEOJSON EXTENSION
+            if datafile.name.endswith('.geojson'):
+                objects = json.load(datafile)
+                for object in objects['features']:
+                    properties = object['properties']
+                    geometry = object['geometry']
+                    radius = properties.get('radius', 0.00)
+                    zone_id = properties['id']
+                    name = properties.get('name', 'No name')
+                    coordinates = geometry['coordinates']
+                    # geometry = GEOSGeometry(Polygon(coordinates,
+                    #                                srid=4326))
+                    # geometry = Polygon(
+                    #    [tuple(l) for l in coordinates[0]], srid=4326)
+                    if geometry['type'] == 'Polygon':
+                        geometry = Polygon(coordinates[0], srid=4326)
+                        centroid = geometry.centroid
+
+                    elif geometry['type'] == 'Point':
+                        centroid = fromstr(
+                            f'POINT({coordinates[0]} {coordinates[1]})',
+                            srid=4326)
+                        geometry = None
+
+                    else:
+                        pass
+
+                    zone_instance = Zone(zone_id=zone_id, centroid=centroid,
+                                         geometry=geometry, radius=radius,
+                                         name=name, zone_set=zoneset)
+                    list_zone_instance.append(zone_instance)
+
+                Zone.objects.bulk_create(list_zone_instance)
+                return redirect('zoneset_details', zoneset.pk)
+
+            elif datafile.name.endswith('.csv'):
+                datafile = datafile.read().decode('utf-8').splitlines()
+                datafile = csv.DictReader(datafile)
+                for row in datafile:
+                    lon, lat = row['x'], row['y']
+                    zone_instance = Zone(
+                        zone_id=row['id'],
+                        centroid=fromstr(f'POINT({lon} {lat})', srid=4326),
+                        geometry=None,
+                        radius=row.get('radius', 0.00),
+                        name=row.get('name', 'No name'),
+                        zone_set=zoneset
+                    )
+                    list_zone_instance.append(zone_instance)
+                Zone.objects.bulk_create(list_zone_instance)
+                return redirect('zoneset_details', zoneset.pk)
+    else:
+        form = ZoneFileForm()
+        return render(request, template, {'form': form})
