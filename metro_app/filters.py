@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import CharFilter, NumberFilter
-from .models import Edge, Node, RoadType, RoadNetwork
+from .models import Edge, Node, RoadType, RoadNetwork, Zone
 from django import forms
 
 
@@ -60,4 +60,16 @@ class RoadTypeFilter(django_filters.FilterSet):
 class RoadNetworkFilter(django_filters.FilterSet):
     class Meta:
         model = RoadNetwork
+        fields = ('name',)
+
+
+class ZoneFilter(django_filters.FilterSet):
+    name = CharFilter(field_name='name', lookup_expr='icontains',
+                      widget=forms.TextInput(attrs={
+                                  'class': 'form-control',
+                                  'placeholder': 'Name contains',
+                              }))
+
+    class Meta:
+        model = Zone
         fields = ('name',)

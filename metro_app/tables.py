@@ -1,5 +1,5 @@
 import django_tables2 as tables
-from .models import Edge, Node, RoadType
+from .models import Edge, Node, RoadType, Zone
 
 
 class EdgeTable(tables.Table):
@@ -45,3 +45,9 @@ class RoadTypeTable(tables.Table):
                   'default_speed', 'default_lanes',
                   'default_param1', 'default_param2',
                   'default_param3', 'color')
+
+
+class ZoneTable(tables.Table):
+    class Meta:
+        model = Zone
+        fields = ('zone_id', 'name', 'radius')

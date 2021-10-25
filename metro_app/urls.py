@@ -4,7 +4,8 @@ from .views import (create_project, create_network, create_roadtype,
                     delete_project, network_details, index,
                     delete_network, visualization, edges_point_geojson,
                     edges_table, nodes_table, road_type_table, create_zoneset,
-                    zoneset_details, update_zoneset, delete_zoneset)
+                    zoneset_details, update_zoneset, delete_zoneset,
+                    zones_table)
 
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone)
 from .metrosim import upload_edges_results
@@ -37,4 +38,5 @@ urlpatterns = [
     path('update_zoneset/<str:pk>/', update_zoneset, name='update_zoneset'),
     path('delete_zoneset/<str:pk>/', delete_zoneset, name='delete_zoneset'),
     path('zone/<str:pk>/upload_zone/', upload_zone, name='upload_zone'),
+    path('table/zoneset/<str:pk>/zones/', zones_table, name='zones'),
 ]

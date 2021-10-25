@@ -42,7 +42,7 @@ var map = L.map('map', {
 var darkMatter = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
   attribution: 'Dark matter'
 })
-
+/* abstract or real network */
 if(network_type==false){
   map.addLayer(darkMatter)
 }

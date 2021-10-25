@@ -14,7 +14,14 @@
     <div class="col-md-2">
       <div class="card card-body">
         <h5 style="text-align: left; margin: 1px;"><i class="fas fa-car"></i>
-          <a href="{% url 'network_details' roadnetwork.pk %}">{{roadnetwork}}</a></h5>
+          {% if roadnetwork %}
+            <a href="{% url 'network_details' roadnetwork.pk %}">{{roadnetwork}}</a>
+          {% endif %}
+          
+          {% if zoneset %}
+            <a href="{% url 'zoneset_details' zoneset.pk %}">{{zoneset}}</a>
+          {% endif %}
+        </h5>
       </div>
     </div>
 
@@ -32,8 +39,10 @@
                 <a role="button" class="btn btn-primary" href="{% url 'edges' roadnetwork.pk %}" >reset</a>
               {% elif network_attribute == 'nodes' %}
                 <a role="button" class="btn btn-primary" href="{% url 'nodes' roadnetwork.pk %}" >reset</a>
-              {% else %}
+              {% elif network_attribute == 'roadtype' %}
                 <a role="button" class="btn btn-primary" href="{% url 'roadtable' roadnetwork.pk %}" >reset</a>
+                {% else %}
+                  <a role="button" class="btn btn-primary" href="{% url 'zones' zoneset.pk %}" >reset</a>
               {% endif %}
 
             </div>

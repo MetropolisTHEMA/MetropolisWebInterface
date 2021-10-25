@@ -542,8 +542,8 @@ class Zone(models.Model):
     centroid = models.PointField(null=True, blank=True)
     geometry = models.PolygonField(null=True, blank=True)
     radius = models.FloatField(null=True, blank=True)
-    name = models.CharField(null=True,
-        max_length=80, blank=True, help_text='Name of the zone')
+    name = models.CharField(null=True, max_length=80, blank=True,
+                            help_text='Name of the zone')
 
     def __str__(self):
         return self.name or 'Zone {}'.format(self.zone_id)

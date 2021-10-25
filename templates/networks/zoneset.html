@@ -4,27 +4,25 @@
 
 {% block content %}
 
-  <h3>Import zoneset file </h3>
+  <h3>Import zone file </h3>
   <hr>
-  <p>Set of zones</p>
+  <h4>Attributes</h4><br>
+  <dfn><strong>Point</strong> or area representing the origin or destination of agents.
+    <strong>Zones</strong> can be defined in two ways :</dfn>
+    <ul>
+      <li>As a circle, with a given center and radius (zero for points).</li>
+      <li>As an area defined by a polygon.</li>
+    </ul>
 
-  <h4>Attributes</h4>
   <ul>
-    <li>project Project: Project the ZoneSet instance belongs to. </li>
-    <li>locked bool: If True, the instance cannot be modified (default is False).</li>
-    <li>srid str: Spatial Reference System Identifier used for the coordinates of
-     the zones.</li>
-    <li>name str: Name of the instance.</li>
-    <li>comment str: Description of the instance (default is '').</li>
-    <li>ags set of str: Tags describing the instance, used to search and filter
-     the instances.</li>
-    <li>date_created datetime.date: Creation date of the ZoneSet.</li>
+    <li><strong>zone_id </strong>int: Id of the zone, as used by the users in the import files.
+     Must be unique for a specific <strong>ODMatrix</strong>.</li>
+    <li><strong>zone_set</strong> ZoneSet: ZoneSet instance the zone belongs to. </li>
+    <li><strong>centroid</strong>Point: Center point of the circle or centroid of the area.</li>
+    <li><strong>geometry</strong> Polygon: Polygon representing the zone, if it is an area.</li>
+    <li><strong>radius</strong> float: Radius of the zone in meters, if it is a circle. </li>
+    <li><strong>name</strong> str: Name of the zone (default is '').</li>
   </ul>
 
   {% include 'networks/upload.html' %}
 {% endblock %}
-
-"""Set of zones.
-
-  :
-  """

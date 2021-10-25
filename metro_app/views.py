@@ -108,10 +108,11 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm
-from .models import Node, Edge, Project, RoadNetwork, RoadType, ZoneSet
+from .models import Node, Edge, Project, RoadNetwork, RoadType, ZoneSet, Zone
 from .networks import make_network_visualization, get_network_directory
-from .tables import EdgeTable, NodeTable, RoadTypeTable
-from .filters import EdgeFilter, NodeFilter, RoadTypeFilter, RoadNetworkFilter
+from .tables import EdgeTable, NodeTable, RoadTypeTable, ZoneTable
+from .filters import EdgeFilter, NodeFilter, RoadTypeFilter, ZoneFilter
+
 import os
 from pyproj import CRS
 from pyproj.exceptions import CRSError
@@ -467,3 +468,27 @@ def delete_zoneset(request, pk):
 
     context = {'zoneset_to_delete': zoneset_to_delete}
     return render(request, 'delete_zoneset.html', context)
+
+
+def zones_table(request, pk):
+    """
+    This function is for displaying database Edges table in front end UI.
+    Users can sort, filter and paginate through pages
+    """
+    zoneset = ZoneSet.objects.get(id=pk)
+    zones = Zone.objects.select_related().filter(zone_set=zoneset)
+    filter = ZoneFilter(request.GET, queryset=zones)
+    table = ZoneTable(filter.qs)
+    RequestConfig(request).configure(table)  # For sorting table column
+    table.paginate(page=request.GET.get("page", 1), per_page=15)
+
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
+    context = {
+        "table": table,
+        "filter": filter,
+        'zoneset': zoneset,
+        "network_attribute": network_attribute
+    }
+    return render(request, 'views/edges_table.html', context)

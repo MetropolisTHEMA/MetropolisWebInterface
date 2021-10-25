@@ -1,4 +1,37 @@
+/* <!--- index-visualization.html---> */
 // Displaying layers (links) information whem mouse hover
+
+/*---  Start Leaflet TimeDimension     ---*/
+var timeDimension = new L.TimeDimension({
+  timeInterval: "2021-10-01 6:00:00/2021-10-01 12:00:00",
+  period: "PT15M",
+});
+
+map.timeDimension = timeDimension;
+
+var player = new L.TimeDimension.Player({
+  transitionTime: 1000, /* act on cursor vitesse */
+  loop: false,
+  startOver: true
+}, timeDimension);
+
+var timeDimensionControlOptions = {
+  player: player,
+  timeDimension: timeDimension,
+   timeZones: ["Local"],
+  position: 'bottomleft',
+  autoPlay: true,
+  timeSliderDragUpdate: true
+};
+
+/*var timeDimensionControl = new L.Control.TimeDimension(timeDimensionControlOptions);
+map.addControl(timeDimensionControl);
+
+var geojson = L.timeDimension.layer.geoJson(geojsonLayer, {updateTimeDimensionMode: 'replace'});
+geojson.addTo(map);*/
+/*---  End Leaflet TimeDimension      ---*/
+
+
 async function linkDropDown() {
   // Remove any previous legend
   d3.select('#linkLegendSvg').remove();
@@ -47,7 +80,8 @@ async function linkDropDown() {
         geojsonLayer.resetStyle(e.target)
       })
     }) // End geojson.eachLayer
-  } else if (linkSelector.value == "lanes") {
+  }
+   else if (linkSelector.value == "lanes") {
     drawLinkLegend(lanes_colorscale, lanes_min, lanes_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -71,7 +105,8 @@ async function linkDropDown() {
         })
       })
     })
-  } else if (linkSelector.value == "length") {
+  }
+  else if (linkSelector.value == "length") {
     drawLinkLegend(length_colorscale, length_min, length_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -94,7 +129,8 @@ async function linkDropDown() {
         })
       });
     });
-  } else if (linkSelector.value == "speed") {
+  }
+  else if (linkSelector.value == "speed") {
     drawLinkLegend(speed_colorscale, speed_min, speed_max);
     geojsonLayer.eachLayer(function(layer) {
       let currentLayer = edges_data_api.find(
@@ -122,86 +158,48 @@ async function linkDropDown() {
   /* ....................................................................................... */
   /* ---------------------------- Output ................................................... */
   else if (linkSelector.value == "travel_time") {
-    var currentLayer_travel_time;
+
+    /*var travel_time_colorscale = d3.scaleLinear().domain(d3.extent(copie))
+      .interpolate(d3.interpolateHcl)
+      .range([d3.rgb("#FFF500"), d3.rgb("#000066")]);*/
     var travel_time_color;
     var copie = [];
-    var travel_time_array = edges_results.map(object => object.travel_time);
-    travel_time_array.forEach(element => {
-      tv = element.split(':')
-      tv = (+tv[0]) * 3600 + (+tv[1]) * 60 + (+tv[2]);
-      copie.push(tv)
-    })
+    var timeStamp = Math.floor(Date.now() / 1000);
 
-    var travel_time_colorscale = d3.scaleLinear().domain(d3.extent(copie))
-      .interpolate(d3.interpolateHcl)
-      .range([d3.rgb("#FFF500"), d3.rgb("#000066")]);
-    var travel_time_max = d3.max(copie);
-    var travel_time_min = d3.min(copie);
-    drawLinkLegend(travel_time_colorscale, travel_time_min, travel_time_max);
-    s = 0
     geojsonLayer.eachLayer(function(layer) {
       let travelLayer = edges_results.filter(
         edge => edge.edge == layer.feature.properties.edge_id)
-      console.log(travelLayer)
-      // Add the time in each Layer
-      let times = [] // Creating an empty list
-      let travelTime = []
+
+      // Add the times in each Layer
+      let travel_time = []
+      let interval_time = []
+      var timeStamp = Math.floor(Date.now() / 1000);
       travelLayer.forEach(
         element => {
           if (element.edge === layer.feature.properties.edge_id) {
             tt = element['travel_time'].split(':') // split of travel time
-            tt = (+tt[0]) * 3600 + (+tt[1]) * 60 +
-              (+tt[2])
-            travelTime.push(tt)
-            layer.feature.properties.travelTime = travelTime
+            tt = (+tt[0]) * 3600 + (+tt[1]) * 60 + (+tt[2])
+            travel_time.push(tt)
+            layer.feature.properties.travel_time = travel_time
 
-            interval_time = element['time'].split(':') // split of time
-            interval_time = (+interval_time[0]) * 3600 + (+interval_time[1]) * 60
-            times.push(interval_time)
-            layer.feature.properties.times = times
-
-            travel_time_color = travel_time_colorscale(travelTime)
-            layer.setStyle({
-              fillColor: travel_time_color,
-              color: travel_time_color,
-            })
+            tt= element['time']//.split(':') // split of time
+            //tt = (+tt[0]) * 3600 + (+tt[1]) * 60
+            interval_time.push(tt)
+            layer.feature.properties.times = interval_time
           }
-        })
+        }) //End forEach
+        
+        // Je souhaite le travel time pour une heure precise (6:00 parexample)
+        console.log(layer)
+       //console.log(layer.feature.properties.travel_time)
+        /*travel_time_color = travel_time_colorscale(layer.feature.properties.times)
+        layer.setStyle({
+          fillColor: travel_time_color,
+          color: travel_time_color,
+        })*/
     }) // end geojsonLayer.eachLayer
-
-    /*---  Start Leaflet TimeDimension     ---*/
-    // start of TimeDimension manual instantiation
-    var timeDimension = new L.TimeDimension({
-      period: "PT5H",
-    });
-    // helper to share the timeDimension object between all layers
-    map.timeDimension = timeDimension;
-    // otherwise you have to set the 'timeDimension' option on all layers.
-
-    var player = new L.TimeDimension.Player({
-      transitionTime: 100,
-      loop: false,
-      startOver: true
-    }, timeDimension);
-
-    var timeDimensionControlOptions = {
-      player: player,
-      timeDimension: timeDimension,
-      position: 'bottomleft',
-      autoPlay: true,
-      minSpeed: 1,
-      speedStep: 0.5,
-      maxSpeed: 15,
-      timeSliderDragUpdate: true
-    };
-
-    var timeDimensionControl = new L.Control.TimeDimension(timeDimensionControlOptions);
-    map.addControl(timeDimensionControl);
-
-    var geojson = L.timeDimension.layer.geoJson(geojsonLayer);
-    geojson.addTo(map);
-    /*---  End Leaflet TimeDimension      ---*/
-  } else if (linkSelector.value == "speed_output") {
+  }
+  else if (linkSelector.value == "speed_output") {
     var currentLayer_speed_output;
     var speed_output_array = edges_results.map(object => object.speed);
     var speed_output_colorscale = d3.scaleLinear().domain(d3.extent(speed_output_array))
