@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.gis.geos import fromstr
 from django.contrib.gis.geos import GEOSGeometry, LineString, Polygon
@@ -11,8 +12,10 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from shapely.ops import split
-from .forms import NodeForm, EdgeForm, RoadTypeFileForm, ZoneFileForm
-from .models import Node, Edge, RoadNetwork, RoadType, ZoneSet, Zone
+from .forms import (NodeForm, EdgeForm,
+                    RoadTypeFileForm, ZoneFileForm, ODPairFileForm,)
+from .models import (Node, Edge, RoadNetwork, RoadType, ZoneSet, Zone,
+                     ODPair, ODMatrix)
 from django.db.utils import IntegrityError
 import os
 from django.conf import settings
@@ -459,7 +462,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
 
 def upload_zone(request, pk):
-    template = "networks/zoneset.html"
+    template = "networks/zone.html"
     list_zone_instance = []
     zoneset = ZoneSet.objects.get(id=pk)
     if request.method == 'POST':
@@ -519,6 +522,70 @@ def upload_zone(request, pk):
                     list_zone_instance.append(zone_instance)
                 Zone.objects.bulk_create(list_zone_instance)
                 return redirect('zoneset_details', zoneset.pk)
+        else:
+            return HttpResponse('Unknown format')
+
     else:
         form = ZoneFileForm()
+        return render(request, template, {'form': form})
+
+
+def upoload_od_pair(request, pk):
+    template = "networks/od_pair.html"
+    od_matrix = ODMatrix.objects.get(id=pk)
+    zoneset = od_matrix.zone_set
+    zones = Zone.objects.filter(zone_set=zoneset)
+    list_od_pair_instance = []
+    zone_instance_dict = {zone.zone_id: zone for zone in zones}
+    if request.method == 'POST':
+        form = ODPairFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            datafile = request.FILES['my_file']
+            if datafile.name.endswith('.csv'):
+                datafile = datafile.read().decode('utf-8').splitlines()
+                datafile = csv.DictReader(datafile)
+                for row in datafile:
+                    try:
+                        origin = zone_instance_dict[int(row['origin'])]
+                        destination = zone_instance_dict[
+                            int(row['destination'])]
+                    except KeyError:
+                        print('not found')
+                    else:
+                        od_pair_instance = ODPair(
+                            origin=origin,
+                            destination=destination,
+                            size=row['size'],
+                            matrix=od_matrix,
+                        )
+                        list_od_pair_instance.append(od_pair_instance)
+                ODPair.objects.bulk_create(list_od_pair_instance)
+                return redirect('od_matrix_details', od_matrix.pk)
+
+            elif datafile.name.endswith('.tsv'):
+                datafile = datafile.read().decode('utf-8').splitlines()
+                datafile = csv.DictReader(datafile, delimiter='\t')
+                for row in datafile:
+                    try:
+                        origin = zone_instance_dict[int(row['origin'])]
+                        destination = zone_instance_dict[
+                            int(row['destination'])]
+                    except KeyError:
+                        print('not found')
+                    else:
+                        od_pair_instance = ODPair(
+                            origin=origin,
+                            destination=destination,
+                            size=row['size'],
+                            matrix=od_matrix,
+                        )
+                        list_od_pair_instance.append(od_pair_instance)
+                ODPair.objects.bulk_create(list_od_pair_instance)
+                return redirect('od_matrix_details', od_matrix.pk)
+            else:
+                messages.error(request, "Uploaded file format \
+                                 not recongnized")
+                return redirect('od_matrix_details', od_matrix.pk)
+    else:
+        form = ODPairFileForm()
         return render(request, template, {'form': form})

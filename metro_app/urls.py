@@ -3,11 +3,15 @@ from .views import (create_project, create_network, create_roadtype,
                     project_details, update_network, update_project,
                     delete_project, network_details, index,
                     delete_network, visualization, edges_point_geojson,
-                    edges_table, nodes_table, road_type_table, create_zoneset,
-                    zoneset_details, update_zoneset, delete_zoneset,
-                    zones_table)
+                    edges_table, nodes_table, road_type_table,
+                    create_zoneset, zoneset_details, update_zoneset,
+                    delete_zoneset, zones_table,
+                    create_od_matrix, od_matrix_details, update_od_matrix,
+                    delete_od_matrix
+                    )
 
-from .networks import (upload_edge, upload_node, upload_road_type, upload_zone)
+from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
+                       upoload_od_pair,)
 from .metrosim import upload_edges_results
 
 urlpatterns = [
@@ -39,4 +43,14 @@ urlpatterns = [
     path('delete_zoneset/<str:pk>/', delete_zoneset, name='delete_zoneset'),
     path('zone/<str:pk>/upload_zone/', upload_zone, name='upload_zone'),
     path('table/zoneset/<str:pk>/zones/', zones_table, name='zones'),
+    path('odmatrix/project/<str:pk>/', create_od_matrix,
+         name='create_od_matrix'),
+    path('odmatrix/<str:pk>/details/', od_matrix_details,
+         name='od_matrix_details'),
+    path('update_odmatrix/<str:pk>/', update_od_matrix,
+         name='update_od_matrix'),
+    path('delete_od_matrix/<str:pk>/', delete_od_matrix,
+         name='delete_od_matrix'),
+    path('odpair/<str:pk>/upoload_od_pair/', upoload_od_pair,
+         name='upoload_od_pair'),
 ]

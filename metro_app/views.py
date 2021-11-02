@@ -107,8 +107,10 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .forms import ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm
-from .models import Node, Edge, Project, RoadNetwork, RoadType, ZoneSet, Zone
+from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
+                    ODMatrixForm)
+from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
+                     Zone, ODMatrix,)
 from .networks import make_network_visualization, get_network_directory
 from .tables import EdgeTable, NodeTable, RoadTypeTable, ZoneTable
 from .filters import EdgeFilter, NodeFilter, RoadTypeFilter, ZoneFilter
@@ -156,7 +158,7 @@ def create_project(request):
             return redirect('home')
 
     form = ProjectForm()
-    return render(request, 'views/project.html', {'form': form})
+    return render(request, 'views/form.html', {'form': form})
 
 
 def update_project(request, pk):
@@ -168,8 +170,12 @@ def update_project(request, pk):
             form.save()
             return redirect('home')
 
-    context = {'form': form, 'project': project}
-    return render(request, 'update_project.html', context)
+    context = {
+        'form': form,
+        'project': project,
+        'parent_template': 'index.html',
+        }
+    return render(request, 'update.html', context)
 
 
 def delete_project(request, pk):
@@ -178,8 +184,10 @@ def delete_project(request, pk):
         project_to_delete.delete()
         return redirect('home')
 
-    context = {'project_to_delete': project_to_delete}
-    return render(request, 'delete_project.html', context)
+    context = {
+        'project_to_delete': project_to_delete
+    }
+    return render(request, 'delete.html', context)
 
 
 def project_details(request, pk):
@@ -188,6 +196,8 @@ def project_details(request, pk):
     total_roadnetworks = roadnetworks.count()
     zonesets = project.zoneset_set.all()
     total_zonesets = zonesets.count()
+    od_matrix = project.odmatrix_set.all()
+    total_od_matrix = od_matrix.count()
 
     context = {
         'project': project,
@@ -195,6 +205,8 @@ def project_details(request, pk):
         'total_roadnetworks': total_roadnetworks,
         'zonesets': zonesets,
         'total_zonesets': total_zonesets,
+        'od_matrix': od_matrix,
+        'total_od_matrix': total_od_matrix,
     }
 
     return render(request, 'views/project_details.html', context)
@@ -225,7 +237,7 @@ def create_network(request, pk):
                 return redirect('project_details', current_project.pk)
 
     context = {'form': form}
-    return render(request, 'views/roadnetwork_form.html', context)
+    return render(request, 'views/form.html', context)
 
 
 def network_details(request, pk):
@@ -242,7 +254,7 @@ def network_details(request, pk):
         'total_edges': total_edges
     }
 
-    return render(request, 'views/network_details.html', context)
+    return render(request, 'views/details.html', context)
 
 
 def update_network(request, pk):
@@ -261,8 +273,11 @@ def update_network(request, pk):
                 form.save()
                 return redirect('project_details', roadnetwork.project.pk)
 
-    context = {'form': form}
-    return render(request, 'update_network.html', context)
+    context = {
+        'form': form,
+        'parent_template': 'base.html',
+        }
+    return render(request, 'update.html', context)
 
 
 def delete_network(request, pk):
@@ -272,7 +287,7 @@ def delete_network(request, pk):
         return redirect('project_details', network_to_delete.project.pk)
 
     context = {'network_to_delete': network_to_delete}
-    return render(request, 'delete_network.html', context)
+    return render(request, 'delete.html', context)
 
 
 def visualization(request, pk):
@@ -313,7 +328,7 @@ def create_roadtype(request, pk):
             form.save()
             return redirect('home')
 
-    return render(request, 'views/roadtype.html', {'form': form})
+    return render(request, 'views/form.html', {'form': form})
 
 # ........................................................................... #
 #             VIEW OF RETURNIGNG EDGES GeoJSON FILE                           #
@@ -427,7 +442,7 @@ def create_zoneset(request, pk):
                 return redirect('project_details', current_project.pk)
 
     context = {'form': form}
-    return render(request, 'views/zoneset_form.html', context)
+    return render(request, 'views/form.html', context)
 
 
 def zoneset_details(request, pk):
@@ -436,8 +451,7 @@ def zoneset_details(request, pk):
     context = {
         'zoneset': zoneset,
     }
-
-    return render(request, 'views/zoneset_details.html', context)
+    return render(request, 'views/details.html', context)
 
 
 def update_zoneset(request, pk):
@@ -456,8 +470,11 @@ def update_zoneset(request, pk):
                 form.save()
                 return redirect('project_details', zoneset.project.pk)
 
-    context = {'form': form}
-    return render(request, 'update_network.html', context)
+    context = {
+        'form': form,
+        'parent_template': 'base.html',
+        }
+    return render(request, 'update.html', context)
 
 
 def delete_zoneset(request, pk):
@@ -466,8 +483,10 @@ def delete_zoneset(request, pk):
         zoneset_to_delete.delete()
         return redirect('project_details', zoneset_to_delete.project.pk)
 
-    context = {'zoneset_to_delete': zoneset_to_delete}
-    return render(request, 'delete_zoneset.html', context)
+    context = {
+        'zoneset_to_delete': zoneset_to_delete
+    }
+    return render(request, 'delete.html', context)
 
 
 def zones_table(request, pk):
@@ -492,3 +511,56 @@ def zones_table(request, pk):
         "network_attribute": network_attribute
     }
     return render(request, 'views/edges_table.html', context)
+
+
+def create_od_matrix(request, pk):
+    """A roadnetwork depends on a project. It
+     must be created inside the project"""
+
+    current_project = Project.objects.get(id=pk)
+    form = ODMatrixForm(initial={'project': current_project})
+    if request.method == 'POST':
+        zoneset = ODMatrix(project=current_project)
+        form = ODMatrixForm(request.POST, instance=zoneset)
+        if form.is_valid():
+            form.save()
+            return redirect('project_details', current_project.pk)
+
+    context = {'form': form}
+    return render(request, 'views/form.html', context)
+
+
+def od_matrix_details(request, pk):
+    od_matrix = ODMatrix.objects.get(id=pk)
+    context = {
+        'od_matrix': od_matrix,
+    }
+    return render(request, 'views/details.html', context)
+
+
+def update_od_matrix(request, pk):
+    od_matrix = ODMatrix.objects.get(id=pk)
+    form = ODMatrixForm(instance=od_matrix)
+    if request.method == 'POST':
+        form = ODMatrixForm(request.POST, instance=od_matrix)
+        if form.is_valid():
+            form.save()
+            return redirect('project_details', od_matrix.project.pk)
+
+    context = {
+        'form': form,
+        'parent_template': 'base.html',
+    }
+    return render(request, 'update.html', context)
+
+
+def delete_od_matrix(request, pk):
+    od_matrix_to_delete = ODMatrix.objects.get(id=pk)
+    if request.method == 'POST':
+        od_matrix_to_delete.delete()
+        return redirect('project_details', od_matrix_to_delete.project.pk)
+
+    context = {
+        'od_matrix_to_delete': od_matrix_to_delete
+    }
+    return render(request, 'delete.html', context)

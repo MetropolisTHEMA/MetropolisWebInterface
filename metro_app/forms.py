@@ -1,5 +1,5 @@
 from django import forms
-from .models import (Project, RoadType, RoadNetwork, ZoneSet)
+from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix)
 
 
 class NodeForm(forms.Form):
@@ -67,4 +67,17 @@ class ZoneSetForm(forms.ModelForm):
 
 
 class ZoneFileForm(forms.Form):
+    my_file = forms.FileField()
+
+
+class ODMatrixForm(forms.ModelForm):
+    class Meta:
+        model = ODMatrix
+        fields = [
+            'zone_set', 'locked',
+            'name', 'comment', 'tags',
+        ]
+
+
+class ODPairFileForm(forms.Form):
     my_file = forms.FileField()

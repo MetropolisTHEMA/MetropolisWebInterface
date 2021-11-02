@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<h3>Import OD Pair file </h3>
+<hr>
+<h4>Attributes</h4><br>
+<dfn>Single <strong>origin-destination</strong> pair of an ODMatrix</dfn>
+
+<ul>
+  <li><strong>matrix</strong> ODMatrix: ODMatrix the ODPair belongs to.</li>
+  <li><strong>origin</strong> Zone: Origin zone for the OD pair.</li>
+  <li><strong>destination</strong> Zone: Destination zone for the OD pair.</li>
+  <li><strong>size</strong> int: Number of agents with the given origin and destination.</li>
+</ul>
+{% include 'networks/upload.html' %}
+{% endblock %}
