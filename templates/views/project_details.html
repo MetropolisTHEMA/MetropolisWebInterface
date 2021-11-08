@@ -73,6 +73,7 @@
 					<tr>
 						<th></th>
 						<th>Network name</th>
+						<th>Locked</th>
 						<th>Abstract network</th>
 						<th>Comment</th>
 						<th>Tags</th>
@@ -87,6 +88,7 @@
 					<tr>
 						<td><a class="btn btn-sm btn-danger" href="{% url 'network_details' roadnetwork.pk %}">details</a></td>
 						<td>{{roadnetwork.name}}</td>
+						<td>{{roadnetwork.locked}}</td>
 						<td>{{roadnetwork.simple}}</td>
 						<td>{{roadnetwork.comment}}</td>
 						<td>{{roadnetwork.tags}}</td>

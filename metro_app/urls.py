@@ -7,7 +7,7 @@ from .views import (create_project, create_network, create_roadtype,
                     create_zoneset, zoneset_details, update_zoneset,
                     delete_zoneset, zones_table,
                     create_od_matrix, od_matrix_details, update_od_matrix,
-                    delete_od_matrix
+                    delete_od_matrix, od_pair_table
                     )
 
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
@@ -32,7 +32,7 @@ urlpatterns = [
     path('network/<str:pk>/upload_road/', upload_road_type, name='upload_road'
          ),
     path('network/<str:pk>/edges.geojson/', edges_point_geojson),
-    path('metrosim/<str:pk>/upload_edges_results/', upload_edges_results),
+    path('metrosim/run/<str:pk>/upload_edges_results/', upload_edges_results),
     path('table/network/<str:pk>/edges/', edges_table, name='edges'),
     path('table/network/<str:pk>/nodes/', nodes_table, name='nodes'),
     path('table/network/<str:pk>/roadtype/', road_type_table,
@@ -53,4 +53,6 @@ urlpatterns = [
          name='delete_od_matrix'),
     path('odpair/<str:pk>/upoload_od_pair/', upoload_od_pair,
          name='upoload_od_pair'),
+    path('table/odmatrix/<str:pk>/odpair/', od_pair_table,
+         name='od_pair'),
 ]

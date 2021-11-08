@@ -110,10 +110,12 @@ from django.contrib.auth.models import User
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
-                     Zone, ODMatrix,)
+                     Zone, ODMatrix, ODPair)
 from .networks import make_network_visualization, get_network_directory
-from .tables import EdgeTable, NodeTable, RoadTypeTable, ZoneTable
-from .filters import EdgeFilter, NodeFilter, RoadTypeFilter, ZoneFilter
+from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
+                     ODPairTable)
+from .filters import (EdgeFilter, NodeFilter, RoadTypeFilter, ZoneFilter,
+                      ODPairFilter)
 
 import os
 from pyproj import CRS
@@ -564,3 +566,27 @@ def delete_od_matrix(request, pk):
         'od_matrix_to_delete': od_matrix_to_delete
     }
     return render(request, 'delete.html', context)
+
+
+def od_pair_table(request, pk):
+    """
+    This function is for displaying database Edges table in front end UI.
+    Users can sort, filter and paginate through pages
+    """
+    od_matrix = ODMatrix.objects.get(id=pk)
+    od_pair = ODPair.objects.select_related().filter(matrix=od_matrix)
+    filter = ODPairFilter(request.GET, queryset=od_pair)
+    table = ODPairTable(filter.qs)
+    RequestConfig(request).configure(table)  # For sorting table column
+    table.paginate(page=request.GET.get("page", 1), per_page=15)
+
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
+    context = {
+        "table": table,
+        "filter": filter,
+        'od_matrix': od_matrix,
+        "network_attribute": network_attribute
+    }
+    return render(request, 'views/edges_table.html', context)

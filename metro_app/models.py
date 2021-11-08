@@ -546,7 +546,11 @@ class Zone(models.Model):
                             help_text='Name of the zone')
 
     def __str__(self):
-        return self.name or 'Zone {}'.format(self.zone_id)
+        return "{} - ({})".format(self.zone_id, self.name)
+        # return self.name or 'Zone {}'.format(self.zone_id)
+
+    def location(self):
+        return str(self.centroid).split(';')[1]
 
     class Meta:
         db_table = 'Zone'

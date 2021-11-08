@@ -1,5 +1,5 @@
 import django_tables2 as tables
-from .models import Edge, Node, RoadType, Zone
+from .models import Edge, Node, RoadType, Zone, ODPair
 
 
 class EdgeTable(tables.Table):
@@ -48,6 +48,15 @@ class RoadTypeTable(tables.Table):
 
 
 class ZoneTable(tables.Table):
+    centroid = tables.Column(accessor='location')
+
     class Meta:
         model = Zone
-        fields = ('zone_id', 'name', 'radius')
+        fields = ('zone_id', 'name', 'radius', 'centroid')
+
+
+class ODPairTable(tables.Table):
+
+    class Meta:
+        model = ODPair
+        fields = ('origin', 'destination', 'size')

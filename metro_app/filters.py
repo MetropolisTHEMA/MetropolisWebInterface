@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import CharFilter, NumberFilter
-from .models import Edge, Node, RoadType, RoadNetwork, Zone
+from .models import Edge, Node, RoadType, RoadNetwork, Zone, ODPair
 from django import forms
 
 
@@ -73,3 +73,10 @@ class ZoneFilter(django_filters.FilterSet):
     class Meta:
         model = Zone
         fields = ('name',)
+
+
+class ODPairFilter(django_filters.FilterSet):
+
+    class Meta:
+        model = ODPair
+        fields = ('origin', 'destination', 'size')
