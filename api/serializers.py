@@ -5,7 +5,7 @@ from metro_app.models import Edge, Node, RoadNetwork, RoadType, EdgeResults
 
 class EdgeResultsSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format='%H:%M')
-    
+
     class Meta:
         model = EdgeResults
         fields = '__all__'
@@ -42,7 +42,7 @@ class EdgeSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Edge
-        fields =(
+        fields = (
             'edge_id', 'name', 'length', 'speed', 'lanes',
         )
 

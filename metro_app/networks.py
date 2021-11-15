@@ -496,7 +496,9 @@ def upload_zone(request, pk):
                         geometry = None
 
                     else:
-                        pass
+                        message = "Zone don't import the good file!"
+                        messages.error(request, message)
+                        return redirect('upload_zone', zoneset.pk)
 
                     zone_instance = Zone(zone_id=zone_id, centroid=centroid,
                                          geometry=geometry, radius=radius,
@@ -510,17 +512,28 @@ def upload_zone(request, pk):
                 datafile = datafile.read().decode('utf-8').splitlines()
                 datafile = csv.DictReader(datafile)
                 for row in datafile:
-                    lon, lat = row['x'], row['y']
-                    zone_instance = Zone(
-                        zone_id=row['id'],
-                        centroid=fromstr(f'POINT({lon} {lat})', srid=4326),
-                        geometry=None,
-                        radius=row.get('radius', 0.00),
-                        name=row.get('name', 'No name'),
-                        zone_set=zoneset
-                    )
-                    list_zone_instance.append(zone_instance)
+                    try:
+                        lon, lat = row['x'], row['y']
+                    except KeyError:
+                        message = "Zone don't import the good file!"
+                        messages.error(request, message)
+                        return redirect('upload_zone', zoneset.pk)
+                    else:
+                        zone_instance = Zone(
+                            zone_id=row['id'],
+                            centroid=fromstr(f'POINT({lon} {lat})', srid=4326),
+                            geometry=None,
+                            radius=row.get('radius', 0.00),
+                            name=row.get('name', 'No name'),
+                            zone_set=zoneset
+                        )
+                        list_zone_instance.append(zone_instance)
+
                 Zone.objects.bulk_create(list_zone_instance)
+                if len(list_zone_instance) > 0:
+                    message = "Zone file has been successfully imported !"
+                    messages.success(request, message)
+
                 return redirect('zoneset_details', zoneset.pk)
         else:
             return HttpResponse('Unknown format')
@@ -536,6 +549,7 @@ def upoload_od_pair(request, pk):
     zoneset = od_matrix.zone_set
     zones = Zone.objects.filter(zone_set=zoneset)
     list_od_pair_instance = []
+    compteur = 0
     zone_instance_dict = {zone.zone_id: zone for zone in zones}
     if request.method == 'POST':
         form = ODPairFileForm(request.POST, request.FILES)
@@ -550,7 +564,7 @@ def upoload_od_pair(request, pk):
                         destination = zone_instance_dict[
                             int(row['destination'])]
                     except KeyError:
-                        print('not found')
+                        compteur = compteur+1
                     else:
                         od_pair_instance = ODPair(
                             origin=origin,
@@ -560,6 +574,9 @@ def upoload_od_pair(request, pk):
                         )
                         list_od_pair_instance.append(od_pair_instance)
                 ODPair.objects.bulk_create(list_od_pair_instance)
+                if compteur > 0:
+                    message = "{} haven't been imported".format(compteur)
+                    messages.warning(request, message)
                 return redirect('od_matrix_details', od_matrix.pk)
 
             elif datafile.name.endswith('.tsv'):
@@ -571,7 +588,7 @@ def upoload_od_pair(request, pk):
                         destination = zone_instance_dict[
                             int(row['destination'])]
                     except KeyError:
-                        print('not found')
+                        compteur = compteur+1
                     else:
                         od_pair_instance = ODPair(
                             origin=origin,
@@ -581,11 +598,17 @@ def upoload_od_pair(request, pk):
                         )
                         list_od_pair_instance.append(od_pair_instance)
                 ODPair.objects.bulk_create(list_od_pair_instance)
+                message = "Your ODPair file has been successfully imported !"
+                messages.success(request, message)
+                print(compteur)
+                if compteur > 0:
+                    message = "{} haven't been imported".format(compteur)
+                    messages.warning(request, message)
                 return redirect('od_matrix_details', od_matrix.pk)
             else:
                 messages.error(request, "Uploaded file format \
                                  not recongnized")
-                return redirect('od_matrix_details', od_matrix.pk)
+                return redirect('upoload_od_pair', od_matrix.pk)
     else:
         form = ODPairFileForm()
         return render(request, template, {'form': form})

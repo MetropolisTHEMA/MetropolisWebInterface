@@ -8,6 +8,13 @@ from metro_project.settings import BASE_DIR
 
 
 def upload_edges_results(request, pk):
+    """ Cette fonctin est mise a  cote en attendant le developpement
+        de la partie simulation. Il nous faut cette partie pour pouvoir
+        uploader les edges results du reseau correspondant sans changement
+        manuel dans le code. Merci de ne pas mettre o days dans le travel times
+        De ce fait nous continurons le plugin TimeDimension une fois cette
+        partie terminée"""
+
     list_edges_results = []
     none_existing_edge_id = []
     run = Run.objects.get(id=1)

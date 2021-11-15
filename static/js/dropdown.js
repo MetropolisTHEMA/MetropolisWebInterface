@@ -188,9 +188,9 @@ async function linkDropDown() {
             layer.feature.properties.times = interval_time
           }
         }) //End forEach
-        
+
         // Je souhaite le travel time pour une heure precise (6:00 parexample)
-        console.log(layer)
+        //console.log(layer)
        //console.log(layer.feature.properties.travel_time)
         /*travel_time_color = travel_time_colorscale(layer.feature.properties.times)
         layer.setStyle({

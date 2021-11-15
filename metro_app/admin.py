@@ -1,21 +1,26 @@
 from django.contrib.gis import admin
 from .models import *
 
+
 @admin.register(Project)
 class ProjectAdmin(admin.OSMGeoAdmin):
     pass
+
 
 @admin.register(File)
 class FileAdmin(admin.OSMGeoAdmin):
     pass
 
+
 @admin.register(ParameterSet)
 class ParameterSetAdmin(admin.OSMGeoAdmin):
     pass
 
+
 @admin.register(RoadNetwork)
 class RoadNetworkAdmin(admin.OSMGeoAdmin):
     pass
+
 
 @admin.register(RoadType)
 class RoadTypeAdmin(admin.OSMGeoAdmin):

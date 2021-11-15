@@ -62,7 +62,6 @@ class ZoneSetForm(forms.ModelForm):
             'name',
             'comment',
             'tags',
-            'locked',
         ]
 
 

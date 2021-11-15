@@ -27,7 +27,7 @@
   			<h5>Zone set name : {{zoneset.name}}</h5>
   			<hr>
     			<a class="btn btn-outline-info  btn-sm btn-block"
-            href="{% url 'create_zoneset' zoneset.project.pk %}">Create zone set</a>
+            href="{% url 'update_zoneset' zoneset.pk %}">Update zone set</a>
           <a class="btn btn-outline-info  btn-sm btn-block"
            href="{% url 'upload_zone' zoneset.pk %}">Import zone</a>
 
@@ -35,7 +35,7 @@
     			<h5>OD matrix name : {{od_matrix.name}}</h5>
     			<hr>
       			<a class="btn btn-outline-info  btn-sm btn-block"
-              href="{% url 'create_od_matrix' od_matrix.project.pk %}">Create OD matrix</a>
+              href="{% url 'update_od_matrix' od_matrix.pk %}">Update OD matrix</a>
             <a class="btn btn-outline-info  btn-sm btn-block"
              href="{% url 'upoload_od_pair' od_matrix.pk %}">Import OD Pair</a>
 
