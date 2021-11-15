@@ -1,9 +1,9 @@
 alabaster==0.7.12
-ApiDoc==1.4.0
 asgiref==3.4.1
 attrs==21.2.0
 autopep8==1.5.6
 Babel==2.9.0
+beautifulsoup4==4.10.0
 branca==0.4.2
 certifi==2021.5.30
 chardet==4.0.0
@@ -13,11 +13,13 @@ cligj==0.7.2
 cycler==0.10.0
 decorator==4.4.2
 Django==3.1.13
+django-bootstrap4==3.0.1
 django-colorfield==0.4.1
 django-cors-headers==3.7.0
 django-crispy-forms==1.11.2
 django-filter==2.4.0
 django-pandas==0.6.4
+django-tables2==2.4.1
 djangorestframework==3.11.2
 docutils==0.16
 drf-dynamic-fields==0.3.1
@@ -56,6 +58,7 @@ PyYAML==3.11
 requests==2.25.1
 Shapely==1.7.1
 six==1.16.0
+soupsieve==2.2.1
 sqlparse==0.4.1
 toml==0.10.2
 urllib3==1.26.5
