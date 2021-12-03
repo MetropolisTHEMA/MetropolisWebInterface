@@ -103,14 +103,14 @@ Django Views Modules
 ====================
 """
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
-                     Zone, ODMatrix, ODPair)
+                     Zone, ODMatrix, ODPair, BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
                      ODPairTable)
@@ -121,6 +121,7 @@ import os
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from django_tables2 import RequestConfig
+from django_q.tasks import async_task, result, fetch, Task
 # import json
 
 
@@ -200,6 +201,7 @@ def project_details(request, pk):
     total_zonesets = zonesets.count()
     od_matrix = project.odmatrix_set.all()
     total_od_matrix = od_matrix.count()
+    tasks = project.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
         'project': project,
@@ -209,6 +211,7 @@ def project_details(request, pk):
         'total_zonesets': total_zonesets,
         'od_matrix': od_matrix,
         'total_od_matrix': total_od_matrix,
+        'tasks': tasks,
     }
 
     return render(request, 'views/project_details.html', context)
@@ -249,11 +252,13 @@ def network_details(request, pk):
         'network)').filter(network_id=pk).count()
     total_edges = Edge.objects.select_related(
         'network').filter(network_id=pk).count()
+    tasks = roadnetwork.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
         'roadnetwork': roadnetwork,
         'total_nodes': total_nodes,
-        'total_edges': total_edges
+        'total_edges': total_edges,
+        'tasks': tasks,
     }
 
     return render(request, 'views/details.html', context)

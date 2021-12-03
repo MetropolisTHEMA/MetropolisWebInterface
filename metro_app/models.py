@@ -23,6 +23,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
 from colorfield.fields import ColorField
+from django_q.tasks import fetch
 
 
 def get_sentinel_user():
@@ -888,3 +889,41 @@ class EdgeResults(models.Model):
 
     class Meta:
         db_table = 'EdgesResults'
+
+
+class BackgroundTask(models.Model):
+    """Class to represent a task that was run in the background on the server.
+
+    :id UUID: Id of the related django-q task.
+    :project Project: Project instance for which the task was created.
+    :status Status: Status of the task (in-progress, finished or failed).
+    :description str: Description of the task.
+    :start_date datetime.datetime: Starting time of the task.
+    :end_date datetime.datetime: Ending time of the task.
+    :time_taken timedelta: Total running time of the task.
+    """
+    INPROGRESS = 0
+    FINISHED = 1
+    FAILED = 2
+    STATUS_CHOICES = (
+        (INPROGRESS, 'In-progress'),
+        (FINISHED, 'Finished'),
+        (FAILED, 'Failed'),
+    )
+    id = models.UUIDField(primary_key=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES)
+    description = models.CharField(max_length=50)
+    start_date = models.DateTimeField(auto_now_add=True)
+    time_taken = models.DurationField(null=True, blank=True)
+    result = models.TextField(null=True, blank=True)
+
+    # Optional Foreign Keys.
+    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE,
+                                     blank=True, null=True)
+
+    def get_status(self):
+        return self.STATUS_CHOICES[self.status][1]
+
+    class Meta:
+        db_table = 'BackgroundTask'

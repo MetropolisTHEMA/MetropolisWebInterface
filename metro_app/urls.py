@@ -7,7 +7,7 @@ from .views import (create_project, create_network, create_roadtype,
                     create_zoneset, zoneset_details, update_zoneset,
                     delete_zoneset, zones_table,
                     create_od_matrix, od_matrix_details, update_od_matrix,
-                    delete_od_matrix, od_pair_table
+                    delete_od_matrix, od_pair_table,
                     )
 
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,

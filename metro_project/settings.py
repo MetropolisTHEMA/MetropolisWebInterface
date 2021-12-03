@@ -9,13 +9,12 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-from pathlib import Path
 from django.contrib.messages import constants as message_constants
 import os
 import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Read settings from settings.json file.
 settings_filename = os.path.join(BASE_DIR, 'settings.json')
@@ -61,6 +60,7 @@ INSTALLED_APPS = [
     'corsheaders',  # pip install django-cors-headers
                     # Access-Control-Allow-Origin' header
                     # For javascript api
+    'django_q',
 ]
 
 MIDDLEWARE = [
@@ -120,22 +120,22 @@ else:
     }
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'sql.log',
-        },
-    },
-    'loggers': {
-        'django.db.backends': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+    #  'version': 1,
+    #  'disable_existing_loggers': False,
+    #  'handlers': {
+        #  'file': {
+            #  'level': 'DEBUG',
+            #  'class': 'logging.FileHandler',
+            #  'filename': 'sql.log',
+        #  },
+    #  },
+    #  'loggers': {
+        #  'django.db.backends': {
+            #  'handlers': ['file'],
+            #  'level': 'DEBUG',
+            #  'propagate': True,
+        #  },
+    #  },
 }
 
 # Password validation
@@ -198,3 +198,28 @@ MESSAGE_LEVEL = message_constants.DEBUG
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 # DJANGO_TABLES2_PAGE_RANGE = 10
+
+redis_settings = settings.get('redis', dict())
+RQ_QUEUES = {
+    'default': {
+        'HOST': redis_settings.get('host', 'localhost'),
+        'PORT': redis_settings.get('port', 6379),
+        'DB': redis_settings.get('db_default', 0),
+        'DEFAULT_TIMEOUT': 360,
+    }
+}
+
+redis_settings = settings.get('redis', dict())
+Q_CLUSTER = {
+    'name': 'default',
+    'workers': 4,
+    'timeout': 600,
+    'retry': 601,
+    'save_limit': 1,
+    'redis': {
+        'host': redis_settings.get('host', 'localhost'),
+        'port': redis_settings.get('port', 6379),
+        'db': redis_settings.get('db_default', 0),
+        'password': redis_settings.get('password', None),
+    }
+}
