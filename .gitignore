@@ -11,6 +11,7 @@ nodes.geojson
 docs/plantuml/*.png
 sql.log
 staticfiles
+templates/index-visualization_old.html
 templates/visualization/
 **/__pycache__/
 docs/build/
@@ -24,3 +25,4 @@ static/js/timedimension_brouillon.js
 static/js/network.js
 static/js/link.js
 visualization/
+api/serializers_old.py

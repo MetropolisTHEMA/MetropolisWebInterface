@@ -78,7 +78,7 @@ current_url = window.location.href
 network_id = parseInt(current_url.split('/')[5])
 
 const request = async () => {
-  const response = await fetch(`http://127.0.0.1:8000/network/${network_id}/edges.geojson/`);
+const response = await fetch(`http://127.0.0.1:8000/network/${network_id}/edges.geojson/`);
   const data = await response.json();
   geojsonLayer = L.geoJSON(data["features"], {
     style: style,
@@ -88,7 +88,8 @@ const request = async () => {
   geojsonLayer.addTo(roads)
 
   /*geojsonLayer = L.geoJSON.vt(data, options).addTo(map);
-  geojsonLayer.addTo(Roads)*/
+  geojsonLayer.addTo(roads)*/
+
   const links = await fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/`);
   const linksdata = await links.json();
   geojsonLayer.eachLayer(function(layer) {

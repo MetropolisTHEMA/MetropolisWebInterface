@@ -1,10 +1,11 @@
 # from rest_framework import viewsets
 from rest_framework import status
 from .serializers import (EdgeSerializer, EdgeResultsSerializer)
-from metro_app.models import Edge, RoadNetwork, EdgeResults, Run
+from metro_app.models import Edge, RoadNetwork, EdgeResults, Run, RoadType
 from rest_framework.response import Response
 from django.http import HttpResponse  # JsonResponse
 from rest_framework.decorators import api_view
+import json
 
 
 @api_view(['GET', 'POST'])
@@ -30,7 +31,7 @@ def edge_list(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 def edge_detail(request, pk):
     """
-    Display a single instance.
+    Display a single edge instance of all network.
     """
     try:
         edge = Edge.objects.get(pk=pk)
@@ -64,31 +65,45 @@ def edges_of_a_network(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     else:
-        edges = Edge.objects.filter(network=roadnetwork)
-        # the JSON object must be str, bytes or bytearray, not QuerySet
-        # a valid Json valid format is ("key":"value") and not ('key': 'value')
-        # That why we are replacing all '' in key, value.
-        edges = str(list(edges.values("edge_id", "name", "length", "speed",
-                                      "lanes"))).replace(
-                ", '", ', "').replace(
-                "':", '":').replace(
-                ": '", ': "').replace(
-                "',", '",').replace(
-                "{'", '{"').replace(
-                'None', "null")
+        edges = Edge.objects.values("road_type_id", "edge_id",
+                                    "name", "length", "speed",
+                                    "lanes").filter(network=roadnetwork)
+        roadtypes = RoadType.objects.filter(network=roadnetwork)
+        roadtypes = {roadtype.id: roadtype for roadtype in roadtypes}
 
-        """I you want to pretify the json format, please add the following
-           commented code. But the api's performance will decrease. """
+        for edge in edges:
 
-        # Create Python object from JSON string data
-        # edges = json.loads(edges)
-        # Pretty JSON
-        # edges = json.dumps(edges)
+            if edge["lanes"] is None:
+                edge['lanes'] = roadtypes[edge['road_type_id']].default_lanes
+
+            if edge["speed"] is None:
+                edge['speed'] = roadtypes[edge['road_type_id']].default_lanes
+
+    edges = json.dumps(list(edges))
     if request.method == 'GET':
-        return HttpResponse(edges)  # content_type="application/json")
-        """serializer = EdgeSerializer(edges,
-                    context={'request': request}, many=True)
+        return HttpResponse(edges, content_type="application/json")
+        """"serializer = EdgeSerializer(edges, context={'request': request},
+                                    many=True)
         return Response(serializer.data)"""
+
+
+@api_view(['GET'])
+def single_edge_instance_of_a_network(request, pk, id):
+    """
+    Display a single edge instance of a network.
+    """
+    try:
+        roadnetwork = RoadNetwork.objects.get(pk=pk)
+        edge = Edge.objects.filter(network=roadnetwork).get(edge_id=id)
+
+    except RoadNetwork.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    except Edge.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = EdgeSerializer(edge, context={'request': request})
+        return Response(serializer.data)
 
 
 @api_view(['GET'])

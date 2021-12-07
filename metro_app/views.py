@@ -121,7 +121,7 @@ import os
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from django_tables2 import RequestConfig
-# import json
+import json
 
 
 # Create your views here.
@@ -298,18 +298,22 @@ def visualization(request, pk):
         'network)').filter(network_id=pk).count()
     total_edges = Edge.objects.select_related(
         'network').filter(network_id=pk).count()
-    context = {"roadnetwork": roadnetwork,
-               }
-    directory = get_network_directory(roadnetwork)
-    data_full_path = os.path.join(directory, "edges.geojson")
-    if not os.path.exists(data_full_path):
-        make_network_visualization(pk)
 
     if total_edges == 0 or total_nodes == 0:
         messages.warning(request, "Edges are not uploaded !")
         return redirect('network_details', roadnetwork.pk)
-    else:
-        return render(request, 'index-visualization.html', context)
+
+    directory = get_network_directory(roadnetwork)
+    data_full_path = os.path.join(directory, "edges.geojson")
+    if not os.path.exists(data_full_path):
+        make_network_visualization(pk)
+    with open(data_full_path, "r") as f:
+        file_js = json.load(f)
+
+    context = {"roadnetwork": roadnetwork,
+               "geojson": file_js
+               }
+    return render(request, 'index-visualization.html', context)
 
 
 # ........................................................................... #

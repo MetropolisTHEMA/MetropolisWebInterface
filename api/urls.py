@@ -1,5 +1,9 @@
 from django.urls import path, include
-from .views import (edge_list, edge_detail, edges_of_a_network, edges_results)
+from .views import (edge_list, edge_detail,
+                    edges_of_a_network,
+                    single_edge_instance_of_a_network,
+                    edges_results
+                    )
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -9,12 +13,12 @@ urlpatterns = [
     path('edges/', edge_list),
     path('edges/<int:pk>/', edge_detail),
     path('network/<int:pk>/edges/', edges_of_a_network),
+    path('network/<int:pk>/edge_id/<int:id>',
+         single_edge_instance_of_a_network),
     path('run/<str:pk>/edges_results/', edges_results),
     ]
 
-"""
-
-from django.urls import path
+"""from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
 from api import views
 
@@ -23,5 +27,4 @@ urlpatterns = [
     path('edges/<int:pk>/', views.EdgeDetail.as_view()),
 ]
 
-urlpatterns = format_suffix_patterns(urlpatterns)
-"""
+urlpatterns = format_suffix_patterns(urlpatterns)"""

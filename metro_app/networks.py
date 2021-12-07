@@ -185,9 +185,9 @@ def upload_edge(request, pk):
                                                              network_id=pk)
     nodes = Node.objects.select_related('network').filter(network_id=pk)
     edges = Edge.objects.select_related().filter(network_id=pk)
-    node_id_dict = {node.node_id: node for node in nodes}
-    road_type_id_dict = {roadtype.road_type_id: roadtype
-                         for roadtype in roadtypes}
+    # node_id_dict = {node.node_id: node for node in nodes}
+    # road_type_id_dict = {roadtype.road_type_id: roadtype
+    #                     for roadtype in roadtypes}
     list_edge_instance = []
     if edges.count() > 0:
         messages.warning(request, "Fail ! Network contains \
@@ -200,6 +200,10 @@ def upload_edge(request, pk):
         return redirect('network_details', roadnetwork.pk)
     form = EdgeForm()
     if request.method == 'POST':
+        node_id_dict = {node.node_id: node for node in nodes}
+        road_type_id_dict = {roadtype.road_type_id: roadtype
+                             for roadtype in roadtypes}
+
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
             datafile = request.FILES['my_file']
