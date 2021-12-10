@@ -229,7 +229,7 @@ def upload_edge_func(roadnetwork, filepath):
             ', '.join(invalid_target_ids))
         gdf = gdf.loc[~invalids]
 
-    if gdf.geom_type.isnull().all():
+    if len(gdf) and gdf.geom_type.isnull().all():
         # The edges have no geometry (the file is probably as CSV).
         # We create the geometries from the nodes.
         message += 'Creating edge geometries from the node coordinates.\n'
