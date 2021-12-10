@@ -215,7 +215,7 @@ Q_CLUSTER = {
     'workers': 4,
     'timeout': 600,
     'retry': 601,
-    'save_limit': 1,
+    'save_limit': 250,
     'redis': {
         'host': redis_settings.get('host', 'localhost'),
         'port': redis_settings.get('port', 6379),

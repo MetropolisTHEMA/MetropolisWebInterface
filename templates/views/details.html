@@ -1,4 +1,5 @@
 {% extends 'index_project_details.html' %}>
+{% load static %}
 {% block title %} Network {% endblock title %}
 
 {% block content %}
@@ -89,6 +90,7 @@
 					<tr>
 						<th>Start date</th>
 						<th>Description</th>
+						<th>Instance</th>
 						<th>Status</th>
 						<th>Time taken</th>
                         <th>Details</th>
@@ -97,16 +99,8 @@
 
 				<tbody>
 					{% for task in tasks %}
-					<tr>
-						<td>{{task.start_date}}</td>
-						<td>{{task.description}}</td>
-                        <td>{{task.get_status}}</td>
-                        <td>{% if task.time_taken %}{{task.time_taken}}{% endif %}</td>
-                        <td>
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#taskModal{{ task.id }}">
-                                Details
-                            </button>
-                        </td>
+                    <tr id="row-task-{{ task.id }}">
+                        {% include 'views/task.html' %}
 					</tr>
 					{% endfor %}
 				</tbody>
@@ -120,40 +114,13 @@
 <a href="{% url 'project_details' roadnetwork.project_id %}">Back</a>
 {% endif %}
 
-{% for task in tasks %}
-<div class="modal fade" id="taskModal{{task.id}}" tabindex="-1" aria-labelledby="taskModalLabel{{task.id}}" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-          <h5 class="modal-title" id="taskModalLabel{{task.id}}">{{ task.description }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-          <dl class="row">
-              <dt class="col-sm-3">Start date</dt>
-              <dd class="col-sm-9">{{ task.start_date }}</dd>
-
-              <dt class="col-sm-3">Status</dt>
-              <dd class="col-sm-9">{{ task.get_status }}</dd>
-
-              {% if task.time_taken %}
-              <dt class="col-sm-3">Time taken</dt>
-              <dd class="col-sm-9">{{ task.time_taken }}</dd>
-              {% endif %}
-
-              {% if task.result %}
-              <dt class="col-sm-3">Result</dt>
-              <dd class="col-sm-9">{{ task.result | linebreaks }}</dd>
-              {% endif %}
-          </dl>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
-      </div>
-    </div>
-  </div>
-</div>
-{% endfor %}
+<script src="{% static '/js/refresh_tag.js' %}"></script>
+<script>
+    {% for task in tasks %}
+    {% if task.status == task.INPROGRESS %}
+    refreshTag("{% url 'fetch_task' task.id %}", "#row-task-{{ task.id }}", 1000);
+    {% endif %}
+    {% endfor %}
+</script>
 
 {% endblock %}

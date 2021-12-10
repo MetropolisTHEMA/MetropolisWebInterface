@@ -925,5 +925,10 @@ class BackgroundTask(models.Model):
     def get_status(self):
         return self.STATUS_CHOICES[self.status][1]
 
+    def instance(self):
+        if self.road_network:
+            return str(self.road_network)
+        return ''
+
     class Meta:
         db_table = 'BackgroundTask'

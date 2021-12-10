@@ -8,6 +8,7 @@ from .views import (create_project, create_network, create_roadtype,
                     delete_zoneset, zones_table,
                     create_od_matrix, od_matrix_details, update_od_matrix,
                     delete_od_matrix, od_pair_table,
+                    fetch_task,
                     )
 
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
@@ -55,4 +56,5 @@ urlpatterns = [
          name='upoload_od_pair'),
     path('table/odmatrix/<str:pk>/odpair/', od_pair_table,
          name='od_pair'),
+    path('task/<uuid:task_id>/', fetch_task, name='fetch_task'),
 ]

@@ -104,9 +104,10 @@ Django Views Modules
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.template import loader
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
@@ -595,3 +596,14 @@ def od_pair_table(request, pk):
         "network_attribute": network_attribute
     }
     return render(request, 'views/edges_table.html', context)
+
+
+def fetch_task(request, task_id):
+    task = get_object_or_404(BackgroundTask, pk=task_id)
+    template = loader.get_template('views/task.html')
+    html = template.render({"task": task}, request)
+    data = {
+        "finished": task.status != task.INPROGRESS,
+        "html": html,
+    }
+    return JsonResponse(data)
