@@ -341,6 +341,11 @@ def upload_edge(request, pk):
             or not RoadType.objects.filter(network_id=pk).exists()):
         messages.warning(request, "You must import nodes and roadtypes first.")
         return redirect('network_details', roadnetwork.pk)
+    if BackgroundTask.objects.filter(
+            road_network=roadnetwork, status=BackgroundTask.INPROGRESS
+    ).exists():
+        messages.warning(request, "Edges are already being imported.")
+        return redirect('network_details', roadnetwork.pk)
     form = EdgeForm()
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
