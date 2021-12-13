@@ -120,17 +120,116 @@ def upload_road_type(request, pk):
         return render(request, template, {'form': form})
 
 
+def upload_node_func(roadnetwork, filepath):
+    dtype = {'id': int, 'x': float, 'y': float}
+    # Read file with GeoPandas.
+    try:
+        gdf = gpd.read_file(filepath, dtype=dtype)
+        gdf['id'] = gdf['id'].astype(int)
+    except Exception as e:
+        try:
+            df = pd.read_csv(filepath, dtype=dtype)
+            df['geometry'] = None
+            gdf = gpd.GeoDataFrame(df)
+            del df
+        except Exception as e1:
+            return 'Cannot read file.\n\nError message:\n{}'.format(e)
+
+    # Check that column id is here.
+    if not 'id' in gdf.columns:
+        return (
+            'Cannot import file.\n\nError message:\nThe following field '
+            'is mandatory: id'
+        )
+
+    if len(gdf) and gdf.geom_type.isnull().all():
+        # The edges have no geometry (the file is probably as CSV).
+        # We create the geometries from the x and y coordinates.
+        if not 'x' in gdf.columns or not 'y' in gdf.columns:
+            return (
+                'Cannot import file.\n\nError message:\nThe following fields'
+                ' are mandatory: x, y'
+            )
+        gdf['geometry'] = gdf.apply(
+            lambda row: geom.Point([row['x'], row['y']]), axis=1)
+
+    message = ''
+    invalids = gdf.geom_type != 'Point'
+    if invalids.any():
+        message += (
+            'Discarding {} invalid geometries (only Points are allowed).\n'
+        ).format(invalids.sum())
+        gdf = gdf.loc[~invalids]
+
+    if not len(gdf):
+        message += 'No valid node to import.\n'
+        return message
+
+    if gdf['id'].nunique() != len(gdf):
+        counts = gdf['id'].value_counts()
+        duplicates = counts.loc[counts > 1].index.astype(str)
+        message += (
+            'Duplicate node ids (only the last one is imported): {}\n'
+        ).format(', '.join(duplicates))
+        gdf = gdf.groupby('id').last()
+    else:
+        gdf.set_index('id', inplace=True)
+
+    nodes_to_import = list()
+    invalid_nodes = list()
+    def handle_nan(value):
+        if value and np.isnan(value):
+            return None
+        else:
+            return value
+    for node_id, row in gdf.iterrows():
+        try:
+            geometry = GEOSGeometry(str(row['geometry']))
+            node = Node(
+                node_id=node_id,
+                network=roadnetwork,
+                location=geometry,
+                name=row.get('name', ''),
+            )
+        except Exception as e:
+            invalid_nodes.append(str(node_id))
+        else:
+            nodes_to_import.append(node)
+    if invalid_nodes:
+        message += (
+            'The following nodes could not be imported correctly: {}\n'
+        ).format(', '.join(invalid_nodes))
+
+    if not nodes_to_import:
+        message += 'No node were imported.\n'
+        return message
+
+    # Create the edges in bulk.
+    try:
+        Node.objects.bulk_create(nodes_to_import)
+    except Exception as e:
+        message += (
+            'Failed to import nodes.\n\nError message:\n{}'
+        ).format(e)
+        return message
+
+    message += 'Successfully imported {} nodes.'.format(
+        len(nodes_to_import))
+    return message
+
+
 def upload_node(request, pk):
     template = "networks/node.html"
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    nodes = Node.objects.select_related('network').filter(network_id=pk)
-    list_node_instance = []
-    if nodes.count() > 0:
-        messages.warning(request, "Fail ! Network contains\
-                        already nodes data.")
+    roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
+    if Node.objects.filter(network_id=pk).exists():
+        messages.warning(request, "The road network already contains nodes.")
         return redirect('network_details', roadnetwork.pk)
-
-    form = NodeForm()
+    if BackgroundTask.objects.filter(
+            road_network=roadnetwork, status=BackgroundTask.INPROGRESS
+    ).exists():
+        messages.warning(
+            request, "A task is in progress for this road network.")
+        return redirect('network_details', roadnetwork.pk)
     if request.method == 'POST':
         # We need to include the files when creating the form
         form = NodeForm(request.POST, request.FILES)
@@ -138,67 +237,48 @@ def upload_node(request, pk):
             # Getting data from the fielfield input
             datafile = request.FILES['my_file']
 
-            # IF THE FILE UPLOADED IS A GEOJSON EXTENSION
-            if datafile.name.endswith('.geojson'):
-                objects = json.load(datafile)
-                for object in objects['features']:
-                    objet_type = object['geometry']['type']
-                    if objet_type == 'Point':
-                        properties = object['properties']
-                        geometry = object['geometry']
-                        node_id = properties['id']
-                        name = properties.get('name', 'No name')
-                        lon = geometry['coordinates'][0]
-                        lat = geometry['coordinates'][1]
-                        location = fromstr(f'POINT({lon} {lat})', srid=4326)
-                        node = Node(node_id=node_id, name=name,
-                                    location=location, network=roadnetwork)
-                        list_node_instance.append(node)
-                    else:
-                        messages.error(request, "The uploaded file is not the \
-                                      node one, please select the good one ! ")
-                        return render(request, template, {'form': form})
-
-            elif datafile.name.endswith('.csv'):  # A CSV EXTENSION
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile)
-                for row in datafile:
-                    lon, lat = row['x'], row['y']
-                    location = fromstr(f'POINT({lon} {lat})', srid=4326)
-                    node = Node(node_id=row['id'], name=row.get('name', ''),
-                                location=location, network=roadnetwork)
-                    list_node_instance.append(node)
-            else:
-                messages.error(request, 'You file does not respect Metropolis \
-                                format guidelines')
-                return render(request, template, {'form': form})
-
-            Node.objects.bulk_create(list_node_instance)
-            if nodes.count() > 0:
-                messages.success(request, 'Your node file has been \
-                             successfully imported !')
+            # Save file on disk (we cannot send large files as arguments of
+            # async tasks).
+            filename = '{}-{}'.format(uuid.uuid4(), datafile.name)
+            filepath = os.path.join(settings.MEDIA_ROOT, filename)
+            with open(filepath, 'wb') as f:
+                f.write(datafile.read())
+            task_id = async_task(upload_node_func, roadnetwork, filepath,
+                                 hook=str_hook)
+            description = 'Importing nodes'
+            db_task = BackgroundTask(project=roadnetwork.project, id=task_id,
+                                     description=description,
+                                     road_network=roadnetwork)
+            db_task.save()
+            messages.success(request, "Task successfully started.")
+        else:
+            messages.error(
+                request, "Invalid request. Did you upload the file correctly?")
         return redirect('network_details', roadnetwork.pk)
     else:
+        form = NodeForm()
         return render(request, template, {'form': form})
 
 
 def upload_edge_func(roadnetwork, filepath):
     # Read file with GeoPandas.
+    dtype = {'id': int, 'source': int, 'target': int, 'road_type': int,
+             'length': float}
     try:
-        gdf = gpd.read_file(filepath)
+        gdf = gpd.read_file(filepath, dtype=dtype)
+        for col, typ in dtype.items():
+            gdf[col] = gdf[col].astype(typ)
     except Exception as e:
         try:
-            df = pd.read_csv(filepath)
+            df = pd.read_csv(filepath, dtype=dtype)
             df['geometry'] = None
             gdf = gpd.GeoDataFrame(df)
             del df
         except Exception as e1:
-            print(e1)
             return 'Cannot read file.\n\nError message:\n{}'.format(e)
 
     # Check that all mandatory keys are here.
-    keys = ['id', 'target', 'source', 'road_type', 'length']
-    if not all(key in gdf.columns for key in keys):
+    if not all(key in gdf.columns for key in dtype.keys()):
         return (
             'Cannot import file.\n\nError message:\nThe following fields'
             ' are mandatory: {}'
@@ -209,6 +289,7 @@ def upload_edge_func(roadnetwork, filepath):
     nodes = Node.objects.filter(network=roadnetwork).values(
         'id', 'node_id', 'location')
     nodes_df = pd.DataFrame(nodes)
+    print(gdf.dtypes)
     gdf = gdf.merge(nodes_df, left_on='source', right_on='node_id', how='left',
                     suffixes=('', '_source'))
     gdf.rename(columns={'location': 'location_source'}, inplace=True)
@@ -303,7 +384,6 @@ def upload_edge_func(roadnetwork, filepath):
                 param3=handle_nan(row.get('param3')),
             )
         except Exception as e:
-            print(e)
             invalid_edges.append(str(edge_id))
         else:
             edges_to_import.append(edge)
@@ -344,9 +424,9 @@ def upload_edge(request, pk):
     if BackgroundTask.objects.filter(
             road_network=roadnetwork, status=BackgroundTask.INPROGRESS
     ).exists():
-        messages.warning(request, "Edges are already being imported.")
+        messages.warning(
+            request, "A task is in progress for this road network.")
         return redirect('network_details', roadnetwork.pk)
-    form = EdgeForm()
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
@@ -370,6 +450,7 @@ def upload_edge(request, pk):
                 request, "Invalid request. Did you upload the file correctly?")
         return redirect('network_details', roadnetwork.pk)
     else:
+        form = EdgeForm()
         return render(request, template, {'form': form})
 
 
