@@ -1,4 +1,5 @@
 {% extends 'index_project_details.html' %}>
+{% load static %}
 {% block title %} Network {% endblock title %}
 
 {% block content %}
@@ -77,10 +78,49 @@
 		</div>
 	</div>
 	<hr>
-	<br>
-  {% if roadnetwork %}
-  <a href="{% url 'project_details' roadnetwork.project_id %}">Back</a>
-  {% endif %}
 </div>
+
+{% if tasks %}
+<div class="row">
+	<h5>// Last Tasks</h5>
+	<div class="col-md">
+		<div class="card card-body">
+			<table class="table table-sm table-striped table-bordered table-hover">
+				<thead>
+					<tr>
+						<th>Start date</th>
+						<th>Description</th>
+						<th>Instance</th>
+						<th>Status</th>
+						<th>Time taken</th>
+                        <th>Details</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					{% for task in tasks %}
+                    <tr id="row-task-{{ task.id }}">
+                        {% include 'views/task.html' %}
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{% endif %}
+
+{% if roadnetwork %}
+<a href="{% url 'project_details' roadnetwork.project_id %}">Back</a>
+{% endif %}
+
+<script src="{% static '/js/refresh_tag.js' %}"></script>
+<script>
+    {% for task in tasks %}
+    {% if task.status == task.INPROGRESS %}
+    refreshTag("{% url 'fetch_task' task.id %}", "#row-task-{{ task.id }}", 1000);
+    {% endif %}
+    {% endfor %}
+</script>
 
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %} Project {% endblock title %}
 
@@ -63,6 +64,36 @@
 		</div>
 	</div>
 </div--->
+
+{% if tasks %}
+<div class="row">
+	<h5>// Last Tasks</h5>
+	<div class="col-md">
+		<div class="card card-body">
+			<table class="table table-sm table-striped table-bordered table-hover">
+				<thead>
+					<tr>
+						<th>Start date</th>
+						<th>Description</th>
+                        <th>Instance</th>
+						<th>Status</th>
+						<th>Time taken</th>
+                        <th>Details</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					{% for task in tasks %}
+                    <tr id="row-task-{{ task.id }}">
+                        {% include 'views/task.html' %}
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{% endif %}
 
 <div class="row">
 	<h5>// Network attributes</h5>
@@ -185,5 +216,14 @@
 	</div>
 	<a href="{% url 'home' %}">Back</a>
 </div>
+
+<script src="{% static '/js/refresh_tag.js' %}"></script>
+<script>
+    {% for task in tasks %}
+    {% if task.status == task.INPROGRESS %}
+    refreshTag("{% url 'fetch_task' task.id %}", "#row-task-{{ task.id }}", 1000);
+    {% endif %}
+    {% endfor %}
+</script>
 
 {% endblock %}

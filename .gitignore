@@ -26,3 +26,4 @@ static/js/network.js
 static/js/link.js
 visualization/
 api/serializers_old.py
+media/

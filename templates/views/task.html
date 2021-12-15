@@ -1,0 +1,50 @@
+<td>{{ task.start_date }}</td>
+<td>{{ task.description }}</td>
+<td>{{ task.instance }}</td>
+<td>
+    {{ task.get_status }}
+    {% if task.status == task.INPROGRESS %}
+    <div class="spinner-border spinner-border-sm mx-3" role="status"></div>
+    {% endif %}
+</td>
+<td>{% if task.time_taken %}{{ task.time_taken }}{% endif %}</td>
+<td>
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#taskModal{{ task.id }}">
+        Details
+    </button>
+    <div class="modal fade" id="taskModal{{task.id}}" tabindex="-1" aria-labelledby="taskModalLabel{{task.id}}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskModalLabel{{task.id}}">{{ task.description }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Instance</dt>
+                        <dd class="col-sm-9">{{ task.instance }}</dd>
+
+                        <dt class="col-sm-3">Start date</dt>
+                        <dd class="col-sm-9">{{ task.start_date }}</dd>
+
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">{{ task.get_status }}</dd>
+
+                        {% if task.time_taken %}
+                        <dt class="col-sm-3">Time taken</dt>
+                        <dd class="col-sm-9">{{ task.time_taken }}</dd>
+                        {% endif %}
+
+                        {% if task.result %}
+                        <dt class="col-sm-3">Result</dt>
+                        <dd class="col-sm-9">{{ task.result | linebreaks }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</td>
