@@ -1,9 +1,9 @@
 // Get url of the current network
 current_url = window.location.href // document.url
 network_id = parseInt(current_url.split('/')[5]) // Get networ id
+var center = data.features[0].geometry.coordinates[0][0]
 
 if(network_type) {
-
   var map = new maplibregl.Map({
     container: 'map',
     style: {
@@ -11,15 +11,15 @@ if(network_type) {
       sources: {},
       layers: []
     },
-    //center: [4.1, 0.46555464972051],
+    center: center, // [4.1, 0.46555464972051],
     zoom: 4
   })
 } else {
   var map = new maplibregl.Map({
     container: 'map',
-    style: 'https://api.maptiler.com/maps/pastel/style.json?key=H3QHO1MyRW0VntDUexsM',
-    /*style: 'https://api.maptiler.com/maps/a656d271-f1f7-4b23-927a-5af6559f7049/style.json?key=6OYzFVmHZSrmbPQ2uqDd',*/
-    center: [2.333, 48.8934],
+    //style: 'https://api.maptiler.com/maps/pastel/style.json?key=H3QHO1MyRW0VntDUexsM',
+    style: 'https://api.maptiler.com/maps/a656d271-f1f7-4b23-927a-5af6559f7049/style.json?key=6OYzFVmHZSrmbPQ2uqDd',
+    center: center, //[2.333, 48.8934],
     zoom: 8
   });
 }

@@ -9,12 +9,27 @@ async function linkDropDown() {
     map.setFilter('bike-docks', null);
     */
 
+  // Get url of the current network
+  current_url = window.location.href // document.url
+  network_id = parseInt(current_url.split('/')[5]) // Get networ id
   var linkSelector = document.getElementById('linkSelector')
-  var mapZoom = 8; //map.getZoom();
 
   if (linkSelector.value == "lanes") {
     // map.fitBounds(map.getBounds().toArray())
-    map.setZoom(mapZoom)
+
+    const lanes_field = await fetch(
+      `http://127.0.0.1:8000/api/network/${network_id}/edges/lanes`);
+    const lanes = await lanes_field.json();
+
+    //Maping api data with the map features data
+    data.features.map(
+      item =>{
+        item.properties.lanes = lanes[item.properties.edge_id]
+      });
+
+    //Updating the already map data.
+    map.getSource('roads').setData(data)
+
     map.setPaintProperty('lines', 'fill-color', [
       'interpolate', ['linear'],
       ['get', 'lanes'],
@@ -22,7 +37,18 @@ async function linkDropDown() {
       5, 'rgb(255, 0, 0)',
     ]);
   } else if (linkSelector.value == "length") {
-    map.setZoom(mapZoom)
+    const length_field = await fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/length`);
+    const length = await length_field.json();
+
+    //Maping api data with the map features data
+    data.features.map(
+      item =>{
+        item.properties.length = length[item.properties.edge_id]
+      });
+
+    //Updating the already map data.
+    map.getSource('roads').setData(data)
+
     map.setPaintProperty('lines', 'fill-color', [
       'interpolate', ['linear'],
       ['get', 'length'],
@@ -30,7 +56,18 @@ async function linkDropDown() {
       3, 'rgb(255, 0, 0)',
     ]);
   } else if (linkSelector.value == "speed") {
-    map.setZoom(mapZoom)
+
+    const speed_field = await fetch(`http://127.0.0.1:8000/api/network/${network_id}/edges/speed`);
+    const speed = await speed_field.json();
+
+    //Maping api data with the map features data
+    data.features.map(
+      item =>{
+        item.properties.speed = speed[item.properties.edge_id]
+      });
+    //Updating the already map data.
+    map.getSource('roads').setData(data)
+
     map.setPaintProperty('lines', 'fill-color', [
       'interpolate', ['linear'],
       ['get', 'speed'],
