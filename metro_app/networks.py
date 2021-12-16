@@ -19,7 +19,7 @@ from .models import (Node, Edge, RoadNetwork, RoadType, ZoneSet, Zone,
 from django.db.utils import IntegrityError
 import os
 from django.conf import settings
-
+import ast
 
 CONGESTION_TYPES = {
     'freeflow': RoadType.FREEFLOW,
@@ -457,12 +457,26 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         # Convert back to the CRS84 projection, required by Folium.
         edges_gdf.to_crs(crs=degree_crs, inplace=True)
 
-        # Create and save edges.geojson file
+        # Caluclate the bounds
+        total_bounds = list(edges_gdf.total_bounds)
+
+        # Create and save edges.geojson file edges_gdf
         directory = get_network_directory(roadnetwork)
         if not os.path.isdir(directory):
             os.makedirs(directory)
-        edges_gdf.to_file(
-            os.path.join(directory, "edges.geojson"), driver='GeoJSON')
+
+        edges = edges_gdf.to_json()  # return a string dictionnary
+        # Convert the string dictionary to a normal dictionnary without quote
+        edges = ast.literal_eval(edges)
+        # Add bounds for future javascript code
+        edges["total_bounds"] = total_bounds
+
+        with open(os.path.join(directory, "edges.geojson"), 'w') as file:
+            # Saving the file
+            json.dump(edges, file)
+
+        # edges_gdf.to_file(
+        #    os.path.join(directory, "edges.geojson"), driver='GeoJSON')
 
 
 def upload_zone(request, pk):

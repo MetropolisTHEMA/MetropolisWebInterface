@@ -22,6 +22,8 @@ async function linkDropDown() {
     const lanes = await lanes_field.json();
 
     //Maping api data with the map features data
+    //Regarder s'il y a lanes dans properties, si ou on ne refait pas
+    // la requete pour la deuxième
     data.features.map(
       item =>{
         item.properties.lanes = lanes[item.properties.edge_id]
