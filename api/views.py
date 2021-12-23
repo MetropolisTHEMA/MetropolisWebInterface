@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from django.http import HttpResponse  # JsonResponse
 from rest_framework.decorators import api_view
 import json
+from django.shortcuts import render
 
 
 @api_view(['GET', 'POST'])
@@ -100,9 +101,12 @@ def single_edge_instance_of_a_network(request, pk, id):
 
     except Edge.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'GET':
-        serializer = EdgeSerializer(edge, context={'request': request})
-        return Response(serializer.data)
+        # serializer = EdgeSerializer(edge, context={'request': request})
+        # return Response(serializer.data)
+
+        return render(request, 'mapbox_popup.html', {'edge': edge})
 
 
 def get_lanes_field_attribute(request, pk):

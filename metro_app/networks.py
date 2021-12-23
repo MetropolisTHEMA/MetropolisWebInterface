@@ -19,7 +19,6 @@ from .models import (Node, Edge, RoadNetwork, RoadType, ZoneSet, Zone,
 from django.db.utils import IntegrityError
 import os
 from django.conf import settings
-import ast
 
 CONGESTION_TYPES = {
     'freeflow': RoadType.FREEFLOW,
@@ -467,7 +466,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
         edges = edges_gdf.to_json()  # return a string dictionnary
         # Convert the string dictionary to a normal dictionnary without quote
-        edges = ast.literal_eval(edges)
+        edges = json.loads(edges)
         # Add bounds for future javascript code
         edges["total_bounds"] = total_bounds
 
