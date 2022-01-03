@@ -439,6 +439,24 @@ class Edge(models.Model):
     class Meta:
         db_table = 'Edge'
 
+    def get_lanes(self):
+        return self.lanes or self.road_type.default_lanes
+
+    def get_speed(self):
+        return self.speed or self.road_type.default_speed
+
+    def get_length_decimal_places(self):
+        return "{:.3}".format(self.length)
+
+    def get_param1(self):
+        return self.param1 or self.road_type.default_param1
+
+    def get_param2(self):
+        return self.param2 or self.road_type.default_param2
+
+    def get_param3(self):
+        return self.param3 or self.road_type.default_param3
+
 
 def get_random_seed():
     return random.randint(0, 1000)

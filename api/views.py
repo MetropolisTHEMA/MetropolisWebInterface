@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from django.http import HttpResponse  # JsonResponse
 from rest_framework.decorators import api_view
 import json
+from django.shortcuts import render
 
 
 @api_view(['GET', 'POST'])
@@ -72,12 +73,11 @@ def edges_of_a_network(request, pk):
         roadtypes = {roadtype.id: roadtype for roadtype in roadtypes}
 
         for edge in edges:
-
             if edge["lanes"] is None:
                 edge['lanes'] = roadtypes[edge['road_type_id']].default_lanes
 
             if edge["speed"] is None:
-                edge['speed'] = roadtypes[edge['road_type_id']].default_lanes
+                edge['speed'] = roadtypes[edge['road_type_id']].default_speed
 
     edges = json.dumps(list(edges))
     if request.method == 'GET':
@@ -101,9 +101,97 @@ def single_edge_instance_of_a_network(request, pk, id):
 
     except Edge.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'GET':
-        serializer = EdgeSerializer(edge, context={'request': request})
-        return Response(serializer.data)
+        # serializer = EdgeSerializer(edge, context={'request': request})
+        # return Response(serializer.data)
+
+        return render(request, 'mapbox_popup.html', {'edge': edge})
+
+
+def get_lanes_field_attribute(request, pk):
+    """
+    This function is for filtering only lanes field from the api instead of
+    having them all (name, speed, lanes and length). The results will used to
+    as speed_output in the hml roadtype filter in the visualization.
+    """
+    try:
+        roadnetwork = RoadNetwork.objects.get(pk=pk)
+
+    except RoadNetwork.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    else:
+        edges = Edge.objects.filter(
+            network=roadnetwork).values('road_type_id', 'edge_id', 'lanes')
+        roadtypes = RoadType.objects.filter(network=roadnetwork)
+        roadtypes = {roadtype.id: roadtype for roadtype in roadtypes}
+        lanes_dict = {}
+        for edge in edges:
+            if edge["lanes"] is None:
+                edge['lanes'] = roadtypes[edge['road_type_id']].default_lanes
+
+            values_list = list(edge.values())
+            lanes_dict[values_list[1]] = values_list[2]
+
+        edges = json.dumps(lanes_dict)
+    if request.method == 'GET':
+        return HttpResponse(edges, content_type="application/json")
+
+
+def get_length_field_attribute(request, pk):
+    """
+    This function is for filtering only length field from the api instead of
+    having them all (name, speed, lanes and length). The results will used to
+    as speed_output in the hml roadtype filter in the visualization.
+    """
+    try:
+        roadnetwork = RoadNetwork.objects.get(pk=pk)
+
+    except RoadNetwork.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    else:
+        edges = Edge.objects.filter(
+            network=roadnetwork).values('edge_id', 'length')
+        length_dict = {list(edge.values())[0]: list(edge.values())[1]
+                       for edge in edges}
+
+        edges = json.dumps(length_dict)
+    if request.method == 'GET':
+        return HttpResponse(edges, content_type="application/json")
+
+
+def get_speed_field_attribute(request, pk):
+    """
+    This function is for filtering only speed field from the api instead of
+    having them all (name, speed, lanes and length). The results will used to
+    as speed_output in the hml roadtype filter in the visualization.
+    """
+    try:
+        roadnetwork = RoadNetwork.objects.get(pk=pk)
+
+    except RoadNetwork.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    else:
+        edges = Edge.objects.filter(
+            network=roadnetwork).values('road_type_id', 'edge_id', 'speed')
+
+        roadtypes = RoadType.objects.filter(network=roadnetwork)
+        roadtypes = {roadtype.id: roadtype for roadtype in roadtypes}
+
+        speed_dict = {}
+        for edge in edges:
+            if edge["speed"] is None:
+                edge['speed'] = roadtypes[edge['road_type_id']].default_speed
+
+            values_list = list(edge.values())
+            speed_dict[values_list[1]] = values_list[2]
+
+        edges = json.dumps(speed_dict)
+    if request.method == 'GET':
+        return HttpResponse(edges, content_type="application/json")
 
 
 @api_view(['GET'])
@@ -115,13 +203,6 @@ def edges_results(request, pk):
     # network_id = run.network_id
     edges = EdgeResults.objects.select_related(
         'run').filter(run=run)
-    """edges = str(list(edges.values())).replace(
-                ", '",', "').replace(
-                "':", '":').replace(
-                ": '", ': "').replace(
-                "',", '",').replace(
-                "{'", '{"').replace(
-                'None', "null")"""
     if request.method == 'GET':
         # return HttpResponse(edges, content_type="application/json")
         serializer = EdgeResultsSerializer(edges, context={'request': request},
