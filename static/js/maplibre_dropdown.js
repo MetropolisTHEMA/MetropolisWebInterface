@@ -20,12 +20,12 @@ async function GetFieldAttribute(field) {
 }
 
 function ColorScale(field, rgb1, rgb2) {
-  const lanes_max = d3.max(field);
-  const lanes_min = d3.min(field);
+  const max = d3.max(field);
+  const min = d3.min(field);
   const colorscale = d3.scaleLinear().domain(d3.extent(field))
     .interpolate(d3.interpolateHcl)
     .range([d3.rgb(rgb1), d3.rgb(rgb2)]);
-  drawLinkLegend(colorscale, lanes_min, lanes_max);
+  drawLinkLegend(colorscale, min, max);
 }
 
 async function linkDropDown() {
@@ -58,9 +58,10 @@ async function linkDropDown() {
       1, 'rgb(255, 245,0 )',
       5, 'rgb(255, 0, 0)',
     ]);
-    //ColorScale(lanes_array, '#FFF500', '#FF0000')
+    ColorScale(lanes_array, '#FFF500', '#FF0000')
     ColorScale(lanes_array, 'rgb(255, 245,0 )', 'rgb(255, 0, 0)')
-  } else if (linkSelector.value == "length") {
+  }
+  else if (linkSelector.value == "length") {
     if (typeof data.features[0].properties.length == 'undefined') {
       const length = await GetFieldAttribute("length")
       // Adding length from the api as the map properties

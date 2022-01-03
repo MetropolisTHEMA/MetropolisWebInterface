@@ -87,7 +87,7 @@ map.on('load', function() {
 
   /* When the user hover their mouse over the 'lines' layer, we'll update the
    feature state for the feature under the mouse.*/
-  map.on('mouseenter', 'lines', async (e) => {
+  map.on('mousemove', 'lines', async (e) => {
     map.getCanvas().style.cursor = 'pointer'
 
     if (e.features.length > 0) {

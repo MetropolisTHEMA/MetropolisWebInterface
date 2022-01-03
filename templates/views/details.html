@@ -16,12 +16,19 @@
 	<div class="col-md">
 		<div class="card card-body">
       {% if roadnetwork %}
-        <h5>Network name : {{roadnetwork.name}}</h5>
+        <h5 style="text-align: center;">Network name : {{roadnetwork.name}}</h5>
   			<hr>
-  			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'roadtype' roadnetwork.pk %}">Create Road Type</a>
-        <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_road' roadnetwork.pk %}">Import Road Type</a>
-  			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_node' roadnetwork.pk %}">Import Node</a>
-  			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_edge' roadnetwork.pk %}">Import Edge</a>
+        <div class="#">
+          <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'roadtype' roadnetwork.pk %}">Create Road Type</a>
+          <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_road' roadnetwork.pk %}">Import Road Type</a>
+        </div>
+
+        <div class="#">
+          <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_node' roadnetwork.pk %}">Import Node</a>
+    			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_edge' roadnetwork.pk %}">Import Edge</a>
+          <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_nodes' roadnetwork.pk %}">Remove Node</a>
+    			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_roads_types' roadnetwork.pk %}">Remove Road types</a>
+        </div>
 
         {% elif zoneset %}
   			<h5>Zone set name : {{zoneset.name}}</h5>
@@ -32,7 +39,7 @@
            href="{% url 'upload_zone' zoneset.pk %}">Import zone</a>
 
           {% elif od_matrix %}
-    			<h5>OD matrix name : {{od_matrix.name}}</h5>
+    			<h5 style="text-align: center;">OD matrix name : {{od_matrix.name}}</h5>
     			<hr>
       			<a class="btn btn-outline-info  btn-sm btn-block"
               href="{% url 'update_od_matrix' od_matrix.pk %}">Update OD matrix</a>
@@ -46,29 +53,29 @@
 
 	<div class="col-md">
 		<div class="card card-body">
-			<h5>Owner Information</h5>
+			<h5 style="text-align: center; ">Owner Information</h5>
 			<hr>
-			<p>Name: {{user.username}}</p>
-			<p>Email: {{user.email}} </p>
+			<p style="text-align: center;">Name: {{user.username}}<br>
+        Email: {{user.email}} </p>
 		</div>
 	</div>
 
 	<div class="col-md">
 		<div class="card card-body">
       {% if roadnetwork %}
-        <h5>Network attributes</h5>
+        <h5 style="text-align: center;">Network attributes</h5>
   			<hr>
-  			<p>Number of Nodes : {{total_nodes}}</p>
-  			<p>Number of Edges : {{total_edges}} </p>
+  			<p style="text-align: center;">Number of Nodes : {{total_nodes}}<br>
+          Number of Edges : {{total_edges}} </p>
 
       {% elif zoneset %}
-  			<h5>Zone set attributes</h5>
+  			<h5 style="text-align: center;">Zone set attributes</h5>
   			<hr>
   			<p>Zone set tag : {{zoneset.tags}}</p>
   			<p>Zone set comment : {{zoneset.comment}} </p>
 
         {% elif od_matrix %}
-    			<h5>OD matrix attributes</h5>
+    			<h5 style="text-align: center;">OD matrix attributes</h5>
     			<hr>
     			<p>OD matrix tag : {{od_matrix.tags}}</p>
     			<p>OD matrix comment: {{od_matrix.comment}} </p>

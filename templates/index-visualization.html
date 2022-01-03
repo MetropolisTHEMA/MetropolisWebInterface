@@ -41,11 +41,11 @@
 <div class="row w-100 h-100">
   <div class="col-md-1 h-100" id="destinationDiv">
     <div id="divToMove">
-      <br><br>
+      <br>
       <a href="{% url 'network_details' roadnetwork.pk %}"><h1><i class="fa fa-road"></i> Back</h1></a>
-      <br><br>
+      <br>
       <hr>
-      <a href="#" onclick="map.fitBounds(total_bounds)";>Reset zoom</a>
+      <a href="#" onclick="map.fitBounds(total_bounds);">Reset zoom</a>
       <hr>
       <div class="form-group w-75 mx-auto">
         <label for="zoneSelector" class="sr-only">Zones</label>
@@ -56,7 +56,7 @@
           <option value="averages">Average</option>
         </select>
       </div>
-      <br>
+
       <div class="form-group w-75 mx-auto">
         <label for="linkSelector" class="sr-only">Links</label>
         <select id="linkSelector" class="form-control" onchange="linkDropDown();">
@@ -74,8 +74,8 @@
           </optgroup>
         </select>
       </div>
-      <hr><hr><hr><hr>
-      <br>
+      <hr>
+
       <div class="form-group w-75 mx-auto">
         <div id="linkLabel" style="height:30px;display:none">
           <label for="legend-links-svg">Legend</label>

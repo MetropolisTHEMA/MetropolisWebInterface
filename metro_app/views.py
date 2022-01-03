@@ -144,6 +144,36 @@ def index(request):
     }
     return render(request, 'dashboard.html', context)
 
+
+def delete_nodes(request, pk):
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    nodes = Node.objects.filter(network=roadnetwork)
+    if request.method == 'POST':
+        nodes.delete()
+        messages.success(request, 'Nodes types deleted!')
+        return redirect('network_details', pk)
+
+    context = {
+        'roadnetwork': roadnetwork,
+        'nodes_to_delete': nodes
+    }
+    return render(request, 'delete.html', context)
+
+
+def delete_roads_types(request, pk):
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    roads_types = RoadType.objects.filter(network=roadnetwork)
+    if request.method == 'POST':
+        roads_types.delete()
+        messages.success(request, 'Roads types deleted!')
+        return redirect('network_details', pk)
+
+    context = {
+        'roadnetwork': roadnetwork,
+        'roads_types_to_delete': roads_types
+    }
+    return render(request, 'delete.html', context)
+
 # ............................................................................#
 #                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
 # ............................................................................#

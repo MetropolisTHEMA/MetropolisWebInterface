@@ -437,6 +437,9 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         # Replace the geometry of the edges with an offset polygon of
         # corresponding width. time : +16s
         col_list = ['geometry', 'oneway', 'width']
+        import pdb
+        pdb.set_trace()
+
         edges_gdf['geometry'] = edges_gdf[col_list].apply(
             lambda row: get_offset_polygon(
                 linestring=row['geometry'],

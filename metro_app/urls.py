@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import (create_project, create_network, create_roadtype,
+from .views import (create_project, delete_nodes, delete_roads_types,
+                    create_network, create_roadtype,
                     project_details, update_network, update_project,
                     delete_project, network_details, index,
                     delete_network, visualization, edges_point_geojson,
@@ -16,6 +17,9 @@ from .metrosim import upload_edges_results
 
 urlpatterns = [
     path('', index, name='home'),
+    path('network/<str:pk>/delete/nodes', delete_nodes, name='delete_nodes'),
+    path('network/<str:pk>/delete/road_types', delete_roads_types,
+         name='delete_roads_types'),
     path('project/', create_project, name='create_project'),
     path('project/<str:pk>/', project_details, name='project_details'),
     path('update_project/<str:pk>/', update_project, name='update_project'),
