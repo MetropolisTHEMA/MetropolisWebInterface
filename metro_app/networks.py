@@ -149,8 +149,16 @@ def upload_node_func(roadnetwork, filepath):
                 'Cannot import file.\n\nError message:\nThe following fields'
                 ' are mandatory: x, y'
             )
-        gdf['geometry'] = gdf.apply(
-            lambda row: geom.Point([row['x'], row['y']]), axis=1)
+        try:
+            gdf['geometry'] = gdf.apply(
+                lambda row: geom.Point(
+                    [float(row['x']), float(row['y'])])
+                , axis=1)
+        except ValueError:
+            return (
+                'Cannot import file.\n\nError message:\nInvalid values in '
+                'column x or y'
+            )
 
     message = ''
     invalids = gdf.geom_type != 'Point'
