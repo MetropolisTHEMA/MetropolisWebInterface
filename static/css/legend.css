@@ -11,13 +11,13 @@ html, body {
 }
 
 #legend-links-container{
-                height:450px;
-                margin-left: 5px;
+                height:500px;
+                margin: -5px;
             }
 
-            #linkLabel{
-                margin-left: 20px;
-                font-size : 12px;
+			#linkLabel{
+                margin-left: -5px;
+                font-size: 15px;
             }
 
 .info {
@@ -37,7 +37,8 @@ html, body {
 .legend {
 			text-align: left;
 			line-height: 20px;
-			color: #555;
+			color: white;
+			font-size: 12px;
 		}
 .legend i {
 			width: 18px;
@@ -47,10 +48,8 @@ html, body {
 			opacity: 0.7;
 		}
 
-
-
 #destinationDiv{
-/*	background-color: red;*/
-	/*/color: white;*/
-	height: 1500px;
+	background-color: rgb(0, 195, 255);
+	color: white;
+	/*height: 1500px;*/
 }

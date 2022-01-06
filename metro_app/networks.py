@@ -132,7 +132,7 @@ def upload_node_func(roadnetwork, filepath):
             gdf = gpd.GeoDataFrame(df)
             del df
         except Exception as e1:
-            return 'Cannot read file.\n\nError message:\n{}'.format(e)
+            return 'Cannot read file.\n\nError message:\n{}'.format(e1)
 
     # Check that column id is here.
     if not 'id' in gdf.columns:
@@ -155,6 +155,9 @@ def upload_node_func(roadnetwork, filepath):
     message = ''
     invalids = gdf.geom_type != 'Point'
     if invalids.any():
+        #  The any() function is used to check whether any element is True, potentially over an axis
+        # Returns False unless there at least one element within a series or along a Dataframe axis 
+        # that is True or equivalent (e.g. non-zero or non-empty).
         message += (
             'Discarding {} invalid geometries (only Points are allowed).\n'
         ).format(invalids.sum())
@@ -175,13 +178,16 @@ def upload_node_func(roadnetwork, filepath):
         gdf.set_index('id', inplace=True)
 
     gdf['gis-geometry'] = gdf['geometry'].apply(lambda g: GEOSGeometry(str(g)))
+    
     nodes_to_import = list()
     invalid_nodes = list()
+
     def handle_nan(value):
         if value and np.isnan(value):
             return None
         else:
             return value
+            
     for node_id, row in gdf.iterrows():
         try:
             node = Node(
@@ -229,6 +235,7 @@ def upload_node(request, pk):
         messages.warning(
             request, "A task is in progress for this road network.")
         return redirect('network_details', roadnetwork.pk)
+
     if request.method == 'POST':
         # We need to include the files when creating the form
         form = NodeForm(request.POST, request.FILES)
@@ -435,6 +442,7 @@ def upload_edge(request, pk):
             filepath = os.path.join(settings.MEDIA_ROOT, filename)
             with open(filepath, 'wb') as f:
                 f.write(datafile.read())
+            # async_tast ne prend pas la fonction avec les parametres tous ensemble ==> a regarder
             task_id = async_task(upload_edge_func, roadnetwork, filepath,
                                  hook=str_hook)
             description = 'Importing edges'
@@ -617,9 +625,23 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
 
         # Convert back to the CRS84 projection, required by Folium.
         edges_gdf.to_crs(crs=degree_crs, inplace=True)
-
         # Caluclate the bounds
         total_bounds = list(edges_gdf.total_bounds)
+        
+        # ----------------------------#
+        if roadnetwork.simple:
+            center_x, center_y = (
+                (total_bounds[0] + total_bounds[2])/2, 
+                (total_bounds[1] + total_bounds[3])/2
+            )
+            (diffx, diffy) = (
+                total_bounds[2] - total_bounds[0],
+                total_bounds[3] - total_bounds[1]
+                )
+            max_diff = max(diffx, diffy)
+            edges_gdf['geometry'] = edges_gdf['geometry'].affine_transform(
+                [20 / max_diff, 0, 0, 20 / max_diff, -center_x, -center_y])
+        #-----------------------------#
 
         # Create and save edges.geojson file edges_gdf
         directory = get_network_directory(roadnetwork)
@@ -629,9 +651,9 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
         edges = edges_gdf.to_json()  # return a string dictionnary
         # Convert the string dictionary to a normal dictionnary without quote
         edges = json.loads(edges)
-        # Add bounds for future javascript code
+        # Add bounds for javascript code
         edges["total_bounds"] = total_bounds
-
+    
         with open(os.path.join(directory, "edges.geojson"), 'w') as file:
             # Saving the file
             json.dump(edges, file)

@@ -33,6 +33,12 @@
       padding: 5px;
       background: white;
     }
+
+  .popup{
+    height: 50px;
+    width: 250px;
+  }
+
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -45,12 +51,24 @@
       <a href="{% url 'network_details' roadnetwork.pk %}"><h1><i class="fa fa-road"></i> Back</h1></a>
       <br>
       <hr>
-      <a href="#" onclick="map.fitBounds(total_bounds);">Reset zoom</a>
+      <a href="#" onclick="map.fitBounds(total_bounds);"><h3>Reset zoom</h3></a>
       <hr>
+
+      <div class="form-group w-75 mx-auto">
+        <label for="styles" class="sr-only">Styles</label>
+        <select id="styles" class="form-control">
+          <option value="default">Styles</option>
+          <option value="hybrid">hybrid</option>
+          <option value="streets">streets</option>
+          <option value="voyager">voyager</option>
+          <option value="pastel">pastel</option>
+        </select>    
+      </div>
+
       <div class="form-group w-75 mx-auto">
         <label for="zoneSelector" class="sr-only">Zones</label>
         <select id="zoneSelector" class="form-control">
-          <option value="none">Zones</option>
+          <option value="default">Zones</option>
           <option value="departures">Departures</option>
           <option value="arrivals">Arrivals</option>
           <option value="averages">Average</option>
@@ -90,14 +108,13 @@
 
   <div class="col-md-11">
     <div class="#" id="map">
-      <select id="styles" class="dropdownSelect">
-        <option value="hybrid">hybrid</option>
-        <option value="streets">streets</option>
-        <option value="voyager">voyager</option>
-        <option value="pastel">pastel</option>
-    </select>
+      
     </div>
   </div>
+
+  
+    
+  
 </div>
 
 <!---The follow code is for getting a network type. ie abstract or real--->
@@ -109,9 +126,9 @@
   var data = {{geojson|safe}};
 </script>
 
-<script src="{% static '/js/map_maplibre.js' %}"></script>
+<script src="{% static '/js/maplibre-map.js' %}"></script>
 <script src="{% static '/js/linklegend.js' %}"></script>
-<script src="{% static 'js/maplibre_dropdown.js' %}"></script>
+<script src="{% static 'js/maplibre-dropdown.js' %}"></script>
 
 
 

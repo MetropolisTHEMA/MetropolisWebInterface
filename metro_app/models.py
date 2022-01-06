@@ -30,6 +30,10 @@ def get_sentinel_user():
     return User.objects.get_or_create(username='deleted')[0]
 
 
+def get_visualization_directory():
+    return os.path.join(settings.TEMPLATES[0]['DIRS'][0], 'visualization')
+
+    
 class Project(models.Model):
     """Projects are containers used to store input models, runs and output
     models in a coherent and organized manner.
@@ -226,10 +230,6 @@ class ParameterSet(models.Model):
 
     class Meta:
         db_table = 'ParameterSet'
-
-
-def get_visualization_directory():
-    return os.path.join(settings.TEMPLATES[0]['DIRS'][0], 'visualization')
 
 
 class RoadNetwork(models.Model):

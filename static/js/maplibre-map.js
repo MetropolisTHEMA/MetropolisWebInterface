@@ -25,49 +25,20 @@ map.addControl(new maplibregl.NavigationControl(), 'top-right');
 map.addControl(new maplibregl.FullscreenControl())
 
 var hoveredStateId = null;
-var customLayers = [{
-  source: {
+
+function addDataLayer() {
+  map.addSource('roads', {
     type: 'geojson',
     data: data,
     'generateId': true // It generate an automatic id which is undefined by defautre
-  },
-  layer: {
-    'id': 'lines',
-    'type': 'fill',
-    'source': 'roads',
-    'layout': {},
-    'paint': {
-      'fill-color': ['get', 'color'],
-      'fill-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false],
-        1,
-        0.6
-      ]
-    }
-  }
-}]
-map.on('style.load', function() {
-  // Always add the same custom soruces and layers after a style change
-  for (var i = 0; i < customLayers.length; i++) {
-    var me = customLayers[i]
-    map.addSource(me.layer.source, me.source);
-    map.addLayer(me.layer, me.id)
-  }
-});
-map.on('load', function() {
-  /*map.addSource('roads', {
-    type: 'geojson',
-    data: data,
-    'generateId': true // It generate an automatic id which is undefined by defautre
-  });
+  })
+
   map.addLayer({
     'id': 'lines',
     'type': 'fill',
     'source': 'roads',
     'layout': {},
     'paint': {
-      'fill-color': ['get', 'color'],
       'fill-opacity': [
         'case',
         ['boolean', ['feature-state', 'hover'], false],
@@ -75,12 +46,23 @@ map.on('load', function() {
         0.6
       ]
     }
-  });*/
+  })
+}
+
+
+map.on('styledata', function () {
+  // Always add the same sources and layers after a style change
+   addDataLayer();
+   linkDropDown()
+});
+
+map.on('load', function () {
 
   // Create a popup, but don't add it to the map yet.
   var popup = new maplibregl.Popup({
     closeButton: false,
-    closeOnClick: false
+    closeOnClick: false,
+    className: 'popup',
   });
 
   /*...... Start Blog  hover effect & displaying information ......*/
@@ -88,6 +70,8 @@ map.on('load', function() {
   /* When the user hover their mouse over the 'lines' layer, we'll update the
    feature state for the feature under the mouse.*/
   map.on('mousemove', 'lines', async (e) => {
+    
+    popup.setLngLat(e.lngLat).setHTML('<br><br><br>').addTo(map)
     map.getCanvas().style.cursor = 'pointer'
 
     if (e.features.length > 0) {
@@ -112,8 +96,9 @@ map.on('load', function() {
     let edge_id = e.features[0].properties.edge_id;
     var edge_instance_api = await fetch(
       `http://127.0.0.1:8000/api/network/${network_id}/edge_id/${edge_id}`)
-      edge_instance = await edge_instance_api.text()
-      popup.setLngLat(e.lngLat).setHTML(edge_instance).addTo(map)
+    edge_instance = await edge_instance_api.text()
+    //popup.setLngLat(e.lngLat).setHTML(edge_instance).addTo(map)
+    popup.setHTML(edge_instance)
 
   });
 
@@ -135,14 +120,33 @@ map.on('load', function() {
   });
   /*...... End Blog hover effect & displaying links information ......*/
 
-  /* Adding muttiples styles */
+  /* Switching layer */
   document
     .getElementById('styles')
-    .addEventListener('change', function(event) {
+    .addEventListener('change', function (event) {
       const style = event.target.value;
       map.setStyle(`https://api.maptiler.com/maps/${style}/style.json?key=6OYzFVmHZSrmbPQ2uqDd`)
     });
 }) // End map.on load
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*map.on('mousemove', 'lines', async function(e) {
   let edge_id = e.features[0].properties.edge_id;

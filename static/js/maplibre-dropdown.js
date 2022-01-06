@@ -7,7 +7,7 @@
   // remove the filter for the 'bike-docks' style layer
   map.setFilter('bike-docks', null);
   */
-
+  
 async function GetFieldAttribute(field) {
   // Get url of the current network
   const current_url = window.location.href // document.url
@@ -32,7 +32,12 @@ async function linkDropDown() {
   d3.select('#linkLegendSvg').remove();
   var linkSelector = document.getElementById('linkSelector')
 
-  if (linkSelector.value == "lanes") {
+  if (linkSelector.value == "default"){
+    map.setPaintProperty('lines', 'fill-color', ['get', 'color'])
+  }
+
+  else if (linkSelector.value == "lanes") {
+    d3.select('#linkLegendSvg').remove();
 
     /* The following IF block is to avoid to re-excute the same piece of code
       two times. The id is for the first time we select 'lanes' the IF statement is
@@ -40,6 +45,7 @@ async function linkDropDown() {
       So in this way, we won't query the api twice and adding the lanes from the api. */
     if (typeof data.features[0].properties.lanes == 'undefined') {
       var lanes = await GetFieldAttribute("lanes")
+      
       // Adding lanes from the api as the map properties
       data.features.map(
         item => {
@@ -58,10 +64,11 @@ async function linkDropDown() {
       1, 'rgb(255, 245,0 )',
       5, 'rgb(255, 0, 0)',
     ]);
-    ColorScale(lanes_array, '#FFF500', '#FF0000')
+    //ColorScale(lanes_array, '#FFF500', '#FF0000')
     ColorScale(lanes_array, 'rgb(255, 245,0 )', 'rgb(255, 0, 0)')
   }
   else if (linkSelector.value == "length") {
+    d3.select('#linkLegendSvg').remove();
     if (typeof data.features[0].properties.length == 'undefined') {
       const length = await GetFieldAttribute("length")
       // Adding length from the api as the map properties
@@ -87,6 +94,7 @@ async function linkDropDown() {
     ColorScale(length_array, 'rgb(255, 245, 0 )', 'rgb(255, 0, 0)')
   }
    else if (linkSelector.value == "speed") {
+    d3.select('#linkLegendSvg').remove();
      if (typeof data.features[0].properties.speed == 'undefined') {
        const speed = await GetFieldAttribute("speed")
        // Adding speed from the api as the map properties

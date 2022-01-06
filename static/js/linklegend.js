@@ -1,3 +1,5 @@
+// https://stackoverflow.com/questions/42821359/scale-in-different-units 
+
 function drawLinkLegend(colorscale, min, max) {
     // Show label
     linkLabel.style.display = 'block'
@@ -39,8 +41,22 @@ function drawLinkLegend(colorscale, min, max) {
         .domain([min, max])
         .range([legendLength, 0]);
 
-    legendSvg.append("g")
-         .attr("class", "legend axis")
-         .attr("transform", "translate(" + (legendWidth - 50) + ", " + legendMargin + ")")
-         .call(d3.axisRight().scale(legendAxis).ticks(10))
+    if (linkSelector.value == 'speed'){
+      legendSvg.append("g")
+          .attr("class", "legend axis")
+          .attr("transform", "translate(" + (legendWidth - 50) + ", " + legendMargin + ")")
+          .call(d3.axisRight().scale(legendAxis).tickFormat(d => d + " km/h").ticks(10))
+    }
+    else if (linkSelector.value == 'length'){
+      legendSvg.append("g")
+          .attr("class", "legend axis")
+          .attr("transform", "translate(" + (legendWidth - 50) + ", " + legendMargin + ")")
+          .call(d3.axisRight().scale(legendAxis).tickFormat(d => d + " km").ticks(10))
+    }
+    else {
+      legendSvg.append("g")
+          .attr("class", "legend axis")
+          .attr("transform", "translate(" + (legendWidth - 50) + ", " + legendMargin + ")")
+          .call(d3.axisRight().scale(legendAxis).ticks(10))
+    }
 }
