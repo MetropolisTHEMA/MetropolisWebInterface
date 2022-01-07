@@ -19,6 +19,19 @@ async function GetFieldAttribute(field) {
   return get_field_dictionnary
 }
 
+/* The following convert hex code to rgb */
+function hex2rgb(hex) {
+  var validHEXInput = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!validHEXInput) {
+    return false;
+  }
+
+  r = parseInt(validHEXInput[1], 16);
+  g = parseInt(validHEXInput[2], 16);
+  b = parseInt(validHEXInput[3], 16);
+  return 'rgb('+r+','+g+','+b+')';
+}
+
 function ColorScale(field, rgb1, rgb2) {
   const max = d3.max(field);
   const min = d3.min(field);
@@ -28,10 +41,21 @@ function ColorScale(field, rgb1, rgb2) {
   drawLinkLegend(colorscale, min, max);
 }
 
+function MapLibreSetPaintProperty(field, number1, number2, color1, color2){
+  map.setPaintProperty('lines', 'fill-color', [
+    'interpolate', ['linear'],
+    ['get', field],
+    number1, color1, //'rgb(255, 245,0 )',
+    number2, color2, //'rgb(255, 0, 0)',
+  ]);
+}
+
 async function linkDropDown() {
   d3.select('#linkLegendSvg').remove();
   var linkSelector = document.getElementById('linkSelector')
-
+  var first_color = hex2rgb(document.getElementById("first").value)
+  var second_color = hex2rgb(document.getElementById("second").value)
+  
   if (linkSelector.value == "default"){
     map.setPaintProperty('lines', 'fill-color', ['get', 'color'])
   }
@@ -58,14 +82,9 @@ async function linkDropDown() {
     else {
       var lanes_array = data.features.map(item => item.properties.lanes)
     }
-    map.setPaintProperty('lines', 'fill-color', [
-      'interpolate', ['linear'],
-      ['get', 'lanes'],
-      1, 'rgb(255, 245,0 )',
-      5, 'rgb(255, 0, 0)',
-    ]);
-    //ColorScale(lanes_array, '#FFF500', '#FF0000')
-    ColorScale(lanes_array, 'rgb(255, 245,0 )', 'rgb(255, 0, 0)')
+    MapLibreSetPaintProperty('lanes', 1, 5, first_color, second_color)
+    ColorScale(lanes_array, first_color, second_color)
+    //ColorScale(lanes_array, 'rgb(255, 245,0 )', 'rgb(255, 0, 0)')
   }
   else if (linkSelector.value == "length") {
     d3.select('#linkLegendSvg').remove();
@@ -83,15 +102,9 @@ async function linkDropDown() {
     else {
         var length_array = data.features.map(item => item.properties.length)
     }
-
-    map.setPaintProperty('lines', 'fill-color', [
-      'interpolate', ['linear'],
-      ['get', 'length'],
-      0, 'rgb(255, 245, 0 )',
-      3, 'rgb(255, 0, 0)',
-    ]);
-    //ColorScale(length_array, '#FFF500', '#FF0000')
-    ColorScale(length_array, 'rgb(255, 245, 0 )', 'rgb(255, 0, 0)')
+    MapLibreSetPaintProperty('length', 0, 3, first_color, second_color)
+    ColorScale(length_array, first_color, second_color)
+    //ColorScale(length_array, 'rgb(255, 245, 0 )', 'rgb(255, 0, 0)')
   }
    else if (linkSelector.value == "speed") {
     d3.select('#linkLegendSvg').remove();
@@ -116,8 +129,9 @@ async function linkDropDown() {
       50, 'rgb(255, 245, 0 )',
       100, 'rgb(0, 0, 102)',
     ]);
-    //ColorScale(speed_array, "#FFF500", "#000066")
-    ColorScale(speed_array, 'rgb(255, 245, 0 )', 'rgb(0, 0, 102)')
+    MapLibreSetPaintProperty('speed', 50, 100, first_color, second_color)
+    ColorScale(speed_array, first_color, second_color)
+    //ColorScale(speed_array, 'rgb(255, 245, 0 )', 'rgb(0, 0, 102)')
   }
 
 } //End function
