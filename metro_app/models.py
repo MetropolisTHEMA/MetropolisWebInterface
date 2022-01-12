@@ -147,8 +147,10 @@ class ParameterSet(models.Model):
     """Set of technical parameters used for a run.
 
     :project Project: Project the ParameterSet instance belongs to.
-    :period_start datetime.time: Earliest possible departure time.
-    :period_end datetime.time: Latest possible departure time.
+    :period_start timedelta: Earliest possible departure time (expressed as
+     time since midnight).
+    :period_end timedelta: Latest possible departure time (expressed as time
+     since midnight).
     :period_interval  timedelta: Interval at which link-specific results are
      recorded.
     :learn_process str: Type of learning process for the day-to-day model.
@@ -180,9 +182,9 @@ class ParameterSet(models.Model):
         (3, 'genetic')
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    period_start = models.TimeField(
+    period_start = models.DurationField(
         help_text='Starting time of the simulated period')
-    period_end = models.TimeField(
+    period_end = models.DurationField(
         help_text='Ending time of the simulated period')
     period_interval = models.DurationField(
         default=timedelta(minutes=5),
@@ -227,6 +229,24 @@ class ParameterSet(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_learning_model(self):
+        if self.learn_process == 0:
+            return {
+                'Exponential': {
+                    'alpha': self.learn_param,
+                }
+            }
+        else:
+            raise 'Unsupported learning process: {}'.format(self.learn_process)
+
+    def get_convergence_criteria(self):
+        criteria = []
+        if self.iter_check:
+            criteria.append({'MaxIteration': self.iter_value})
+        assert len(criteria) > 0, \
+               'At least one convergence criteria must be enabled'
+        return criteria
 
     class Meta:
         db_table = 'ParameterSet'
@@ -307,6 +327,8 @@ class RoadType(models.Model):
     :default_speed float: Default free-flow speed of the edges for this road
      type, in kilometers per hour.
     :default_lanes int: Default number of lanes for this road type.
+    :default_outflow float: Default outflow of the bottleneck at the end of the
+     edge (in meters of vehicles per lane per hour)
     :default_param1 float: Default value for the first parameter used in the
      congestion model. The exact meaning depends on the congestion model.
     :default_param2 float: Default value for the second parameter used in the
@@ -323,9 +345,9 @@ class RoadType(models.Model):
     LINEAR = 4
     CONGESTION_CHOICES = (
         (BOTTLENECK, 'Bottleneck'),
-        (FREEFLOW, 'Free flow'),
-        (LOGDENSITY, 'Log-density'),
-        (BPR, 'Bureau of public roads'),
+        (FREEFLOW, 'FreeFlow'),
+        (LOGDENSITY, 'LogDensity'),
+        (BPR, 'BureauOfPublicRoads'),
         (LINEAR, 'Linear'),
     )
     network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
@@ -337,6 +359,7 @@ class RoadType(models.Model):
         default=0, choices=CONGESTION_CHOICES)
     default_speed = models.FloatField(default=50)
     default_lanes = models.SmallIntegerField(default=1)
+    default_outflow = models.FloatField(null=True, blank=True)
     default_param1 = models.FloatField(null=True, blank=True)
     default_param2 = models.FloatField(null=True, blank=True)
     default_param3 = models.FloatField(null=True, blank=True)
@@ -397,6 +420,8 @@ class Edge(models.Model):
      default speed for the given road type is used if empty.
     :lanes int: Number of lanes on the edge. The default number of lanes for
      the given road type is used if empty.
+    :outflow float: Outflow of the bottleneck at the end of the edge (in meters
+     of vehicles per lane per hour)
     :param1 float: Parameter used to compute the travel time of the edge. The
      exact meaning depends on the congestion model. The default value for the
      given road type is used if empty.
@@ -429,6 +454,7 @@ class Edge(models.Model):
     length = models.FloatField()
     speed = models.FloatField(null=True, blank=True)
     lanes = models.SmallIntegerField(null=True, blank=True)
+    outflow = models.FloatField(null=True, blank=True)
     param1 = models.FloatField(null=True, blank=True)
     param2 = models.FloatField(null=True, blank=True)
     param3 = models.FloatField(null=True, blank=True)
@@ -447,6 +473,12 @@ class Edge(models.Model):
 
     def get_length_decimal_places(self):
         return "{:.3}".format(self.length)
+
+    def get_length_in_meters(self):
+        return self.length * 1000.0
+
+    def get_outflow(self):
+        return self.outflow or self.road_type.default_outflow
 
     def get_param1(self):
         return self.param1 or self.road_type.default_param1
@@ -756,104 +788,6 @@ class Run(models.Model):
         db_table = 'Run'
 
 
-class Agent(models.Model):
-    """Generated agent ready to be used by MetroSim.
-
-    :agent_id int: Id of the agent, as used by the users in the import files.
-     Must be unique for a specific Population.
-    :population Population: Population instance the Agent belongs to.
-    :origin_node Node: Node of the road network used as the origin of the
-     agent for car trips.
-    :destination_node Node: Node of the road network used as the destination of
-     the agent for car trips.
-    :origin_stop PTStop: PTStop of the public-transit network used as the
-     origin of the agent for public-transit trips.
-    :destination_stop PTStop: PTStop of the public-transit network used as the
-     destination of the agent for public-transit trips.
-    ...
-    """
-    agent_id = models.PositiveBigIntegerField(
-        db_index=True, help_text='Id of the agent')
-    population = models.ForeignKey(Population, on_delete=models.CASCADE)
-    origin_node = models.ForeignKey(
-        Zone, related_name='origin_zone', on_delete=models.CASCADE,
-        help_text='Origin zone of the agent',
-    )
-    destination_node = models.ForeignKey(
-        Zone, related_name='destination_zone', on_delete=models.CASCADE,
-        help_text='Destination zone of the agent',
-    )
-    #  origin_stop = models.ForeignKey(
-    #      PTStop, related_name='origin_stop', on_delete=models.CASCADE,
-    #      help_text='Origin stop of the agent',
-    #  )
-    #  destination_stop = models.ForeignKey(
-    #      PTStop, related_name='destination_stop', on_delete=models.CASCADE,
-    #      help_text='Destination stop of the agent',
-    #  )
-
-    def __str__(self):
-        return 'Agent {}'.format(self.agent_id)
-
-    class Meta:
-        db_table = 'Agent'
-
-
-class AgentResults(models.Model):
-    """Class to hold results of MetroSim for a specific agent.
-
-    :agent Agent: Agent instance for which the AgentResults is created.
-    :run Run: Run instance from which the results are coming.
-    :mode str: Mode chosen by the agent for the last iteration. Possible values
-     are private vehicle, public transit and walking.
-    :departure_time datetime.time: Departure time of the agent for the last
-     iteration.
-    :arrival_time datetime.time: Arrival time of the agent for the last
-     iteration.
-    :travel_time timedelta: Travel time of the agent for the last iteration.
-    :utility float: Utility level obtained by the agent for the last iteration.
-    :real_cost float: Cost paid by the agent for the last iteration.
-    """
-    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
-    run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    mode_choices = (
-        (0, 'Private vehicle'),
-        (1, 'Public transit'),
-        (2, 'Walking'),
-    )
-    mode = models.PositiveSmallIntegerField()
-    departure_time = models.TimeField()
-    arrival_time = models.TimeField()
-    travel_time = models.DurationField()
-    utility = models.FloatField()
-    real_cost = models.FloatField()
-
-    class Meta:
-        db_table = 'AgentResults'
-
-
-class AgentRoadPath(models.Model):
-    """Road path taken by a specific agent for the last iteration of a run.
-
-    An AgentRoadPath only exists for agents who took the car for the last
-    iteration of the run.
-
-    :agent Agent: Agent instance for which the AgentRoadPath is created.
-    :run Run: Run instance from which the results are coming.
-    :edge Edge: Edge of the road network taken.
-    :time datetime.time: Time at which the edge was taken.
-    :travel_time timedelta: Travel time on the edge.
-    """
-    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
-    run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
-    time = models.TimeField()
-    travel_time = models.DurationField()
-
-    class Meta:
-        db_table = 'AgentRoadPath'
-
-
 class NodeResults(models.Model):
     """Class to hold results of MetroSim for a specific node of the road
     network.
@@ -950,3 +884,251 @@ class BackgroundTask(models.Model):
 
     class Meta:
         db_table = 'BackgroundTask'
+
+
+class Vehicle(models.Model):
+    """A Vehicle is an element of the road-network graph, representing a class
+    of vehicle moving on the network.
+
+    :network: RoadNetwork instance the Vehicle belongs to.
+    :vehicle_id int: Id of the Vehicle, as used by the users in the import
+     files.
+     Must be unique for a specific RoadNetwork.
+    :name str: Name of the Vehicle (default is '').
+    :length float: Front-to-front length of the Vehicle (in meters).
+    :speed_multiplicator float: Optional. If not None, the free-flow speed of
+    the vehicle on an edge is the base speed on the edge multiplied by this
+    value.
+    """
+    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    vehicle_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the vehicle (must be unique)')
+    name = models.CharField(
+        max_length=80, blank=True, help_text='Name of the vehicle')
+    length = models.FloatField(help_text='Length of the vehicle (meters)')
+    speed_multiplicator = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name or 'Vehicle {}'.format(self.vehicle_id)
+
+    def get_speed_function(self):
+        if speed_multiplicator:
+            {'Multiplicator': self.multiplicator}
+        else:
+            'Base'
+
+    class Meta:
+        db_table = 'Vehicle'
+
+
+class Agent(models.Model):
+    """Generated agent ready to be used by MetroSim.
+
+    :agent_id int: Id of the agent, as used by the users in the import files.
+     Must be unique for a specific Population.
+    :population Population: Population instance the Agent belongs to.
+    :origin_zone Zone: Zone used as the origin of the agent for his trips.
+    :destination_zone Zone: Zone used as the destination of the agent for his
+     trips.
+    :mode_choice_model int: Type of mode-choice model for the agent (either
+     deterministic or logit).
+    :mode_choice_u float: Random value 0 <= u < 1 for the mode choice.
+    :mode_choice_mu float: Variance of the error term for a Logit mode-choice
+     model.
+    :t_star timedelta: Desired arrival at destination (or departure from
+     origin) of the agent (expressed as a duration since midnight).
+    :delta timedelta: Length of the desired arrival / departure time period.
+    :beta float: Penalty for early arrivals / departures (in utility / hour).
+    :gamma float: Penalty for late arrivals / departures (in utility / hour).
+    :desired_arrival bool: If True, t_star represents a desired arrival time at
+     destination, otherwise it represents a desired departure time from origin.
+    :vehicle Vehicle: Vehicle used by the agent for car trips.
+    :dep_time_car_u float: Random value 0 <= u < 1 for the car departure-time
+     choice.
+    :dep_time_car_mu float: Variance of the error term in the car
+     departure-time choice model.
+    :car_vot float: Value of time in a car (in utility / hour).
+    :origin_stop PTStop: PTStop of the public-transit network used as the
+     origin of the agent for public-transit trips.
+    :destination_stop PTStop: PTStop of the public-transit network used as the
+     destination of the agent for public-transit trips.
+    """
+    agent_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the agent')
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    # Origin - destination.
+    origin_zone = models.ForeignKey(
+        Zone, related_name='origin_zone', on_delete=models.CASCADE,
+        help_text='Origin zone of the agent',
+    )
+    destination_zone = models.ForeignKey(
+        Zone, related_name='destination_zone', on_delete=models.CASCADE,
+        help_text='Destination zone of the agent',
+    )
+    # Mode-choice parameters.
+    DETERMINISTIC = 0
+    LOGIT = 1
+    MODE_CHOICES = (
+        (DETERMINISTIC, 'Deterministic'),
+        (LOGIT, 'Logit'),
+    )
+    mode_choice_model = models.SmallIntegerField(
+        default=0, choices=MODE_CHOICES)
+    mode_choice_u = models.FloatField()
+    mode_choice_mu = models.FloatField(blank=True, null=True)
+    # Schedule utility parameters.
+    t_star = models.DurationField()
+    delta = models.DurationField()
+    beta = models.FloatField()
+    gamma = models.FloatField()
+    desired_arrival = models.BooleanField(default=True)
+    # Car mode.
+    vehicle = models.ForeignKey(
+        Vehicle, on_delete=models.CASCADE, help_text='Vehicle of the agent')
+    dep_time_car_u = models.FloatField()
+    dep_time_car_mu = models.FloatField()
+    car_vot = models.FloatField
+
+    def __str__(self):
+        return 'Agent {}'.format(self.agent_id)
+
+    def get_car_dep_time_model(self):
+        return {
+            'ContinuousLogit': {
+                'u': self.dep_time_car_u,
+                'mu': self.dep_time_car_mu,
+            }
+        }
+
+    def get_car_utility_model(self):
+        return {
+            'Proportional': {
+                'alpha': self.car_vot,
+            }
+        }
+
+    def get_mode_choice_model(self):
+        if self.mode_choice_model == self.DETERMINISTIC:
+            return {
+                'Deterministic': {
+                    'u': self.mode_choice_u,
+                }
+            }
+        else:
+            return {
+                'Logit': {
+                    'u': self.mode_choice_u,
+                    'mu': self.mode_choice_mu,
+                }
+            }
+
+    def get_schedule_delay_utility(self):
+        return {
+            'AlphaBetaGammaModel': {
+                't_star_low': max(
+                    0, (self.t_star - self.delta / 2).total_seconds()),
+                't_star_high': (self.t_star + self.delta / 2).total_seconds(),
+                'beta': self.beta,
+                'gamma': self.gamma,
+                'desired_arrival': self.desired_arrival,
+            }
+        }
+
+    def get_origin_node(self, road_network):
+        try:
+            relation = ZoneNodeCorrespondance.objects.get(
+                zone_set=self.origin_zone.zone_set, road_network=road_network)
+        except ZoneNodeCorrespondance.DoesNotExist:
+            return None
+        try:
+            link = self.origin_zone.zonenoderelation_set.get(relation=relation)
+        except ZoneNodeRelation.DoesNotExist:
+            return None
+        return link.node
+
+    def get_destination_node(self, road_network):
+        try:
+            relation = ZoneNodeCorrespondance.objects.get(
+                zone_set=self.destination_zone.zone_set,
+                road_network=road_network)
+        except ZoneNodeCorrespondance.DoesNotExist:
+            return None
+        try:
+            link = self.destination_zone.zonenoderelation_set.get(
+                relation=relation)
+        except ZoneNodeRelation.DoesNotExist:
+            return None
+        return link.node
+
+    class Meta:
+        db_table = 'Agent'
+
+
+class AgentResults(models.Model):
+    """Class to hold results of MetroSim for a specific agent.
+
+    :agent Agent: Agent instance for which the AgentResults is created.
+    :run Run: Run instance from which the results are coming.
+    :mode str: Mode chosen by the agent for the last iteration. Possible values
+     are private vehicle, public transit and walking.
+    :departure_time datetime.time: Departure time of the agent for the last
+     iteration.
+    :arrival_time datetime.time: Arrival time of the agent for the last
+     iteration.
+    :travel_time timedelta: Travel time of the agent for the last iteration.
+    :utility float: Utility level obtained by the agent for the last iteration.
+    :real_cost float: Cost paid by the agent for the last iteration.
+    """
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    mode_choices = (
+        (0, 'Private vehicle'),
+        (1, 'Public transit'),
+        (2, 'Walking'),
+    )
+    mode = models.PositiveSmallIntegerField()
+    departure_time = models.TimeField()
+    arrival_time = models.TimeField()
+    travel_time = models.DurationField()
+    utility = models.FloatField()
+    real_cost = models.FloatField()
+
+    class Meta:
+        db_table = 'AgentResults'
+
+
+class AgentRoadPath(models.Model):
+    """Road path taken by a specific agent for the last iteration of a run.
+
+    An AgentRoadPath only exists for agents who took the car for the last
+    iteration of the run.
+
+    :agent Agent: Agent instance for which the AgentRoadPath is created.
+    :run Run: Run instance from which the results are coming.
+    :edge Edge: Edge of the road network taken.
+    :time datetime.time: Time at which the edge was taken.
+    :travel_time timedelta: Travel time on the edge.
+    """
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
+    time = models.TimeField()
+    travel_time = models.DurationField()
+
+    class Meta:
+        db_table = 'AgentRoadPath'
+
+
+class ZoneNodeCorrespondance(models.Model):
+    """Class to link OD zones with road-network nodes.
+    """
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+
+class ZoneNodeRelation(models.Model):
+    """Class to link OD zones with road-network nodes.
+    """
+    relation = models.ForeignKey(
+        ZoneNodeCorrespondance, on_delete=models.CASCADE)
+    zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)

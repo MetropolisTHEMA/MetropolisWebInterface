@@ -12,7 +12,7 @@ class EdgeTable(tables.Table):
                  'data-show-toggle': 'true',
                  }"""
         fields = ('edge_id', 'name', 'source', 'target', 'road_type',
-                  'lanes', 'length', 'speed',
+                  'lanes', 'length', 'speed', 'outflow',
                   'param1', 'param2', 'param3',
                   )
         # 'data-pagination': 'true',
@@ -43,6 +43,7 @@ class RoadTypeTable(tables.Table):
         model = RoadType
         fields = ('road_type_id', 'name', 'congestion',
                   'default_speed', 'default_lanes',
+                  'default_outflow',
                   'default_param1', 'default_param2',
                   'default_param3', 'color')
 

@@ -85,6 +85,7 @@ def upload_road_type(request, pk):
                                        row['congestion'].lower()],
                             default_speed=row.get('default_speed', None),
                             default_lanes=row.get('default_lanes', None),
+                            default_outflow=row.get('default_outflow', None),
                             default_param1=row.get('default_param1', None),
                             default_param2=row.get('default_param2', None),
                             default_param3=row.get('default_param3', None),
@@ -392,6 +393,7 @@ def upload_edge_func(roadnetwork, filepath):
                 speed=handle_nan(row.get('speed')),
                 lanes=handle_nan(row.get('lanes')),
                 name=row.get('name', ''),
+                outflow=handle_nan(row.get('outflow')),
                 param1=handle_nan(row.get('param1')),
                 param2=handle_nan(row.get('param2')),
                 param3=handle_nan(row.get('param3')),
@@ -505,7 +507,7 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         return split(polygon, linestring)[-1]
 
 
-def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
+def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
                                node_color='lightgray', edge_width_ratio=1,
                                max_lanes=5):
     """Generates an HTML file with the Leaflet.js representation of a network.
