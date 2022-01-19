@@ -94,7 +94,6 @@
 	</div>
 </div>
 {% endif %}
-
 <div class="row">
 	<h5>// Network attributes</h5>
 	<div class="col-md">
@@ -117,15 +116,15 @@
 				<tbody>
 					{% for roadnetwork in roadnetworks %}
 					<tr>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'network_details' roadnetwork.pk %}">details</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'network_details' roadnetwork.pk %}">details</a></td>
 						<td>{{roadnetwork.name}}</td>
 						<td>{{roadnetwork.locked}}</td>
 						<td>{{roadnetwork.simple}}</td>
 						<td>{{roadnetwork.comment}}</td>
 						<td>{{roadnetwork.tags}}</td>
 						<td>{{roadnetwork.date_created}}</td>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'update_network' roadnetwork.pk %}">Update</a></td>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'delete_network' roadnetwork.pk %}">Remove</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'update_network' roadnetwork.pk %}">Update</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'delete_network' roadnetwork.pk %}">Remove</a></td>
 					</tr>
 					{% endfor %}
 				</tbody>
@@ -155,14 +154,14 @@
 				<tbody>
 					{% for zoneset in zonesets %}
 					<tr>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'zoneset_details' zoneset.pk %}">details</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'zoneset_details' zoneset.pk %}">details</a></td>
 						<td>{{zoneset.locked}}</td>
 						<td>{{zoneset.name}}</td>
 						<td>{{zoneset.comment}}</td>
 						<td>{{zoneset.tags}}</td>
 						<td>{{zoneset.date_created}}</td>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'update_zoneset' zoneset.pk %}">Update</a></td>
-						<td><a class="btn btn-sm btn-danger" href="{% url 'delete_zoneset' zoneset.pk %}">Remove</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'update_zoneset' zoneset.pk %}">Update</a></td>
+						<td><a class="btn btn-sm btn-success" href="{% url 'delete_zoneset' zoneset.pk %}">Remove</a></td>
 					</tr>
 					{% endfor %}
 
@@ -195,7 +194,7 @@
 				<tbody>
 					{% for od_matrix in od_matrix %}
 					<tr>
-						<td><a class="btn btn-sm btn-danger"
+						<td><a class="btn btn-sm btn-success"
 						 href="{% url 'od_matrix_details' od_matrix.pk %}">details</a></td>
 						<td>{{od_matrix.locked}}</td>
 						<td>{{od_matrix.zone_set}}</td>
@@ -203,9 +202,9 @@
 						<td>{{od_matrix.comment}}</td>
 						<td>{{od_matrix.tags}}</td>
 						<td>{{od_matrix.date_created}}</td>
-							<td><a class="btn btn-sm btn-danger"
+							<td><a class="btn btn-sm btn-success"
 								href="{% url 'update_od_matrix' od_matrix.pk %}">Update</a></td>
-							<td><a class="btn btn-sm btn-danger"
+							<td><a class="btn btn-sm btn-success"
 								href="{% url 'delete_od_matrix' od_matrix.pk %}">Remove</a></td>
 					</tr>
 					{% endfor %}

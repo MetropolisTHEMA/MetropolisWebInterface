@@ -17,14 +17,13 @@
   body {
     margin: 0;
     padding: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
-
   #map {
-    position: relative;
-    width: 100.0%;
-    height: 100.0%;
-    left: 0.0%;
-    top: 0.0%;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
   }
 
   select {
@@ -40,6 +39,27 @@
     height: 50px;
     width: 250px;
   }
+
+  #console {
+    position: absolute;
+    top: 800px;
+    left: 600px;
+    width: 600px;
+    margin-bottom: 5px;
+    padding: 10px 10px;
+    background-color: white;
+    display: none;
+ }
+
+  .session {
+    margin-bottom: 20px;
+  }
+
+  .row {
+    height: 12px;
+    width: 100%;
+  }
+
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -66,6 +86,7 @@
           <option value="streets">streets</option>
           <option value="voyager">voyager</option>
           <option value="pastel">pastel</option>
+          <option value="ab9f3046-e237-4a68-83bd-0dd997a354a1">dark</option>
         </select>
       </div>
 
@@ -122,9 +143,19 @@
   </div>
 
   <div class="col-md-11">
-    <div class="#" id="map">
-
+    
+    <div class="#" id="map"></div>
+    <div id='console'>
+        <div class='session' id='sliderbar'>
+          <h2>Time: <label id='active-hour'>6H</label></h2>
+          <input id='slider' class='row' type='range' min='0' max='24' step='1' value='0' />
+        </div>
+        <div>
+          <button type="button" class="btn btn-success" id="btnPlay" onclick="Play()">Play</button>
+          <button type="button" class="btn btn-secondary" id="btnPause"">Pause</button>
+        </div>
     </div>
+
   </div>
 
 </div>
@@ -141,4 +172,5 @@
 <script src="{% static '/js/maplibre-map.js' %}"></script>
 <script src="{% static '/js/linklegend.js' %}"></script>
 <script src="{% static 'js/maplibre-dropdown.js' %}"></script>
+<script src="{% static 'js/fetchapi.js' %}"></script>
 {% endblock %}

@@ -12,17 +12,17 @@ def upload_edges_results(request, pk):
         de la partie simulation. Il nous faut cette partie pour pouvoir
         uploader les edges results du reseau correspondant sans changement
         manuel dans le code. Merci de ne pas mettre o days dans le travel times
-        De ce fait nous continurons le plugin TimeDimension une fois cette
+        De ce fait nous continuerons le plugin TimeDimension une fois cette
         partie terminée"""
-
     list_edges_results = []
     none_existing_edge_id = []
     run = Run.objects.get(id=1)
     edges = Edge.objects.select_related().filter(network_id=pk)
     edges_instance_dict = {edge.edge_id: edge for edge in edges}
-    edges_results_root = os.path.join(BASE_DIR, 'edges_results')
-    url = edges_results_root + "/edge_results.csv"
-    with open(url) as edges_results:
+    edges_results_root = os.path.join(BASE_DIR, 'edges_results/edge_results.csv')
+    #url = os.path.join(edges_results_root, 'edge_results.csv')
+    #url = edges_results_root + "/edge_results.csv"
+    with open(edges_results_root) as edges_results:
         edges_results = edges_results.read().splitlines()
         # The following line return an objet containing each row
         # as a composition of directionary with column name as key
@@ -45,4 +45,6 @@ def upload_edges_results(request, pk):
                 )
                 list_edges_results.append(edge)
         EdgeResults.objects.bulk_create(list_edges_results)
+        print(len(list_edges_results))
+        print(len(none_existing_edge_id))
         return HttpResponse('Process finished')

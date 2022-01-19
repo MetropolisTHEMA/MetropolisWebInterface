@@ -5,7 +5,7 @@ from .views import (edge_list, edge_detail,
                     get_lanes_field_attribute,
                     get_length_field_attribute,
                     get_speed_field_attribute,
-                    edges_results
+                    get_field_from_edges_results,
                     )
 from rest_framework import routers
 
@@ -24,7 +24,8 @@ urlpatterns = [
          get_length_field_attribute),
     path('network/<int:pk>/edges/speed/',
          get_speed_field_attribute),
-    path('run/<str:pk>/edges_results/', edges_results),
+    path('run/<str:pk>/edges_results/<str:field>', get_field_from_edges_results),
+    
     ]
 
 """from django.urls import path

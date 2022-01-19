@@ -131,29 +131,3 @@ map.on('load', function () {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*map.on('mousemove', 'lines', async function(e) {
-  let edge_id = e.features[0].properties.edge_id;
-  var edge_instance_api = await fetch(
-    `http://127.0.0.1:8000/api/network/${network_id}/edge_id/${edge_id}`)
-  edge_instance = await edge_instance_api.json()
-  popup.setLngLat(e.lngLat).setHTML(
-    JSON.stringify(edge_instance, null, 2)
-  ).addTo(map)
-});*/
