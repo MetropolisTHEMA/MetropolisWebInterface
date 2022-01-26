@@ -193,6 +193,21 @@ def get_speed_field_attribute(request, pk):
     if request.method == 'GET':
         return HttpResponse(edges, content_type="application/json")
 
+@api_view(['GET'])
+def edges_results(request, pk):
+    """Return edges results data """
+    # roadnetwork = RoadNetwork.objects.get(pk=pk)
+
+    run = Run.objects.get(id=pk)
+    # network_id = run.network_id
+    edges = EdgeResults.objects.select_related(
+        'run').filter(run=run)
+   # edges = json.dumps(edges)
+    if request.method == 'GET':
+        #return HttpResponse(edges, content_type="application/json")
+        serializer = EdgeResultsSerializer(edges, 
+            context={'request': request}, many=True)
+        return Response(serializer.data)
 
 @api_view(['GET'])
 def get_field_from_edges_results(request, pk, field):

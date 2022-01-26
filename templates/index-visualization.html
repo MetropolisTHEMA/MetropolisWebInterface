@@ -42,9 +42,9 @@
 
   #console {
     position: absolute;
-    top: 800px;
-    left: 600px;
-    width: 600px;
+    top: 600px;
+    left: 20px;
+    width: 300px;
     margin-bottom: 5px;
     padding: 10px 10px;
     background-color: white;
@@ -60,6 +60,21 @@
     width: 100%;
   }
 
+  input[type=range] {
+    -webkit-appearance: none;
+    background-color: yellow;
+    width: 200px;
+    height:20px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+     -webkit-appearance: none;
+    background-color: red;
+    opacity: 0.5;
+    width: 10px;
+    height: 26px;
+}
+
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -70,11 +85,11 @@
     <div id="divToMove">
       <br>
       <a href="{% url 'network_details' roadnetwork.pk %}">
-        <h1><i class="fa fa-road"></i> Back</h1>
+        <h3><i class="fa fa-road"></i> Back</h3>
       </a>
-      <hr>
+
       <a href="#" onclick="map.fitBounds(total_bounds);">
-        <h3>Reset zoom</h3>
+        <h5>Reset zoom</h5>
       </a>
       <hr>
 
@@ -111,25 +126,23 @@
           </optgroup>
 
           <optgroup label="Ouput">
-            <option value="congestion">Congestion</option>
             <option value="speed_output">Speed</option>
+            <option value="congestion">Congestion</option>
             <option value="travel_time">Travel Time</option>
           </optgroup>
         </select>
       </div>
       <hr>
       <div class="form-group w-75 mx-auto" style="text-align: center;">
-        <p style="font-size: 15px; font-weight: bold;">Chose a color</p>
+      
         <div>
-          <input type="color" id="first" value="#FFF500">
+          <input type="color" id="first" value="#00FF00">
         </div>
         <div>
           <input type="color" id="second" value="#FF0000">
         </div>
       </div>
-
       <hr>
-
       <div class="form-group w-75 mx-auto">
         <div id="linkLabel" style="height:30px;display:none">
           <label for="legend-links-svg">Legend</label>
@@ -139,23 +152,21 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <div class="col-md-11">
-    
     <div class="#" id="map"></div>
     <div id='console'>
         <div class='session' id='sliderbar'>
-          <h2>Time: <label id='active-hour'>6H</label></h2>
+          <h2><i class="fa fa-clock-o" style="font-size:25px;color:red"></i> 
+            <label id='active-hour' style="color:red">6h:00</label></h2>
           <input id='slider' class='row' type='range' min='0' max='24' step='1' value='0' />
         </div>
         <div>
-          <button type="button" class="btn btn-success" id="btnPlay" onclick="Play()">Play</button>
+          <button type="button" class="btn btn-success" id="btnPlay">Play</button>
           <button type="button" class="btn btn-secondary" id="btnPause"">Pause</button>
         </div>
     </div>
-
   </div>
 
 </div>
@@ -172,5 +183,4 @@
 <script src="{% static '/js/maplibre-map.js' %}"></script>
 <script src="{% static '/js/linklegend.js' %}"></script>
 <script src="{% static 'js/maplibre-dropdown.js' %}"></script>
-<script src="{% static 'js/fetchapi.js' %}"></script>
 {% endblock %}

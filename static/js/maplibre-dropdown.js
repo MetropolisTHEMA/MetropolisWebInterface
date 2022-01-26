@@ -8,23 +8,20 @@
   map.setFilter('bike-docks', null);
   */
 
-function Play() {
-  var first_color = hex2rgb(document.getElementById("first").value)
-  var second_color = hex2rgb(document.getElementById("second").value)
-  
-    for (let i = 0; i <25; i++) {
-      document.getElementById('slider').addEventListener('input', (event) => {
-        //const hour = parseInt(event.target.value)
-        map.setPaintProperty('lines', 'fill-color', [
-          'interpolate', ['linear'],
-          ['at', i, ['get', 'speed_output']],
-          30, first_color,
-          70, second_color,
-        ]);
-        document.getElementById('active-hour').innerText = time[i]
-      });
-    }
-}
+var linkSelector = document.getElementById('linkSelector')
+var slider = document.getElementById('slider')
+var current_time = document.getElementById('active-hour')
+var first_color = document.getElementById("first")
+var second_color = document.getElementById("second")
+var color1 = hex2rgb(first_color.value)
+var color2 = hex2rgb(second_color.value)
+var time = ["06:00", "06:15", "06:30", "06:45",
+    "07h:00", "07h:15", "07h:30", "07h:45",
+    "08:00", "08:15", "08:30", "08:45",
+    "09:00", "09:15", "09:30", "09:45",
+    "10:00", "10:15", "10:30", "10:45",
+    "11:00", "11:15", "11:30", "11:45",
+    "12:00"]
 
 async function GetFieldAttribute(field) {
   // Get url of the current network
@@ -61,26 +58,17 @@ function hex2rgb(hex) {
   return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
-function ColorScale(array, rgb1, rgb2) {
-  const max = d3.max(array);
-  const min = d3.min(array);
-  const colorscale = d3.scaleLinear().domain(d3.extent(array))
+function ColorScale(min, max, rgb1, rgb2) {
+  const colorscale = d3.scaleLinear().domain([min, max])
     .interpolate(d3.interpolateHcl)
     .range([d3.rgb(rgb1), d3.rgb(rgb2)]);
   drawLinkLegend(colorscale, min, max);
 }
 
-function MapLibreSetPaintProperty(field, array, number1, number2, color1, color2) {
-  map.setPaintProperty('lines', 'fill-color', [
-    'interpolate', ['linear'],
-    ['get', field],
-    number1, color1, //'rgb(255, 245,0 )',
-    number2, color2, //'rgb(255, 0, 0)',
-  ]);
-  ColorScale(array, color1, color2)
-}
-
-function MapLibreSetPaintProperty2(field, array, number1, number2, color1, color2) {
+function _SetPaintProperty_(field, array, min) {
+  let color1 = hex2rgb(document.getElementById("first").value)
+  let color2 = hex2rgb(document.getElementById("second").value)
+  let label = linkSelector.selectedOptions[0].parentElement.label
   let time = ["06h:00", "06h:15", "06h:30", "06h:45",
     "07h:00", "07h:15", "07h:30", "07h:45",
     "08h:00", "08h:15", "08h:30", "08h:45",
@@ -88,34 +76,108 @@ function MapLibreSetPaintProperty2(field, array, number1, number2, color1, color
     "10h:00", "10h:15", "10h:30", "10h:45",
     "11h:00", "11h:15", "11h:30", "11h:45",
     "12h:00"]
-  
-  document.getElementById('slider').addEventListener('input', (event) => {
-    const hour = parseInt(event.target.value);
-    // update the map
+
+  if (label === 'Input'){
+    let max = Math.max(...array);
     map.setPaintProperty('lines', 'fill-color', [
       'interpolate', ['linear'],
-      ['at', hour, ['get', field]],
-      number1, color1,
-      number2, color2,
+      ['get', field],
+      min, color1, //'rgb(255, 245,0 )',
+      max, color2, //'rgb(255, 0, 0)',
+    ]);
+    ColorScale(min, max, color1, color2)
+  }
+  else {
+    slider.addEventListener('input', (event) => {
+      const hour = parseInt(event.target.value);
+      const data = [];
+      const _max_ = [];
+      array.forEach(item => {
+        data.push(parseInt(item[hour]))
+        _max_.push(Math.max(...item))
+      });
+      //let max_of_max = Math.max(..._max_)
+      let max = Math.max(...data); // max of each of an array of given time (here hour)
+      map.setPaintProperty('lines', 'fill-color', [
+        'interpolate', ['linear'],
+        ['at', hour, ['get', field]],
+        min, color1,
+        max, color2,
+      ]);
+      document.getElementById('active-hour').innerText = time[hour]
+      d3.select('#linkLegendSvg').remove();
+      ColorScale(min, max, color1, color2)
+      //ColorScale(min, max_of_max, color1, color2)
+    });
+  }
+}
+
+function InputSetPaintProperty(field, array, min, color2){
+  let max = Math.max(...array);
+   map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['get', field],
+      min, color1, //'rgb(255, 245,0 )',
+      max, color2, //'rgb(255, 0, 0)',
     ]);
     d3.select('#linkLegendSvg').remove();
-    // update text in the UI
-    document.getElementById('active-hour').innerText = time[hour]
+    ColorScale(min, max, color1, color2)
+}
 
-    ColorScale(array[hour], color1, color2)
-  });
+
+function OutputSetPaintProperty(field,array_of_array, min){
+  var counter = 0;
+  var intervalId = 25;
+
+  /* Initializing the slider when the drop down list change */
+  slider.addEventListener('mouseenter', (e) => {
+    linkSelector.addEventListener('change',function(){
+      slider.value = 0;
+      counter = 0;
+      intervalId = 0;
+      current_time.innerText = '6:00'
+    })
+
+    function stop(){
+      clearInterval(intervalId);
+    }
+    
+    function start(){
+      if (counter==intervalId) stop()
+      else {
+        slider.value = counter
+        const _data = [];
+        const _max_ = [];
+        array_of_array.forEach(item => {
+          _data.push(item[counter])
+          _max_.push(Math.max(...item))
+        });
+      var max_of_max = Math.max(..._max_)
+      var max = Math.round(Math.max(..._data)); 
+      map.setPaintProperty('lines', 'fill-color', [
+        'interpolate-hcl', ['linear'],
+         ['at', counter, ['get', field]],
+          min, color1,
+          max, color2,
+        ]);
+      d3.select('#linkLegendSvg').remove();
+      ColorScale(min, max_of_max, color1, color2)
+      current_time.innerText = time[counter]
+      counter++;
+      } 
+     // ColorScale(min, max_of_max, color1, color2)
+    }
+    setInterval(start, 1500)
+  })
 }
 
 async function linkDropDown() {
   d3.select('#linkLegendSvg').remove();
-  var linkSelector = document.getElementById('linkSelector')
-  var first_color = hex2rgb(document.getElementById("first").value)
-  var second_color = hex2rgb(document.getElementById("second").value)
+  document.getElementById('console').style.display = 'none'
 
   if (linkSelector.value == "default") {
     map.setPaintProperty('lines', 'fill-color', ['get', 'color'])
   }
-
   else if (linkSelector.value == "lanes") {
     d3.select('#linkLegendSvg').remove();
 
@@ -138,9 +200,13 @@ async function linkDropDown() {
     else {
       var lanes_array = data.features.map(item => item.properties.lanes)
     }
-    let max = lanes_array[lanes_array.indexOf(Math.max(...lanes_array))];
-    let min = lanes_array[lanes_array.indexOf(Math.min(...lanes_array))];
-    MapLibreSetPaintProperty('lanes', lanes_array, min, max, first_color, second_color)
+    var min = 1;
+    InputSetPaintProperty('lanes', lanes_array, min, color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('lanes', lanes_array, min, color)
+    });
   }
   else if (linkSelector.value == "length") {
     d3.select('#linkLegendSvg').remove();
@@ -158,9 +224,13 @@ async function linkDropDown() {
     else {
       var length_array = data.features.map(item => item.properties.length)
     }
-    let max = length_array[length_array.indexOf(Math.max(...length_array))];
-    let min = length_array[length_array.indexOf(Math.min(...length_array))];
-    MapLibreSetPaintProperty('length', length_array, min, max, first_color, second_color)
+    let min = 0;
+    InputSetPaintProperty('length', length_array, min,color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('length', length_array, min, color)
+    });
   }
   else if (linkSelector.value == "speed") {
     d3.select('#linkLegendSvg').remove();
@@ -178,51 +248,106 @@ async function linkDropDown() {
     else {
       var speed_array = data.features.map(item => item.properties.speed)
     }
-   let max = speed_array[speed_array.indexOf(Math.max(...speed_array))];
-   let min = speed_array[speed_array.indexOf(Math.min(...speed_array))];
-    MapLibreSetPaintProperty('speed',speed_array, min, max, first_color, second_color)
+
+   let min = 0; 
+    InputSetPaintProperty('speed',speed_array, min, color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('speed', speed_array, min, color)
+    });
   }
   /*................. The output value .....................*/
-  else if (linkSelector.value == "speed_output") {
+  else if (linkSelector.value === "speed_output") {
     d3.select('#linkLegendSvg').remove();
     const speed_output = await GetOutputFieldAttribute("speed")
-
     data.features.map(
       feature => {
         feature.properties.speed_output = speed_output[feature.properties.edge_id]
       });
     map.getSource('roads').setData(data)
     var speed_output_array = Object.values(speed_output)
-    MapLibreSetPaintProperty2('speed_output', speed_output_array, 30, 130, first_color, second_color)
-    
+    let min = 0; 
+    OutputSetPaintProperty('speed_output', speed_output_array, min)
     document.getElementById('console').style.display = 'block'
+
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'speed_output']],
+      0, color1,
+      130, color2,
+    ]);
+    
   }
-  else if (linkSelector.value == "congestion") {
+  else if (linkSelector.value === "congestion") {
+    d3.select('#linkLegendSvg').remove();
     const congestion = await GetOutputFieldAttribute("congestion")
     data.features.map(
       feature => {
         feature.properties.congestion = congestion[feature.properties.edge_id]
       });
     map.getSource('roads').setData(data)
-    var speed_output_array = Object.values(speed_output)
-    
-    MapLibreSetPaintProperty2('congestion', 0.3, 0.7, first_color, second_color)
+    var congestion_array = Object.values(congestion)
+    let min = 0; 
+    OutputSetPaintProperty('congestion', congestion_array, min)
     document.getElementById('console').style.display = 'block'
-  }
 
-  else if (linkSelector.value == "") {
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'congestion']],
+      0, color1,
+      1, color2,
+    ]);
+  }
+  else if (linkSelector.value === "travel_time") {
+    d3.select('#linkLegendSvg').remove();
     const travel_time = await GetOutputFieldAttribute("travel_time")
 
     data.features.map(
       feature => {
-        feature.properties.congestion = travel_time[feature.properties.edge_id]
+        feature.properties.travel_time = travel_time[feature.properties.edge_id]
       });
     map.getSource('roads').setData(data)
-    //var speed_output_array = Object.values(speed_output)
-
-    MapLibreSetPaintProperty2('congestion', 0.3, 0.7, first_color, second_color)
+    var travel_time_array = Object.values(travel_time)
+    let min = 0; 
+    OutputSetPaintProperty('travel_time', travel_time_array, min)
     document.getElementById('console').style.display = 'block'
-  }
 
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'travel_time']],
+      0, color1,
+      2000, color2,
+    ]);
+  }
 } //End function
 
+
+/*
+function OutputSetPaintProperty(field,array_of_array, min) {
+  document.getElementById('slider').addEventListener('input', (event) => {
+    const hour = parseInt(event.target.value);
+    const _data = [];
+    const _max_ = [];
+    array_of_array.forEach(item => {// each item is an array
+      _data.push(item[hour])
+      _max_.push(Math.max(...item))
+    });
+   let max_of_max = Math.max(..._max_)
+   let max = Math.round(Math.max(..._data)); // max of each of an array of given time (here hour)
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', hour, ['get', field]],
+      min, color1,
+      max, color2,
+    ]);
+    document.getElementById('active-hour').innerText = time[hour]
+    d3.select('#linkLegendSvg').remove();
+    //ColorScale(min, max, color1, color2)
+    ColorScale(min, max_of_max, color1, color2)
+  });
+}
+*/

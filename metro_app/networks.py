@@ -505,7 +505,7 @@ def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
         return split(polygon, linestring)[-1]
 
 
-def make_network_visualization(road_network_id, node_radius=6, lane_width=6,
+def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
                                node_color='lightgray', edge_width_ratio=1,
                                max_lanes=5):
     """Generates an HTML file with the Leaflet.js representation of a network.
