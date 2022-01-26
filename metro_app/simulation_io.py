@@ -21,7 +21,7 @@ def to_input_json(parameters, populations=[], road_network=None):
             edge_data = {
                 'id': edge.id,
                 'base_speed': edge.get_speed(),
-                'length': edge.get_length_in_meters(),
+                'length': edge.get_length_in_km(),
                 'lanes': edge.get_lanes(),
                 'speed_density': edge.road_type.get_congestion_display(),
             }

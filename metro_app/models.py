@@ -20,6 +20,7 @@ import os
 import random
 from datetime import timedelta
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
 from colorfield.fields import ColorField
@@ -33,7 +34,7 @@ def get_sentinel_user():
 def get_visualization_directory():
     return os.path.join(settings.TEMPLATES[0]['DIRS'][0], 'visualization')
 
-    
+
 class Project(models.Model):
     """Projects are containers used to store input models, runs and output
     models in a coherent and organized manner.
@@ -474,6 +475,9 @@ class Edge(models.Model):
     def get_length_decimal_places(self):
         return "{:.3}".format(self.length)
 
+    def get_length_in_km(self):
+        return self.length
+
     def get_length_in_meters(self):
         return self.length * 1000.0
 
@@ -886,6 +890,35 @@ class BackgroundTask(models.Model):
         db_table = 'BackgroundTask'
 
 
+class VehicleSet(models.Model):
+    """A set of Vehicles.
+
+    :project Project: Project the VehicleSet instance belongs to.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the VehicleSet.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    locked = models.BooleanField(default=False)
+    name = models.CharField(max_length=80, help_text='Name of the VehicleSet')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the VehicleSet',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the VehicleSet')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'VehicleSet'
+
+
 class Vehicle(models.Model):
     """A Vehicle is an element of the road-network graph, representing a class
     of vehicle moving on the network.
@@ -899,21 +932,35 @@ class Vehicle(models.Model):
     :speed_multiplicator float: Optional. If not None, the free-flow speed of
     the vehicle on an edge is the base speed on the edge multiplied by this
     value.
+    :speed_function 2-D array of float: Optional. If not None, it must be an
+    array of [float, float] arrays where the first value represents the base
+    speed and the second value represents the actual speed of the vehicle for
+    this base speed.
     """
-    network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
     vehicle_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the vehicle (must be unique)')
     name = models.CharField(
         max_length=80, blank=True, help_text='Name of the vehicle')
     length = models.FloatField(help_text='Length of the vehicle (meters)')
     speed_multiplicator = models.FloatField(null=True, blank=True)
+    speed_function = ArrayField(
+        ArrayField(
+            models.FloatField(),
+            size=2,
+        ),
+        size=20,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.name or 'Vehicle {}'.format(self.vehicle_id)
 
     def get_speed_function(self):
-        if speed_multiplicator:
-            {'Multiplicator': self.multiplicator}
+        if self.speed_multiplicator:
+            {'Multiplicator': self.speed_multiplicator}
+        elif len(self.speed_function) > 0:
+            {'Piecewise': self.speed_function}
         else:
             'Base'
 
@@ -994,7 +1041,7 @@ class Agent(models.Model):
 
     def get_car_dep_time_model(self):
         return {
-            'ContinuousLogit': {
+            'Logit': {
                 'u': self.dep_time_car_u,
                 'mu': self.dep_time_car_mu,
             }
@@ -1119,16 +1166,44 @@ class AgentRoadPath(models.Model):
         db_table = 'AgentRoadPath'
 
 
-class ZoneNodeCorrespondance(models.Model):
-    """Class to link OD zones with road-network nodes.
+class Network(models.Model):
+    """Class to link a road network, a vehicle set and a zone set (and
+    eventually, a public-transit network).
+
+    The road network and the zone set are further connected through
+    ZoneNodeRelations.
+
+    :project Project: Project the Network instance belongs to.
+    :road_network RoadNetwork: RoadNetwork of the Network.
+    :vehicle_set VehicleSet: VehicleSet of the Network.
+    :zone_set ZoneSet: ZoneSet of the Network.
+    :name str: Name of the Network.
+    :comment str: Description of the Network (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Network.
     """
-    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    vehicle_set = models.ForeignKey(VehicleSet, on_delete=models.CASCADE)
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    name = models.CharField(max_length=80, help_text='Name of the Network')
+    comment = models.CharField(max_length=240, blank=True,
+                               help_text='Additional comment for the Network')
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(auto_now_add=True,
+                                    help_text='Creation date of the Network')
+
+    def __str__(self):
+        self.name
+
+    class Meta:
+        db_table = 'Network'
+
 
 class ZoneNodeRelation(models.Model):
-    """Class to link OD zones with road-network nodes.
+    """Link between an OD zone and a road-network node.
     """
-    relation = models.ForeignKey(
-        ZoneNodeCorrespondance, on_delete=models.CASCADE)
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
