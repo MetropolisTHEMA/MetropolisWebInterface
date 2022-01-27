@@ -37,7 +37,7 @@ urlpatterns = [
     path('network/<str:pk>/upload_road/', upload_road_type, name='upload_road'
          ),
     path('network/<str:pk>/edges.geojson/', edges_point_geojson),
-    path('metrosim/run/<str:pk>/upload_edges_results/', upload_edges_results),
+    path('metrosim/network/<str:pk>/upload_edges_results/', upload_edges_results),
     path('table/network/<str:pk>/edges/', edges_table, name='edges'),
     path('table/network/<str:pk>/nodes/', nodes_table, name='nodes'),
     path('table/network/<str:pk>/roadtype/', road_type_table,

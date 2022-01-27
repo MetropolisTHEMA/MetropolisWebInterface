@@ -846,7 +846,6 @@ class EdgeResults(models.Model):
     class Meta:
         db_table = 'EdgesResults'
 
-
 class BackgroundTask(models.Model):
     """Class to represent a task that was run in the background on the server.
 

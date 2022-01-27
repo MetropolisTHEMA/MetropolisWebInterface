@@ -20,7 +20,7 @@ if (network_type) {
     //style: 'https://api.maptiler.com/maps/a656d271-f1f7-4b23-927a-5af6559f7049/style.json?key=6OYzFVmHZSrmbPQ2uqDd',
   });
 }
-map.fitBounds(total_bounds)
+
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
 map.addControl(new maplibregl.FullscreenControl())
 
@@ -49,15 +49,15 @@ function addDataLayer() {
   })
 }
 
-
+/* styledata */
 map.on('styledata', function () {
   // Always add the same sources and layers after a style change
    addDataLayer();
-   linkDropDown()
+   linkDropDown();
 });
 
 map.on('load', function () {
-
+  map.fitBounds(total_bounds)
   // Create a popup, but don't add it to the map yet.
   var popup = new maplibregl.Popup({
     closeButton: false,
@@ -131,29 +131,3 @@ map.on('load', function () {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*map.on('mousemove', 'lines', async function(e) {
-  let edge_id = e.features[0].properties.edge_id;
-  var edge_instance_api = await fetch(
-    `http://127.0.0.1:8000/api/network/${network_id}/edge_id/${edge_id}`)
-  edge_instance = await edge_instance_api.json()
-  popup.setLngLat(e.lngLat).setHTML(
-    JSON.stringify(edge_instance, null, 2)
-  ).addTo(map)
-});*/

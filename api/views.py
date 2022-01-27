@@ -3,11 +3,11 @@ from rest_framework import status
 from .serializers import (EdgeSerializer, EdgeResultsSerializer)
 from metro_app.models import Edge, RoadNetwork, EdgeResults, Run, RoadType
 from rest_framework.response import Response
-from django.http import HttpResponse  # JsonResponse
+from django.http import HttpResponse, Http404 # JsonResponse
 from rest_framework.decorators import api_view
 import json
 from django.shortcuts import render
-
+import datetime
 
 @api_view(['GET', 'POST'])
 def edge_list(request):
@@ -193,7 +193,6 @@ def get_speed_field_attribute(request, pk):
     if request.method == 'GET':
         return HttpResponse(edges, content_type="application/json")
 
-
 @api_view(['GET'])
 def edges_results(request, pk):
     """Return edges results data """
@@ -203,8 +202,34 @@ def edges_results(request, pk):
     # network_id = run.network_id
     edges = EdgeResults.objects.select_related(
         'run').filter(run=run)
+   # edges = json.dumps(edges)
     if request.method == 'GET':
-        # return HttpResponse(edges, content_type="application/json")
-        serializer = EdgeResultsSerializer(edges, context={'request': request},
-                                           many=True)
+        #return HttpResponse(edges, content_type="application/json")
+        serializer = EdgeResultsSerializer(edges, 
+            context={'request': request}, many=True)
         return Response(serializer.data)
+
+@api_view(['GET'])
+def get_field_from_edges_results(request, pk, field):
+   
+    if not field in ("congestion", "speed", "travel_time"):
+        raise Http404
+        # return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    run = Run.objects.get(id=pk)
+    edges = EdgeResults.objects.select_related('run').filter(
+        run=run).values("edge", field)
+
+    speed_dict = {}
+    for dictionary in edges:
+        if dictionary["edge"] in speed_dict:
+            speed_dict[dictionary["edge"]].append(dictionary[field])
+        else:
+            speed_dict[dictionary["edge"]] = [dictionary[field]]
+    
+    edges = json.dumps(speed_dict, default=datetime.timedelta.total_seconds)
+    if request.method == 'GET':
+        return HttpResponse(edges, content_type="application/json")
+
+
+

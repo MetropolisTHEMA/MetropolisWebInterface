@@ -7,7 +7,22 @@
   // remove the filter for the 'bike-docks' style layer
   map.setFilter('bike-docks', null);
   */
-  
+
+var linkSelector = document.getElementById('linkSelector')
+var slider = document.getElementById('slider')
+var current_time = document.getElementById('active-hour')
+var first_color = document.getElementById("first")
+var second_color = document.getElementById("second")
+var color1 = hex2rgb(first_color.value)
+var color2 = hex2rgb(second_color.value)
+var time = ["06:00", "06:15", "06:30", "06:45",
+    "07h:00", "07h:15", "07h:30", "07h:45",
+    "08:00", "08:15", "08:30", "08:45",
+    "09:00", "09:15", "09:30", "09:45",
+    "10:00", "10:15", "10:30", "10:45",
+    "11:00", "11:15", "11:30", "11:45",
+    "12:00"]
+
 async function GetFieldAttribute(field) {
   // Get url of the current network
   const current_url = window.location.href // document.url
@@ -15,8 +30,19 @@ async function GetFieldAttribute(field) {
 
   let get_field_request = await fetch(
     `http://127.0.0.1:8000/api/network/${network_id}/edges/${field}`);
-  let get_field_dictionnary = await get_field_request.json();
-  return get_field_dictionnary
+  let get_field_dictionary = await get_field_request.json();
+  return get_field_dictionary
+}
+
+async function GetOutputFieldAttribute(field) {
+  const current_url = window.location.href // document.url
+  //const network_id = parseInt(current_url.split('/')[5]) // Get network id
+
+  let get_field_request = await fetch(
+    `http://127.0.0.1:8000/api/run/1/edges_results/${field}`);
+
+  let get_field_dictionary = await get_field_request.json();
+  return get_field_dictionary
 }
 
 /* The following convert hex code to rgb */
@@ -29,37 +55,129 @@ function hex2rgb(hex) {
   r = parseInt(validHEXInput[1], 16);
   g = parseInt(validHEXInput[2], 16);
   b = parseInt(validHEXInput[3], 16);
-  return 'rgb('+r+','+g+','+b+')';
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
-function ColorScale(field, rgb1, rgb2) {
-  const max = d3.max(field);
-  const min = d3.min(field);
-  const colorscale = d3.scaleLinear().domain(d3.extent(field))
+function ColorScale(min, max, rgb1, rgb2) {
+  const colorscale = d3.scaleLinear().domain([min, max])
     .interpolate(d3.interpolateHcl)
     .range([d3.rgb(rgb1), d3.rgb(rgb2)]);
   drawLinkLegend(colorscale, min, max);
 }
 
-function MapLibreSetPaintProperty(field, number1, number2, color1, color2){
-  map.setPaintProperty('lines', 'fill-color', [
-    'interpolate', ['linear'],
-    ['get', field],
-    number1, color1, //'rgb(255, 245,0 )',
-    number2, color2, //'rgb(255, 0, 0)',
-  ]);
+function _SetPaintProperty_(field, array, min) {
+  let color1 = hex2rgb(document.getElementById("first").value)
+  let color2 = hex2rgb(document.getElementById("second").value)
+  let label = linkSelector.selectedOptions[0].parentElement.label
+  let time = ["06h:00", "06h:15", "06h:30", "06h:45",
+    "07h:00", "07h:15", "07h:30", "07h:45",
+    "08h:00", "08h:15", "08h:30", "08h:45",
+    "09h:00", "09h:15", "09h:30", "09h:45",
+    "10h:00", "10h:15", "10h:30", "10h:45",
+    "11h:00", "11h:15", "11h:30", "11h:45",
+    "12h:00"]
+
+  if (label === 'Input'){
+    let max = Math.max(...array);
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate', ['linear'],
+      ['get', field],
+      min, color1, //'rgb(255, 245,0 )',
+      max, color2, //'rgb(255, 0, 0)',
+    ]);
+    ColorScale(min, max, color1, color2)
+  }
+  else {
+    slider.addEventListener('input', (event) => {
+      const hour = parseInt(event.target.value);
+      const data = [];
+      const _max_ = [];
+      array.forEach(item => {
+        data.push(parseInt(item[hour]))
+        _max_.push(Math.max(...item))
+      });
+      //let max_of_max = Math.max(..._max_)
+      let max = Math.max(...data); // max of each of an array of given time (here hour)
+      map.setPaintProperty('lines', 'fill-color', [
+        'interpolate', ['linear'],
+        ['at', hour, ['get', field]],
+        min, color1,
+        max, color2,
+      ]);
+      document.getElementById('active-hour').innerText = time[hour]
+      d3.select('#linkLegendSvg').remove();
+      ColorScale(min, max, color1, color2)
+      //ColorScale(min, max_of_max, color1, color2)
+    });
+  }
+}
+
+function InputSetPaintProperty(field, array, min, color2){
+  let max = Math.max(...array);
+   map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['get', field],
+      min, color1, //'rgb(255, 245,0 )',
+      max, color2, //'rgb(255, 0, 0)',
+    ]);
+    d3.select('#linkLegendSvg').remove();
+    ColorScale(min, max, color1, color2)
+}
+
+
+function OutputSetPaintProperty(field,array_of_array, min){
+  var counter = 0;
+  var intervalId = 25;
+
+  /* Initializing the slider when the drop down list change */
+  slider.addEventListener('mouseenter', (e) => {
+    linkSelector.addEventListener('change',function(){
+      slider.value = 0;
+      counter = 0;
+      intervalId = 0;
+      current_time.innerText = '6:00'
+    })
+
+    function stop(){
+      clearInterval(intervalId);
+    }
+    
+    function start(){
+      if (counter==intervalId) stop()
+      else {
+        slider.value = counter
+        const _data = [];
+        const _max_ = [];
+        array_of_array.forEach(item => {
+          _data.push(item[counter])
+          _max_.push(Math.max(...item))
+        });
+      var max_of_max = Math.max(..._max_)
+      var max = Math.round(Math.max(..._data)); 
+      map.setPaintProperty('lines', 'fill-color', [
+        'interpolate-hcl', ['linear'],
+         ['at', counter, ['get', field]],
+          min, color1,
+          max, color2,
+        ]);
+      d3.select('#linkLegendSvg').remove();
+      ColorScale(min, max_of_max, color1, color2)
+      current_time.innerText = time[counter]
+      counter++;
+      } 
+     // ColorScale(min, max_of_max, color1, color2)
+    }
+    setInterval(start, 1500)
+  })
 }
 
 async function linkDropDown() {
   d3.select('#linkLegendSvg').remove();
-  var linkSelector = document.getElementById('linkSelector')
-  var first_color = hex2rgb(document.getElementById("first").value)
-  var second_color = hex2rgb(document.getElementById("second").value)
-  
-  if (linkSelector.value == "default"){
+  document.getElementById('console').style.display = 'none'
+
+  if (linkSelector.value == "default") {
     map.setPaintProperty('lines', 'fill-color', ['get', 'color'])
   }
-
   else if (linkSelector.value == "lanes") {
     d3.select('#linkLegendSvg').remove();
 
@@ -69,7 +187,7 @@ async function linkDropDown() {
       So in this way, we won't query the api twice and adding the lanes from the api. */
     if (typeof data.features[0].properties.lanes == 'undefined') {
       var lanes = await GetFieldAttribute("lanes")
-      
+
       // Adding lanes from the api as the map properties
       data.features.map(
         item => {
@@ -82,9 +200,13 @@ async function linkDropDown() {
     else {
       var lanes_array = data.features.map(item => item.properties.lanes)
     }
-    MapLibreSetPaintProperty('lanes', 1, 5, first_color, second_color)
-    ColorScale(lanes_array, first_color, second_color)
-    //ColorScale(lanes_array, 'rgb(255, 245,0 )', 'rgb(255, 0, 0)')
+    var min = 1;
+    InputSetPaintProperty('lanes', lanes_array, min, color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('lanes', lanes_array, min, color)
+    });
   }
   else if (linkSelector.value == "length") {
     d3.select('#linkLegendSvg').remove();
@@ -100,38 +222,132 @@ async function linkDropDown() {
       var length_array = Object.values(length);
     }
     else {
-        var length_array = data.features.map(item => item.properties.length)
+      var length_array = data.features.map(item => item.properties.length)
     }
-    MapLibreSetPaintProperty('length', 0, 3, first_color, second_color)
-    ColorScale(length_array, first_color, second_color)
-    //ColorScale(length_array, 'rgb(255, 245, 0 )', 'rgb(255, 0, 0)')
+    let min = 0;
+    InputSetPaintProperty('length', length_array, min,color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('length', length_array, min, color)
+    });
   }
-   else if (linkSelector.value == "speed") {
+  else if (linkSelector.value == "speed") {
     d3.select('#linkLegendSvg').remove();
-     if (typeof data.features[0].properties.speed == 'undefined') {
-       const speed = await GetFieldAttribute("speed")
-       // Adding speed from the api as the map properties
-       data.features.map(
-         item => {
-           item.properties.speed = speed[item.properties.edge_id]
-         });
-       //Updating the already map data.
-       map.getSource('roads').setData(data)
-       var speed_array = Object.values(speed);
-     }
-     else {
-         var speed_array = data.features.map(item => item.properties.speed)
-     }
+    if (typeof data.features[0].properties.speed == 'undefined') {
+      const speed = await GetFieldAttribute("speed")
+      // Adding speed from the api as the map properties
+      data.features.map(
+        item => {
+          item.properties.speed = speed[item.properties.edge_id]
+        });
+      //Updating the already map data.
+      map.getSource('roads').setData(data)
+      var speed_array = Object.values(speed);
+    }
+    else {
+      var speed_array = data.features.map(item => item.properties.speed)
+    }
 
-    map.setPaintProperty('lines', 'fill-color', [
-      'interpolate', ['linear'],
-      ['get', 'speed'],
-      50, 'rgb(255, 245, 0 )',
-      100, 'rgb(0, 0, 102)',
-    ]);
-    MapLibreSetPaintProperty('speed', 50, 100, first_color, second_color)
-    ColorScale(speed_array, first_color, second_color)
-    //ColorScale(speed_array, 'rgb(255, 245, 0 )', 'rgb(0, 0, 102)')
+   let min = 0; 
+    InputSetPaintProperty('speed',speed_array, min, color2)
+
+    second_color.addEventListener('input', function(){
+      let color = hex2rgb(second_color.value)
+      InputSetPaintProperty('speed', speed_array, min, color)
+    });
   }
+  /*................. The output value .....................*/
+  else if (linkSelector.value === "speed_output") {
+    d3.select('#linkLegendSvg').remove();
+    const speed_output = await GetOutputFieldAttribute("speed")
+    data.features.map(
+      feature => {
+        feature.properties.speed_output = speed_output[feature.properties.edge_id]
+      });
+    map.getSource('roads').setData(data)
+    var speed_output_array = Object.values(speed_output)
+    let min = 0; 
+    OutputSetPaintProperty('speed_output', speed_output_array, min)
+    document.getElementById('console').style.display = 'block'
 
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'speed_output']],
+      0, color1,
+      130, color2,
+    ]);
+    
+  }
+  else if (linkSelector.value === "congestion") {
+    d3.select('#linkLegendSvg').remove();
+    const congestion = await GetOutputFieldAttribute("congestion")
+    data.features.map(
+      feature => {
+        feature.properties.congestion = congestion[feature.properties.edge_id]
+      });
+    map.getSource('roads').setData(data)
+    var congestion_array = Object.values(congestion)
+    let min = 0; 
+    OutputSetPaintProperty('congestion', congestion_array, min)
+    document.getElementById('console').style.display = 'block'
+
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'congestion']],
+      0, color1,
+      1, color2,
+    ]);
+  }
+  else if (linkSelector.value === "travel_time") {
+    d3.select('#linkLegendSvg').remove();
+    const travel_time = await GetOutputFieldAttribute("travel_time")
+
+    data.features.map(
+      feature => {
+        feature.properties.travel_time = travel_time[feature.properties.edge_id]
+      });
+    map.getSource('roads').setData(data)
+    var travel_time_array = Object.values(travel_time)
+    let min = 0; 
+    OutputSetPaintProperty('travel_time', travel_time_array, min)
+    document.getElementById('console').style.display = 'block'
+
+    /* To execute the first position (first hour) when a field is selected */
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', 0, ['get', 'travel_time']],
+      0, color1,
+      2000, color2,
+    ]);
+  }
 } //End function
+
+
+/*
+function OutputSetPaintProperty(field,array_of_array, min) {
+  document.getElementById('slider').addEventListener('input', (event) => {
+    const hour = parseInt(event.target.value);
+    const _data = [];
+    const _max_ = [];
+    array_of_array.forEach(item => {// each item is an array
+      _data.push(item[hour])
+      _max_.push(Math.max(...item))
+    });
+   let max_of_max = Math.max(..._max_)
+   let max = Math.round(Math.max(..._data)); // max of each of an array of given time (here hour)
+    map.setPaintProperty('lines', 'fill-color', [
+      'interpolate-hcl', ['linear'],
+      ['at', hour, ['get', field]],
+      min, color1,
+      max, color2,
+    ]);
+    document.getElementById('active-hour').innerText = time[hour]
+    d3.select('#linkLegendSvg').remove();
+    //ColorScale(min, max, color1, color2)
+    ColorScale(min, max_of_max, color1, color2)
+  });
+}
+*/

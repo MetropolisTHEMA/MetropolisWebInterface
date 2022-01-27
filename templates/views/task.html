@@ -9,7 +9,7 @@
 </td>
 <td>{% if task.time_taken %}{{ task.time_taken }}{% endif %}</td>
 <td>
-    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#taskModal{{ task.id }}">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#taskModal{{ task.id }}">
         Details
     </button>
     <div class="modal fade" id="taskModal{{task.id}}" tabindex="-1" aria-labelledby="taskModalLabel{{task.id}}" aria-hidden="true">
