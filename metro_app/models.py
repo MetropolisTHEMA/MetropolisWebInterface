@@ -502,26 +502,14 @@ class Population(models.Model):
     """A Population represents a set of agents, with given characteristics,
     whose preferences and decisions are simulated.
 
-    A Population is composed of two parts:
-    - A set of population segments representing each an origin-destination
-      matrix of agents with a given distribution of preferences.
-    - A set of agents with given origin, destination and preferences, generated
-      according to the population segments.
-
-    :generated bool: If True, indicate that the set of agents corresponding to
-     the population segments has been generated.
     :locked bool: If True, the instance cannot be modified (default is False).
-    :random_seed int: Seed for the random number generator used to generate the
-     agents (default is a random integer).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
     :date_created datetime.date: Creation date of the Population.
     """
-    generated = models.BooleanField(default=False)
     locked = models.BooleanField(default=False)
-    random_seed = models.PositiveIntegerField(get_random_seed)
     name = models.CharField(max_length=80, help_text='Name of the Population')
     comment = models.CharField(
         max_length=240, blank=True,
@@ -651,7 +639,55 @@ class Preferences(models.Model):
     """Distribution of preferences describing a set of agents.
 
     :project Project: Project the Preferences instance belongs to.
-    ...
+    :mode_choice_model int: Model used for the mode choice (either
+     Deterministic, Logit, or First).
+    :mode_choice_mu_distr int: Distribution for the value of mu in the mode
+     choice model (only relevant if mode_choice_model is Logit).
+    :mode_choice_mu_mean float: Mean value of mu in the mode choice model (only
+     relevant if mode_choice_model is Logit).
+    :mode_choice_mu_std float: Standard-deviation of mu in the mode choice
+     model (only relevant if mode_choice_model is Logit and
+     mode_choice_mu_distr is not Constant).
+    :t_star_distr int: Distribution for the value of tstar.
+    :t_star_mean timedelta: Mean value of tstar.
+    :t_star_std timedelta: Standard-deviation of tstar (only relevant if
+     t_star_distr is not Constant).
+    :delta_distr int: Distribution for the value of delta.
+    :delta_mean timedelta: Mean value of delta.
+    :delta_std timedelta: Standard-deviation of delta (only relevant if
+     delta_distr is not Constant).
+    :beta_distr int: Distribution for the value of beta.
+    :beta_mean float: Mean value of beta.
+    :beta_std float: Standard-deviation of beta (only relevant if
+     beta_distr is not Constant).
+    :gamma_distr int: Distribution for the value of gamma.
+    :gamma_mean float: Mean value of gamma.
+    :gamma_std float: Standard-deviation of gamma (only relevant if gamma_distr
+     is not Constant).
+    :desired_arrival bool: If True, tstar represents a desired time of arrival.
+     Otherwise, tstar represents a desired time of departure.
+    .vehicle Vehicle: Vehicle used by the agents.
+    :dep_time_car_choice_model int: Model used for the departure-time choice by
+     car (either Continuous Logit or Constant).
+    :dep_time_car_mu_distr int: Distribution for the value of mu in the
+     departure-time model (only relevant if dep_time_car_model is Continuous
+     Logit).
+    :dep_time_car_mu_mean float: Mean value of mu in the departure-time choice
+     model (only relevant if dep_time_car_model is Continuous Logit).
+    :dep_time_car_mu_std float: Standard-deviation of mu in the departure-time
+     choice model (only relevant if dep_time_car_model is Continuous Logit and
+     dep_time_car_mu_distr is not Constant).
+    :dep_time_car_constant_distr int: Distribution for the departure time of
+     the agents (only relevant if dep_time_car_model is Constant).
+    :dep_time_car_constant_mean timedelta: Mean of the departure time of the
+     agents (only relevant if dep_time_car_model is Constant).
+    :dep_time_car_constant_std timedelta: Standard-deviation of the departure
+     time of the agents (only relevant if dep_time_car_model is Constant and
+     dep_time_car_constant_distr is not Constant).
+    :car_vot_distr int: Distribution of the value of time by car.
+    :car_vot_mean float: Mean of the value of time by car.
+    :car_vot_std float: Standard-deviation of the value of time by car (only
+     relevant if car_vot_distr is not Constant).
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
@@ -660,6 +696,68 @@ class Preferences(models.Model):
     :date_created datetime.date: Creation date of the Preferences.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    # Distributions.
+    CONSTANT = 0
+    UNIFORM = 1
+    NORMAL = 2
+    LOGNORMAL = 3
+    DISTRIBUTIONS = (
+        (CONSTANT, 'Constant'),
+        (UNIFORM, 'Uniform'),
+        (NORMAL, 'Normal'),
+        (LOGNORMAL, 'Log-normal'),
+    )
+    # Mode choice parameters.
+    DETERMINISTIC_MODE = 0
+    LOGIT_MODE = 1
+    FIRST_MODE = 2
+    MODE_CHOICES = (
+        (DETERMINISTIC_MODE, 'Deterministic'),
+        (LOGIT_MODE, 'Logit'),
+        (FIRST_MODE, 'First'),
+    )
+    mode_choice_model = models.SmallIntegerField(
+        default=0, choices=MODE_CHOICES)
+    mode_choice_mu_distr = models.SmallIntegerField(
+        default=0, choices=DISTRIBUTIONS)
+    mode_choice_mu_mean = Models.FloatField(blank=True, null=True)
+    mode_choice_mu_std = Models.FloatField(blank=True, null=True)
+    # Schedule utility parameters.
+    t_star_distr = Models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    t_star_mean = models.DurationField()
+    t_star_std = models.DurationField(blank=True, null=True)
+    delta_distr = Models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    delta_mean = models.DurationField(default=timedelta(0))
+    delta_std = models.DurationField(blank=True, null=True)
+    beta_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    beta_mean = models.FloatField()
+    beta_std = models.FloatField(blank=True, null=True)
+    gamma_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    gamma_mean = models.FloatField()
+    gamma_std = models.FloatField(blank=True, null=True)
+    desired_arrival = models.BooleanField(default=True)
+    # Car mode.
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    LOGIT_DEP_TIME = 0
+    CONSTANT_DEP_TIME = 1
+    DEP_TIME_CHOICES = (
+        (LOGIT_DEP_TIME, 'Continuous Logit'),
+        (CONSTANT_DEP_TIME, 'Constant'),
+    )
+    dep_time_car_choice_model = models.SmallIntegerField(
+        default=0, choices=DEP_TIME_CHOICES)
+    dep_time_car_mu_distr = models.SmallIntegerField(
+        default=0, choices=DISTRIBUTIONS)
+    dep_time_car_mu_mean = models.FloatField(blank=True, null=True)
+    dep_time_car_mu_std = models.FloatField(blank=True, null=True)
+    dep_time_car_constant_distr = models.SmallIntegerField(
+        default=0, choices=DISTRIBUTIONS)
+    dep_time_car_constant_mean = models.DurationField(blank=True, null=True)
+    dep_time_car_constant_std = models.DurationField(blank=True, null=True)
+    car_vot_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    car_vot_mean = models.FloatField()
+    car_vot_std = models.FloatField(blank=True, null=True)
+    # Meta.
     locked = models.BooleanField(default=False)
     name = models.CharField(max_length=80, help_text='Name of the Preferences')
     comment = models.CharField(
@@ -686,15 +784,23 @@ class PopulationSegment(models.Model):
      distribution of preferences for this population segment.
     :od_matrix ODMatrix: ODMatrix instance representing the origin-destination
      matrix for this population segment.
+    :random_seed int: Seed for the random number generator used to generate the
+     agents (default is a random integer).
+    :generated bool: If True, indicate that the set of agents corresponding to
+     the population segment has been generated.
+    :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
     :date_created datetime.date: Creation date of the PopulationSegment.
     """
-    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    population = models.ManyToManyField(Population)
     preferences = models.ForeignKey(Preferences, on_delete=models.CASCADE)
     od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
+    random_seed = models.PositiveIntegerField(get_random_seed)
+    generated = models.BooleanField(default=False)
+    locked = models.BooleanField(default=False)
     name = models.CharField(
         max_length=80, help_text='Name of the population segment')
     comment = models.CharField(
@@ -923,7 +1029,7 @@ class Vehicle(models.Model):
     """A Vehicle is an element of the road-network graph, representing a class
     of vehicle moving on the network.
 
-    :network: RoadNetwork instance the Vehicle belongs to.
+    :vehicle_set: VehicleSet instance the Vehicle belongs to.
     :vehicle_id int: Id of the Vehicle, as used by the users in the import
      files.
      Must be unique for a specific RoadNetwork.
@@ -937,6 +1043,7 @@ class Vehicle(models.Model):
     speed and the second value represents the actual speed of the vehicle for
     this base speed.
     """
+    vehicle_set = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     vehicle_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the vehicle (must be unique)')
     name = models.CharField(
@@ -978,7 +1085,7 @@ class Agent(models.Model):
     :destination_zone Zone: Zone used as the destination of the agent for his
      trips.
     :mode_choice_model int: Type of mode-choice model for the agent (either
-     deterministic or logit).
+     deterministic, logit or first).
     :mode_choice_u float: Random value 0 <= u < 1 for the mode choice.
     :mode_choice_mu float: Variance of the error term for a Logit mode-choice
      model.
@@ -990,10 +1097,14 @@ class Agent(models.Model):
     :desired_arrival bool: If True, t_star represents a desired arrival time at
      destination, otherwise it represents a desired departure time from origin.
     :vehicle Vehicle: Vehicle used by the agent for car trips.
+    :dep_time_car_model int: Type of departure-time model for the agent, by car
+     (either continuous logit or constant).
     :dep_time_car_u float: Random value 0 <= u < 1 for the car departure-time
-     choice.
+     choice (if Logit).
     :dep_time_car_mu float: Variance of the error term in the car
-     departure-time choice model.
+     departure-time choice model (if Logit).
+    :dep_time_car_constant timedelta: Departure time of the agent by car (for
+     constant departure time).
     :car_vot float: Value of time in a car (in utility / hour).
     :origin_stop PTStop: PTStop of the public-transit network used as the
      origin of the agent for public-transit trips.
@@ -1002,7 +1113,8 @@ class Agent(models.Model):
     """
     agent_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the agent')
-    population = models.ForeignKey(Population, on_delete=models.CASCADE)
+    population_segment = models.ForeignKey(
+        PopulationSegment, on_delete=models.CASCADE)
     # Origin - destination.
     origin_zone = models.ForeignKey(
         Zone, related_name='origin_zone', on_delete=models.CASCADE,
@@ -1013,15 +1125,17 @@ class Agent(models.Model):
         help_text='Destination zone of the agent',
     )
     # Mode-choice parameters.
-    DETERMINISTIC = 0
-    LOGIT = 1
+    DETERMINISTIC_MODE = 0
+    LOGIT_MODE = 1
+    FIRST_MODE = 2
     MODE_CHOICES = (
-        (DETERMINISTIC, 'Deterministic'),
-        (LOGIT, 'Logit'),
+        (DETERMINISTIC_MODE, 'Deterministic'),
+        (LOGIT_MODE, 'Logit'),
+        (FIRST_MODE, 'First'),
     )
     mode_choice_model = models.SmallIntegerField(
         default=0, choices=MODE_CHOICES)
-    mode_choice_u = models.FloatField()
+    mode_choice_u = models.FloatField(blank=True, null=True)
     mode_choice_mu = models.FloatField(blank=True, null=True)
     # Schedule utility parameters.
     t_star = models.DurationField()
@@ -1032,20 +1146,34 @@ class Agent(models.Model):
     # Car mode.
     vehicle = models.ForeignKey(
         Vehicle, on_delete=models.CASCADE, help_text='Vehicle of the agent')
-    dep_time_car_u = models.FloatField()
-    dep_time_car_mu = models.FloatField()
-    car_vot = models.FloatField
+    LOGIT_DEP_TIME = 0
+    CONSTANT_DEP_TIME = 1
+    DEP_TIME_CHOICES = (
+        (LOGIT_DEP_TIME, 'Continuous Logit'),
+        (CONSTANT_DEP_TIME, 'Constant'),
+    )
+    dep_time_car_choice_model = models.SmallIntegerField(
+        default=0, choices=DEP_TIME_CHOICES)
+    dep_time_car_u = models.FloatField(blank=True, null=True)
+    dep_time_car_mu = models.FloatField(blank=True, null=True)
+    dep_time_car_constant = models.DurationField(blank=True, null=True)
+    car_vot = models.FloatField()
 
     def __str__(self):
         return 'Agent {}'.format(self.agent_id)
 
     def get_car_dep_time_model(self):
-        return {
-            'Logit': {
-                'u': self.dep_time_car_u,
-                'mu': self.dep_time_car_mu,
+        if self.dep_time_car_choice_model == self.LOGIT_DEP_TIME:
+            return {
+                'Logit': {
+                    'u': self.dep_time_car_u,
+                    'mu': self.dep_time_car_mu,
+                }
             }
-        }
+        elif self.dep_time_car_choice_model == self.CONSTANT_DEP_TIME:
+            return {
+                'Constant': self.dep_time_car_constant.total_seconds(),
+            }
 
     def get_car_utility_model(self):
         return {
