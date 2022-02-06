@@ -11,6 +11,13 @@ from .views import (create_project, delete_nodes, delete_roads_types,
                     delete_od_matrix, od_pair_table,
                     fetch_task,
                     )
+from metro_app.vehicle.views import (upload_vehicle, add_vehicle,
+                                     update_vehicle, delete_vehicle,
+                                     create_vehicle_set, vehicle_set_details,
+                                     update_vehicle_set, delete_vehicle_set)
+from metro_app.preferences.views import (add_preferences, update_preferences,
+                                         delete_preferences)
+from metro_app.population.views import (add_population, update_population)
 
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
                        upoload_od_pair,)
@@ -37,7 +44,8 @@ urlpatterns = [
     path('network/<str:pk>/upload_road/', upload_road_type, name='upload_road'
          ),
     path('network/<str:pk>/edges.geojson/', edges_point_geojson),
-    path('metrosim/network/<str:pk>/upload_edges_results/', upload_edges_results),
+    path('metrosim/network/<str:pk>/upload_edges_results/',
+         upload_edges_results),
     path('table/network/<str:pk>/edges/', edges_table, name='edges'),
     path('table/network/<str:pk>/nodes/', nodes_table, name='nodes'),
     path('table/network/<str:pk>/roadtype/', road_type_table,
@@ -61,4 +69,28 @@ urlpatterns = [
     path('table/odmatrix/<str:pk>/odpair/', od_pair_table,
          name='od_pair'),
     path('task/<uuid:task_id>/', fetch_task, name='fetch_task'),
+    path('vehicle/project/<str:pk>/upload_vehicle', upload_vehicle,
+         name='upload_vehicle'),
+    path('vehicle/project/<str:pk>/add_vehicle', add_vehicle,
+         name='add_vehicle'),
+    path('update_vehicle/<str:pk>/', update_vehicle, name='update_vehicle'),
+    path('delete_vehicle/<str:pk>/', delete_vehicle, name='delete_vehicle'),
+    path('vehicleset/project/<str:pk>/', create_vehicle_set,
+         name='create_vehicle_set'),
+    path('vehicleset/<str:pk>/details/', vehicle_set_details,
+         name='vehicle_set_details'),
+    path('update_vehicle_set/<str:pk>/', update_vehicle_set,
+         name='update_vehicle_set'),
+    path('delete_vehicle_set/<str:pk>/', delete_vehicle_set,
+         name='delete_vehicle_set'),
+    path('preferences/project/<str:pk>/', add_preferences,
+         name='add_preferences'),
+    path('update_preferences/<str:pk>', update_preferences,
+         name='update_preferences'),
+    path('delete_preferences/<str:pk>/', delete_preferences,
+         name='delete_preferences'),
+    path('population/project/<str:pk>/', add_population,
+         name='add_population'),
+    path('update_population/<str:pk>', update_population,
+         name='update_population')
 ]

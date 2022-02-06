@@ -218,14 +218,14 @@ def get_field_from_edges_results(request, pk, field):
     
     run = Run.objects.get(id=pk)
     edges = EdgeResults.objects.select_related('run').filter(
-        run=run).values("edge", field)
+        run=run).values("edge__edge_id", field)
 
     speed_dict = {}
     for dictionary in edges:
-        if dictionary["edge"] in speed_dict:
-            speed_dict[dictionary["edge"]].append(dictionary[field])
+        if dictionary["edge__edge_id"] in speed_dict:
+            speed_dict[dictionary["edge__edge_id"]].append(dictionary[field])
         else:
-            speed_dict[dictionary["edge"]] = [dictionary[field]]
+            speed_dict[dictionary["edge__edge_id"]] = [dictionary[field]]
     
     edges = json.dumps(speed_dict, default=datetime.timedelta.total_seconds)
     if request.method == 'GET':

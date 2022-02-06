@@ -52,8 +52,8 @@ function addDataLayer() {
 /* styledata */
 map.on('styledata', function () {
   // Always add the same sources and layers after a style change
-   addDataLayer();
-   linkDropDown();
+  addDataLayer();
+  linkDropDown();
 });
 
 map.on('load', function () {

@@ -111,7 +111,8 @@ from django.template import loader
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
-                     Zone, ODMatrix, ODPair, BackgroundTask)
+                     Zone, ODMatrix, ODPair, Vehicle, VehicleSet,
+                     Preferences, Population, BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
                      ODPairTable)
@@ -232,6 +233,10 @@ def project_details(request, pk):
     total_zonesets = zonesets.count()
     od_matrix = project.odmatrix_set.all()
     total_od_matrix = od_matrix.count()
+    vehicles = Vehicle.objects.all()
+    vehicleset = VehicleSet.objects.all()
+    preferences = Preferences.objects.all()
+    populations = Population.objects.all()
     tasks = project.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
@@ -242,6 +247,10 @@ def project_details(request, pk):
         'total_zonesets': total_zonesets,
         'od_matrix': od_matrix,
         'total_od_matrix': total_od_matrix,
+        'vehicles': vehicles,
+        'vehicleset': vehicleset,
+        'preferences': preferences,
+        'populations': populations,
         'tasks': tasks,
     }
 
@@ -464,7 +473,7 @@ def road_type_table(request, pk):
 
 
 def create_zoneset(request, pk):
-    """A roadnetwork depends on a project. It
+    """A zoneset depends on a project. It
      must be created inside the project"""
 
     current_project = Project.objects.get(id=pk)

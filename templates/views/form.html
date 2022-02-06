@@ -16,8 +16,17 @@
 	{% elif 'roadtype' in request.get_full_path %}
 		<h4> Creating a roadtype </h4>
 
-		{% elif 'project' in request.get_full_path %}
-			<h4> Creating a project </h4>
+	{% elif 'vehicle' in request.get_full_path %}
+		<h4> Adding vehicle </h4>
+
+	{% elif 'vehicleset' in request.get_full_path %}
+		<h4> Creating a Vehcile set </h4>
+	
+	{% elif 'preferences' in request.get_full_path %}
+		<h4> Adding preferences </h4>
+
+	{% elif 'project' in request.get_full_path %}
+		<h4> Creating a project </h4>
 
 	{% endif %}
 

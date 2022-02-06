@@ -843,50 +843,11 @@ class EdgeResults(models.Model):
     travel_time = models.DurationField()
     speed = models.FloatField()
 
+    def __str__(self):
+        return "{}".format(self.run)
+
     class Meta:
         db_table = 'EdgesResults'
-
-class BackgroundTask(models.Model):
-    """Class to represent a task that was run in the background on the server.
-
-    :id UUID: Id of the related django-q task.
-    :project Project: Project instance for which the task was created.
-    :status Status: Status of the task (in-progress, finished or failed).
-    :description str: Description of the task.
-    :start_date datetime.datetime: Starting time of the task.
-    :end_date datetime.datetime: Ending time of the task.
-    :time_taken timedelta: Total running time of the task.
-    """
-    INPROGRESS = 0
-    FINISHED = 1
-    FAILED = 2
-    STATUS_CHOICES = (
-        (INPROGRESS, 'In-progress'),
-        (FINISHED, 'Finished'),
-        (FAILED, 'Failed'),
-    )
-    id = models.UUIDField(primary_key=True)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES)
-    description = models.CharField(max_length=50)
-    start_date = models.DateTimeField(auto_now_add=True)
-    time_taken = models.DurationField(null=True, blank=True)
-    result = models.TextField(null=True, blank=True)
-
-    # Optional Foreign Keys.
-    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE,
-                                     blank=True, null=True)
-
-    def get_status(self):
-        return self.STATUS_CHOICES[self.status][1]
-
-    def instance(self):
-        if self.road_network:
-            return str(self.road_network)
-        return ''
-
-    class Meta:
-        db_table = 'BackgroundTask'
 
 
 class VehicleSet(models.Model):
@@ -938,7 +899,7 @@ class Vehicle(models.Model):
     """
     vehicle_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the vehicle (must be unique)')
-    name = models.CharField(
+    name = models.CharField('Name',
         max_length=80, blank=True, help_text='Name of the vehicle')
     length = models.FloatField(help_text='Length of the vehicle (meters)')
     speed_multiplicator = models.FloatField(null=True, blank=True)
@@ -1024,7 +985,7 @@ class Agent(models.Model):
     mode_choice_mu = models.FloatField(blank=True, null=True)
     # Schedule utility parameters.
     t_star = models.DurationField()
-    delta = models.DurationField()
+    delta = models.DurationField(default=timedelta())
     beta = models.FloatField()
     gamma = models.FloatField()
     desired_arrival = models.BooleanField(default=True)
@@ -1206,3 +1167,46 @@ class ZoneNodeRelation(models.Model):
     network = models.ForeignKey(Network, on_delete=models.CASCADE)
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
+
+
+class BackgroundTask(models.Model):
+    """Class to represent a task that was run in the background on the server.
+
+    :id UUID: Id of the related django-q task.
+    :project Project: Project instance for which the task was created.
+    :status Status: Status of the task (in-progress, finished or failed).
+    :description str: Description of the task.
+    :start_date datetime.datetime: Starting time of the task.
+    :end_date datetime.datetime: Ending time of the task.
+    :time_taken timedelta: Total running time of the task.
+    """
+    INPROGRESS = 0
+    FINISHED = 1
+    FAILED = 2
+    STATUS_CHOICES = (
+        (INPROGRESS, 'In-progress'),
+        (FINISHED, 'Finished'),
+        (FAILED, 'Failed'),
+    )
+    id = models.UUIDField(primary_key=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES)
+    description = models.CharField(max_length=50)
+    start_date = models.DateTimeField(auto_now_add=True)
+    time_taken = models.DurationField(null=True, blank=True)
+    result = models.TextField(null=True, blank=True)
+
+    # Optional Foreign Keys.
+    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE,
+                                     blank=True, null=True)
+
+    def get_status(self):
+        return self.STATUS_CHOICES[self.status][1]
+
+    def instance(self):
+        if self.road_network:
+            return str(self.road_network)
+        return ''
+
+    class Meta:
+        db_table = 'BackgroundTask'

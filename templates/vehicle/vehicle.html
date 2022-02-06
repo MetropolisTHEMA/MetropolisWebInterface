@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h3>Import Vehicle file </h3>
+  <hr>
+<p>A Vehicle is an element of the road-network graph, representing a class
+  of vehicle moving on the network.</p>
+
+<h4>Vehicle attributes</h4>
+<ul>
+  <li><strong>network</strong> RoadNetwork: RoadNetwork instance the Vehicle belongs to.</li>
+  <li><strong>vehicle_id</strong> int: Id of the Vehicle, as used by the users in the import
+    files. Must be unique for a specific RoadNetwork.</li>
+  <li><strong>name</strong> str: Name of the Vehicle (default is '').</li>
+  <li><strong>length</strong> float: Front-to-front length of the Vehicle (in meters).</li>
+  <li><strong>speed_multiplicator</strong> float: Optional. If not None, the free-flow speed of
+    the vehicle on an edge is the base speed on the edge multiplied by this
+    value.</li>
+  <li><strong>speed_function</strong> 2-D array of float: Optional. If not None, it must be an
+    array of [float, float] arrays where the first value represents the base
+    speed <br> and the second value represents the actual speed of the vehicle for
+    this base speed.</li>
+</ul>
+
+{% include 'networks/upload.html' %}
+
+{% endblock %}

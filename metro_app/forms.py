@@ -1,5 +1,6 @@
 from django import forms
-from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix)
+from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
+                     Vehicle, VehicleSet, Preferences, Population)
 
 
 class NodeForm(forms.Form):
@@ -80,3 +81,33 @@ class ODMatrixForm(forms.ModelForm):
 
 class ODPairFileForm(forms.Form):
     my_file = forms.FileField()
+
+
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = '__all__'
+        
+
+class VehicleFileForm(forms.Form):
+    my_file = forms.FileField()
+
+
+class VehicleSetForm(forms.ModelForm):
+    class Meta:
+        model = VehicleSet
+        fields = '__all__'
+        exclude = ('locked',)
+
+
+class PreferencesForm(forms.ModelForm):
+    class Meta:
+        model = Preferences
+        fields = '__all__'
+
+
+class PopulationForm(forms.ModelForm):
+    class Meta:
+        model = Population
+        fields = '__all__'
+        exclude = ('locked',)
