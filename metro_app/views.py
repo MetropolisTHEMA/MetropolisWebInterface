@@ -112,7 +112,7 @@ from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
                      Zone, ODMatrix, ODPair, Vehicle, VehicleSet,
-                     Preferences, Population, BackgroundTask)
+                     Preferences, Population, Network, BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
                      ODPairTable)
@@ -237,6 +237,7 @@ def project_details(request, pk):
     vehicleset = VehicleSet.objects.all()
     preferences = Preferences.objects.all()
     populations = Population.objects.all()
+    networks = Network.objects.all()
     tasks = project.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
@@ -251,6 +252,7 @@ def project_details(request, pk):
         'vehicleset': vehicleset,
         'preferences': preferences,
         'populations': populations,
+        'networks': networks,
         'tasks': tasks,
     }
 
@@ -477,7 +479,6 @@ def create_zoneset(request, pk):
      must be created inside the project"""
 
     current_project = Project.objects.get(id=pk)
-    form = ZoneSetForm(initial={'project': current_project})
     if request.method == 'POST':
         srid = int(request.POST.get('srid'))
         try:
@@ -492,6 +493,7 @@ def create_zoneset(request, pk):
                 form.save()
                 return redirect('project_details', current_project.pk)
 
+    form = ZoneSetForm(initial={'project': current_project})
     context = {'form': form}
     return render(request, 'views/form.html', context)
 

@@ -5,7 +5,7 @@
 
 
 	{% if 'network' in request.get_full_path %}
-		<h4> Creating a  Networkk </h4>
+		<h4> Creating a  Network </h4>
 
 	{% elif 'zoneset' in request.get_full_path %}
 		<h4> Creating a Zone set </h4>
@@ -25,6 +25,9 @@
 	{% elif 'preferences' in request.get_full_path %}
 		<h4> Adding preferences </h4>
 
+	{% elif 'population_segment' in request.get_full_path %}
+		<h4>Creating a population segment</h4>
+		
 	{% elif 'project' in request.get_full_path %}
 		<h4> Creating a project </h4>
 

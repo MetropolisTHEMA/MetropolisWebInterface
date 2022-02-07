@@ -17,8 +17,9 @@ from metro_app.vehicle.views import (upload_vehicle, add_vehicle,
                                      update_vehicle_set, delete_vehicle_set)
 from metro_app.preferences.views import (add_preferences, update_preferences,
                                          delete_preferences)
-from metro_app.population.views import (add_population, update_population)
-
+from metro_app.population.views import (add_population, update_population,
+                                        create_population_segment)
+from metro_app.network.views import create_network2
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
                        upoload_od_pair,)
 from .metrosim import upload_edges_results
@@ -92,5 +93,9 @@ urlpatterns = [
     path('population/project/<str:pk>/', add_population,
          name='add_population'),
     path('update_population/<str:pk>', update_population,
-         name='update_population')
+         name='update_population'),
+    path('create_network2/project/<str:pk>/', create_network2,
+         name='create_network2'),
+     path('population_segment/project/<str:pk>', create_population_segment,
+          name='create_population_segment')
 ]

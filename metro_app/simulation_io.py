@@ -14,6 +14,8 @@ Supported distributions are:
 - 2: normal
 - 3: log-normal
 """
+
+
 def generate_value(rng, distr, mean, std, size):
     if isinstance(mean, timedelta):
         mean = mean.total_seconds()
@@ -42,6 +44,8 @@ def generate_value(rng, distr, mean, std, size):
 """Generate a list of agents for a given population segment and store them in
 the database.
 """
+
+
 def generate_agents(population_segment):
     preferences = population_segment.preferences
     od_matrix = population_segment.od_matrix
@@ -161,9 +165,11 @@ def generate_agents(population_segment):
     population_segment.save()
 
 
-
-"""Create a JSON input file readable by the simulator from a Run.
 """
+Create a JSON input file readable by the simulator from a Run.
+"""
+
+
 def to_input_json(parameters, population, road_network=None):
     network = dict()
 

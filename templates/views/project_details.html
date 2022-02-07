@@ -10,16 +10,24 @@
 			<h5 style="text-align: center;">Project name : {{project.name}}</h5>
 			<hr>
 			<div class="">
-				<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'update_project' project.pk %}">Update Project</a>
-				<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'create_network' project.pk %}">Create Network</a>
-				<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'create_zoneset' project.pk %}">Create Zone set</a>
-				<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'create_od_matrix' project.pk %}">Create OD matrix</a>
+				<a class="btn btn-outline-info  btn-sm btn-block" 
+					href="{% url 'update_project' project.pk %}">Update Project</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_network' project.pk %}">Create Road Network</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_zoneset' project.pk %}">Create Zone set</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_od_matrix' project.pk %}">Create OD matrix</a>
 				<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'create_vehicle_set' project.pk %}">Create Vehicle set</a>
 				<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'add_preferences' project.pk %}">Add Preferences</a>
 				<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'add_population' project.pk %}">Add Population</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_network2' project.pk %}">Create Network</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_population_segment' project.pk %}">Create population segment</a>
 			</div>
 		</div>
 	</div>
@@ -106,7 +114,7 @@
 				<thead>
 					<tr>
 						<th></th>
-						<th>Network name</th>
+						<th>Road network</th>
 						<th>Abstract network</th>
 						<th>Comment</th>
 						<th>Tags</th>
@@ -263,6 +271,7 @@
 			<table class="table table-sm table-striped table-bordered table-hover">
 				<thead>
 					<tr>
+						<th></th>
 						<th>Name</th>
 						<th>Comment</th>
 						<th>Tags</th>
@@ -275,6 +284,8 @@
 				<tbody>
 					{% for preference in preferences %}
 					<tr>
+						<td><a class="btn btn-sm btn-success"
+							href="">details</a></td>
 						<td>{{preference.name}}</td>
 						<td>{{preference.comment}}</td>
 						<td>{{preference.tags}}</td>
@@ -326,6 +337,50 @@
 	</div>
 </div>
 
+<br>
+<div class="row">
+	<h5>// Network</h5>
+	<div class="col-md">
+		<div class="card card-body">
+			<table class="table table-sm table-striped table-bordered table-hover">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Network</th>
+						<th>Vehicle set</th>
+						<th>Zone set</th>
+						<th>Name</th>
+						<th>Comment</th>
+						<th>Tags</th>
+						<th>Created date</th>
+						<th>Update</th>
+						<th>Remove</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					{% for network in networks %}
+					<tr>
+						<td><a class="btn btn-sm btn-success"
+							href="#">details</a></td>
+						<td>{{network.road_network}}</td>
+						<td>{{network.vehicle_set}}</td>
+						<td>{{network.zone_set.tags}}</td>
+						<td>{{network.name}}</td>
+						<td>{{network.comment}}</td>
+						<td>{{network.tags}}</td>
+						<td>{{network.date_created}}</td>
+						<td><a class="btn btn-sm btn-success"
+							href="#">Update</a></td>
+						<td><a class="btn btn-sm btn-success"	href="#">Remove</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+
+			</table>
+		</div>
+	</div>
+</div>
 
 <a href="{% url 'home' %}">Back</a>
 

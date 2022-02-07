@@ -1,6 +1,8 @@
 from django import forms
 from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
-                     Vehicle, VehicleSet, Preferences, Population)
+                     Vehicle, VehicleSet, Preferences, Population,
+                     Network, PopulationSegment
+                     )
 
 
 class NodeForm(forms.Form):
@@ -110,4 +112,16 @@ class PopulationForm(forms.ModelForm):
     class Meta:
         model = Population
         fields = '__all__'
+        exclude = ('locked',)
+
+
+class NetworkForm(forms.ModelForm):
+    class Meta:
+        model = Network
+        fields = '__all__'
+
+
+class PopulationSegmentForm(forms.ModelForm):
+    class Meta:
+        model = PopulationSegment
         exclude = ('locked',)

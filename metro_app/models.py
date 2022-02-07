@@ -35,6 +35,14 @@ def get_visualization_directory():
     return os.path.join(settings.TEMPLATES[0]['DIRS'][0], 'visualization')
 
 
+def project_directory_path(instance, filename):
+    return 'project_files/{}/{}'.format(instance.project.id, filename)
+
+
+def get_random_seed():
+    return random.randint(0, 1000)
+
+
 class Project(models.Model):
     """Projects are containers used to store input models, runs and output
     models in a coherent and organized manner.
@@ -115,10 +123,6 @@ class Membership(models.Model):
 
     class Meta:
         db_table = 'Membership'
-
-
-def project_directory_path(instance, filename):
-    return 'project_files/{}/{}'.format(instance.project.id, filename)
 
 
 class File(models.Model):
@@ -494,10 +498,6 @@ class Edge(models.Model):
         return self.param3 or self.road_type.default_param3
 
 
-def get_random_seed():
-    return random.randint(0, 1000)
-
-
 class Population(models.Model):
     """A Population represents a set of agents, with given characteristics,
     whose preferences and decisions are simulated.
@@ -635,6 +635,85 @@ class ODMatrix(models.Model):
         db_table = 'ODMatrix'
 
 
+class VehicleSet(models.Model):
+    """A set of Vehicles.
+
+    :project Project: Project the VehicleSet instance belongs to.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the VehicleSet.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    locked = models.BooleanField(default=False)
+    name = models.CharField(max_length=80, help_text='Name of the VehicleSet')
+    comment = models.CharField(
+        max_length=240, blank=True,
+        help_text='Additional comment for the VehicleSet',
+    )
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(
+        auto_now_add=True, help_text='Creation date of the VehicleSet')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'VehicleSet'
+
+
+class Vehicle(models.Model):
+    """A Vehicle is an element of the road-network graph, representing a class
+    of vehicle moving on the network.
+
+    :vehicle_set: VehicleSet instance the Vehicle belongs to.
+    :vehicle_id int: Id of the Vehicle, as used by the users in the import
+     files.
+     Must be unique for a specific RoadNetwork.
+    :name str: Name of the Vehicle (default is '').
+    :length float: Front-to-front length of the Vehicle (in meters).
+    :speed_multiplicator float: Optional. If not None, the free-flow speed of
+    the vehicle on an edge is the base speed on the edge multiplied by this
+    value.
+    :speed_function 2-D array of float: Optional. If not None, it must be an
+    array of [float, float] arrays where the first value represents the base
+    speed and the second value represents the actual speed of the vehicle for
+    this base speed.
+    """
+    vehicle_set = models.ForeignKey(VehicleSet, on_delete=models.CASCADE)
+    vehicle_id = models.PositiveBigIntegerField(
+        db_index=True, help_text='Id of the vehicle (must be unique)')
+    name = models.CharField('Name', max_length=80,
+                            blank=True, help_text='Name of the vehicle')
+    length = models.FloatField(help_text='Length of the vehicle (meters)')
+    speed_multiplicator = models.FloatField(null=True, blank=True)
+    speed_function = ArrayField(
+        ArrayField(
+            models.FloatField(),
+            size=2,
+        ),
+        size=20,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return self.name or 'Vehicle {}'.format(self.vehicle_id)
+
+    def get_speed_function(self):
+        if self.speed_multiplicator:
+            {'Multiplicator': self.speed_multiplicator}
+        elif len(self.speed_function) > 0:
+            {'Piecewise': self.speed_function}
+        else:
+            'Base'
+
+    class Meta:
+        db_table = 'Vehicle'
+
+
 class Preferences(models.Model):
     """Distribution of preferences describing a set of agents.
 
@@ -720,13 +799,13 @@ class Preferences(models.Model):
         default=0, choices=MODE_CHOICES)
     mode_choice_mu_distr = models.SmallIntegerField(
         default=0, choices=DISTRIBUTIONS)
-    mode_choice_mu_mean = Models.FloatField(blank=True, null=True)
-    mode_choice_mu_std = Models.FloatField(blank=True, null=True)
+    mode_choice_mu_mean = models.FloatField(blank=True, null=True)
+    mode_choice_mu_std = models.FloatField(blank=True, null=True)
     # Schedule utility parameters.
-    t_star_distr = Models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    t_star_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
     t_star_mean = models.DurationField()
     t_star_std = models.DurationField(blank=True, null=True)
-    delta_distr = Models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
+    delta_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
     delta_mean = models.DurationField(default=timedelta(0))
     delta_std = models.DurationField(blank=True, null=True)
     beta_distr = models.SmallIntegerField(default=0, choices=DISTRIBUTIONS)
@@ -795,6 +874,7 @@ class PopulationSegment(models.Model):
      the instances.
     :date_created datetime.date: Creation date of the PopulationSegment.
     """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     population = models.ManyToManyField(Population)
     preferences = models.ForeignKey(Preferences, on_delete=models.CASCADE)
     od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
@@ -956,85 +1036,6 @@ class EdgeResults(models.Model):
         db_table = 'EdgesResults'
 
 
-class VehicleSet(models.Model):
-    """A set of Vehicles.
-
-    :project Project: Project the VehicleSet instance belongs to.
-    :locked bool: If True, the instance cannot be modified (default is False).
-    :name str: Name of the instance.
-    :comment str: Description of the instance (default is '').
-    :tags set of str: Tags describing the instance, used to search and filter
-     the instances.
-    :date_created datetime.date: Creation date of the VehicleSet.
-    """
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    locked = models.BooleanField(default=False)
-    name = models.CharField(max_length=80, help_text='Name of the VehicleSet')
-    comment = models.CharField(
-        max_length=240, blank=True,
-        help_text='Additional comment for the VehicleSet',
-    )
-    tags = models.CharField(max_length=240, blank=True)
-    date_created = models.DateField(
-        auto_now_add=True, help_text='Creation date of the VehicleSet')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = 'VehicleSet'
-
-
-class Vehicle(models.Model):
-    """A Vehicle is an element of the road-network graph, representing a class
-    of vehicle moving on the network.
-
-    :vehicle_set: VehicleSet instance the Vehicle belongs to.
-    :vehicle_id int: Id of the Vehicle, as used by the users in the import
-     files.
-     Must be unique for a specific RoadNetwork.
-    :name str: Name of the Vehicle (default is '').
-    :length float: Front-to-front length of the Vehicle (in meters).
-    :speed_multiplicator float: Optional. If not None, the free-flow speed of
-    the vehicle on an edge is the base speed on the edge multiplied by this
-    value.
-    :speed_function 2-D array of float: Optional. If not None, it must be an
-    array of [float, float] arrays where the first value represents the base
-    speed and the second value represents the actual speed of the vehicle for
-    this base speed.
-    """
-    vehicle_set = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
-    vehicle_id = models.PositiveBigIntegerField(
-        db_index=True, help_text='Id of the vehicle (must be unique)')
-    name = models.CharField('Name',
-        max_length=80, blank=True, help_text='Name of the vehicle')
-    length = models.FloatField(help_text='Length of the vehicle (meters)')
-    speed_multiplicator = models.FloatField(null=True, blank=True)
-    speed_function = ArrayField(
-        ArrayField(
-            models.FloatField(),
-            size=2,
-        ),
-        size=20,
-        blank=True,
-        null=True,
-    )
-
-    def __str__(self):
-        return self.name or 'Vehicle {}'.format(self.vehicle_id)
-
-    def get_speed_function(self):
-        if self.speed_multiplicator:
-            {'Multiplicator': self.speed_multiplicator}
-        elif len(self.speed_function) > 0:
-            {'Piecewise': self.speed_function}
-        else:
-            'Base'
-
-    class Meta:
-        db_table = 'Vehicle'
-
-
 class Agent(models.Model):
     """Generated agent ready to be used by MetroSim.
 
@@ -1074,7 +1075,7 @@ class Agent(models.Model):
     agent_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the agent')
     population_segment = models.ForeignKey(
-        PopulationSegment, on_delete=models.CASCADE)
+       PopulationSegment, on_delete=models.CASCADE)
     # Origin - destination.
     origin_zone = models.ForeignKey(
         Zone, related_name='origin_zone', on_delete=models.CASCADE,
@@ -1117,7 +1118,7 @@ class Agent(models.Model):
     dep_time_car_u = models.FloatField(blank=True, null=True)
     dep_time_car_mu = models.FloatField(blank=True, null=True)
     dep_time_car_constant = models.DurationField(blank=True, null=True)
-    car_vot = models.FloatField()
+    car_vot = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return 'Agent {}'.format(self.agent_id)

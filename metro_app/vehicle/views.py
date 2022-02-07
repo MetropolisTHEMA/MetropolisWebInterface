@@ -5,7 +5,7 @@ import json
 
 
 def upload_vehicle(request, pk):
-    # pk : is the current project id
+    vehicle_set = VehicleSet.objects.get(id=pk)
     if request.method == 'POST':
         list_vehicle = []
         form = VehicleFileForm(request.POST, request.FILES)
@@ -15,6 +15,7 @@ def upload_vehicle(request, pk):
                 data = json.load(file)
                 for feature in data:
                     vehicle = Vehicle(
+                        vehicle_set=vehicle_set,
                         vehicle_id=feature['id'],
                         name=feature.get('name', None),
                         length=feature.get('length', None),
@@ -24,7 +25,7 @@ def upload_vehicle(request, pk):
                     )
                     list_vehicle.append(vehicle)
             Vehicle.objects.bulk_create(list_vehicle)
-            return redirect('project_details', pk)
+            return redirect('vehicle_set_details', pk)
 
     form = VehicleFileForm()
     context = {
@@ -38,7 +39,7 @@ def add_vehicle(request, pk):
         form = VehicleForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('project_details', pk)
+            return redirect('vehicle_set_details', pk)
 
     form = VehicleForm()
     context = {
@@ -54,7 +55,7 @@ def update_vehicle(request, pk):
         form = VehicleForm(request.POST, instance=vehicle)
         if form.is_valid():
             form.save()
-            return redirect('project_details', 3)
+            return redirect('vehicle_set_details', pk)
 
     form = VehicleForm(instance=vehicle)
     context = {
@@ -68,7 +69,7 @@ def delete_vehicle(request, pk):
     vehicle_to_delete = Vehicle.objects.get(id=pk)
     if request.method == 'POST':
         vehicle_to_delete.delete()
-        return redirect('project_details', 3)
+        return redirect('vehicle_set_details', pk)
 
     context = {
         'vehicle_to_delete': vehicle_to_delete,
