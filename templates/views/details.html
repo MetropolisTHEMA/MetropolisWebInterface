@@ -30,14 +30,16 @@
           <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_nodes' roadnetwork.pk %}">Remove Node</a>
     	  <a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_roads_types' roadnetwork.pk %}">Remove Road types</a>
         </div>
+		
 
         {% elif zoneset %}
   			<h5>Zone set name : {{zoneset.name}}</h5>
   			<hr>
-    			<a class="btn btn-outline-info  btn-sm btn-block"
-            href="{% url 'update_zoneset' zoneset.pk %}">Update zone set</a>
-          <a class="btn btn-outline-info  btn-sm btn-block"
+    		<a class="btn btn-outline-info  btn-sm btn-block"
+            	href="{% url 'update_zoneset' zoneset.pk %}">Update zone set</a>
+            <a class="btn btn-outline-info  btn-sm btn-block"
            href="{% url 'upload_zone' zoneset.pk %}">Import zone</a>
+	
 
         {% elif od_matrix %}
     		<h5 style="text-align: center;">OD matrix name : {{od_matrix.name}}</h5>
@@ -47,15 +49,30 @@
             <a class="btn btn-outline-info  btn-sm btn-block"
              href="{% url 'upoload_od_pair' od_matrix.pk %}">Upload OD Pair</a>
 
-		{% elif 'vehicleset' %}
-		  <h5 style="text-align: center;">Vehicleset: {{vehicleset.name}}</h5>
-		  <hr>
-		  <a class="btn btn-outline-info  btn-sm btn-block"
-		   href="{% url 'update_vehicle_set' vehicleset.pk %}">Update vehicle set</a>
-		  <a class="btn btn-outline-info  btn-sm btn-block"
-		   href="{% url 'upload_vehicle' vehicleset.pk %}">Upload vehicles</a>
-		  <a class="btn btn-outline-info  btn-sm btn-block"
-		   href="{% url 'add_vehicle' vehicleset.pk %}">Add vehicle</a>
+
+		{% elif population %}
+		   <h5 style="text-align: center;">Population: {{population.name}}</h5>
+		   <hr>
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'update_population' population.pk %}">Update population</a>
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_population_segment' population.pk %}">Create Popluation Segment</a>
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="#">Upload Population Segment</a>
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'add_agent'  population.pk %}">Add agent</a>
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'upload_agent'  population.pk %}">Upload agent</a>
+		  
+
+		{% elif network %}
+			<h5>Network name : {{network.name}}</h5>
+			<hr>
+		    <a class="btn btn-outline-info  btn-sm btn-block"
+		  		href="{% url 'update_network2' network.pk %}">Update network</a>
+			<a class="btn btn-outline-info  btn-sm btn-block"
+		 		href="{% url 'upload_zone_node_relation' network.pk %}">Zone Node Relation</a>
+
        {% endif %}
 		</div>
 	</div>
@@ -65,19 +82,19 @@
 			<h5 style="text-align: center; ">Owner Information</h5>
 			<hr>
 			<p style="text-align: center;">Name: {{user.username}}<br>
-        Email: {{user.email}} </p>
+        	Email: {{user.email}} </p>
 		</div>
 	</div>
 
 	<div class="col-md">
 		<div class="card card-body">
-      {% if roadnetwork %}
+        {% if roadnetwork %}
         <h5 style="text-align: center;">Network attributes</h5>
   			<hr>
   			<p style="text-align: center;">Number of Nodes : {{total_nodes}}<br>
-          Number of Edges : {{total_edges}} </p>
+            Number of Edges : {{total_edges}} </p>
 
-      {% elif zoneset %}
+        {% elif zoneset %}
   			<h5 style="text-align: center;">Zone set attributes</h5>
   			<hr>
   			<p>Zone set tag : {{zoneset.tags}}<br>
@@ -87,15 +104,20 @@
     		<h5 style="text-align: center;">OD matrix attributes</h5>
     		<hr>
     		<p>OD matrix tag : {{od_matrix.tags}}<br>
-    		   OD matrix comment: {{od_matrix.comment}} </p>
 
-		{% elif vehicleset %}
-			<h5 style="text-align: center;">Vehicle set attributes</h5>
+		{% elif population %}
+			<h5 style="text-align: center;">Population attributes</h5>
 			<hr>
-			<p>Vehicle set tag : {{vehicleset.tags}}<br>
-			Vehicle set comment: {{vehicleset.comment}} </p>
+			<p>Population tag : {{population.tags}}<br>
+			Population comment: {{population.comment}} </p>
+		
+		{% elif network %}
+			<h5 style="text-align: center;">Network attributes</h5>
+			<hr>
+			<p>Network tag : {{network.tags}}<br>
+			Network comment: {{network.comment}} </p>
 
-      {% endif %}
+        {% endif %}
 		</div>
 	</div>
 	<hr>

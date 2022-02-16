@@ -1,7 +1,7 @@
 from django import forms
 from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
-                     Vehicle, VehicleSet, Preferences, Population,
-                     Network, PopulationSegment
+                     Vehicle, Preferences, Population, Agent,
+                     Network, PopulationSegment, ZoneNodeRelation
                      )
 
 
@@ -95,13 +95,6 @@ class VehicleFileForm(forms.Form):
     my_file = forms.FileField()
 
 
-class VehicleSetForm(forms.ModelForm):
-    class Meta:
-        model = VehicleSet
-        fields = '__all__'
-        exclude = ('locked',)
-
-
 class PreferencesForm(forms.ModelForm):
     class Meta:
         model = Preferences
@@ -124,4 +117,18 @@ class NetworkForm(forms.ModelForm):
 class PopulationSegmentForm(forms.ModelForm):
     class Meta:
         model = PopulationSegment
-        exclude = ('locked',)
+        exclude = ('locked', 'generated',)
+
+
+class ZoneNodeRelationFileForm(forms.Form):
+    my_file = forms.FileField()
+
+
+class AgentForm(forms.ModelForm):
+    class Meta:
+        model = Agent
+        fields = '__all__'
+
+
+class AgentFileForm(forms.Form):
+    my_file = forms.FileField()

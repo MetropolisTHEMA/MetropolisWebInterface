@@ -111,8 +111,9 @@ from django.template import loader
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
-                     Zone, ODMatrix, ODPair, Vehicle, VehicleSet,
-                     Preferences, Population, Network, BackgroundTask)
+                     Zone, ODMatrix, ODPair, Vehicle,
+                     Preferences, Population, Network, PopulationSegment,
+                     BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
                      ODPairTable)
@@ -234,7 +235,6 @@ def project_details(request, pk):
     od_matrix = project.odmatrix_set.all()
     total_od_matrix = od_matrix.count()
     vehicles = Vehicle.objects.all()
-    vehicleset = VehicleSet.objects.all()
     preferences = Preferences.objects.all()
     populations = Population.objects.all()
     networks = Network.objects.all()
@@ -249,7 +249,6 @@ def project_details(request, pk):
         'od_matrix': od_matrix,
         'total_od_matrix': total_od_matrix,
         'vehicles': vehicles,
-        'vehicleset': vehicleset,
         'preferences': preferences,
         'populations': populations,
         'networks': networks,

@@ -1,11 +1,11 @@
-from metro_app.models import Project,  Vehicle, VehicleSet
-from metro_app.forms import VehicleFileForm, VehicleForm, VehicleSetForm
+from metro_app.models import Project,  Vehicle
+from metro_app.forms import VehicleFileForm, VehicleForm
 from django.shortcuts import render, redirect
 import json
 
 
 def upload_vehicle(request, pk):
-    vehicle_set = VehicleSet.objects.get(id=pk)
+    current_project = Project.objects.get(id=pk)
     if request.method == 'POST':
         list_vehicle = []
         form = VehicleFileForm(request.POST, request.FILES)
@@ -15,7 +15,7 @@ def upload_vehicle(request, pk):
                 data = json.load(file)
                 for feature in data:
                     vehicle = Vehicle(
-                        vehicle_set=vehicle_set,
+                        project=current_project,
                         vehicle_id=feature['id'],
                         name=feature.get('name', None),
                         length=feature.get('length', None),
@@ -25,7 +25,7 @@ def upload_vehicle(request, pk):
                     )
                     list_vehicle.append(vehicle)
             Vehicle.objects.bulk_create(list_vehicle)
-            return redirect('vehicle_set_details', pk)
+            return redirect('project_details', pk)
 
     form = VehicleFileForm()
     context = {
@@ -35,13 +35,16 @@ def upload_vehicle(request, pk):
 
 
 def add_vehicle(request, pk):
+    current_project = Project.objects.get(id=pk)
+    vehicle = Vehicle(project=current_project)
+
     if request.method == 'POST':
-        form = VehicleForm(request.POST)
+        form = VehicleForm(request.POST, instance=vehicle)
         if form.is_valid():
             form.save()
-            return redirect('vehicle_set_details', pk)
+            return redirect('project_details', pk)
 
-    form = VehicleForm()
+    form = VehicleForm(initial={'project': current_project})
     context = {
         'form': form,
     }
@@ -49,7 +52,6 @@ def add_vehicle(request, pk):
 
 
 def update_vehicle(request, pk):
-
     vehicle = Vehicle.objects.get(id=pk)
     if request.method == 'POST':
         form = VehicleForm(request.POST, instance=vehicle)

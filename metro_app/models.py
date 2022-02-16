@@ -376,7 +376,7 @@ class RoadType(models.Model):
 
     class Meta:
         db_table = 'RoadType'
-
+ 
 
 class Node(models.Model):
     """A Node is an element of the road-network graph, representing an
@@ -498,34 +498,6 @@ class Edge(models.Model):
         return self.param3 or self.road_type.default_param3
 
 
-class Population(models.Model):
-    """A Population represents a set of agents, with given characteristics,
-    whose preferences and decisions are simulated.
-
-    :locked bool: If True, the instance cannot be modified (default is False).
-    :name str: Name of the instance.
-    :comment str: Description of the instance (default is '').
-    :tags set of str: Tags describing the instance, used to search and filter
-     the instances.
-    :date_created datetime.date: Creation date of the Population.
-    """
-    locked = models.BooleanField(default=False)
-    name = models.CharField(max_length=80, help_text='Name of the Population')
-    comment = models.CharField(
-        max_length=240, blank=True,
-        help_text='Additional comment for the Population',
-    )
-    tags = models.CharField(max_length=240, blank=True)
-    date_created = models.DateField(
-        auto_now_add=True, help_text='Creation date of the population')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = 'Population'
-
-
 class ZoneSet(models.Model):
     """Set of zones.
 
@@ -635,40 +607,42 @@ class ODMatrix(models.Model):
         db_table = 'ODMatrix'
 
 
-class VehicleSet(models.Model):
-    """A set of Vehicles.
-
-    :project Project: Project the VehicleSet instance belongs to.
+class Population(models.Model):
+    """A Population represents a set of agents, with given characteristics,
+    whose preferences and decisions are simulated.
+    :project Project: Project the Population instance belongs to.
+    :zone_set Zonset: Zoneset the populztion instance belongs
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
     :tags set of str: Tags describing the instance, used to search and filter
      the instances.
-    :date_created datetime.date: Creation date of the VehicleSet.
+    :date_created datetime.date: Creation date of the Population.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
     locked = models.BooleanField(default=False)
-    name = models.CharField(max_length=80, help_text='Name of the VehicleSet')
+    name = models.CharField(max_length=80, help_text='Name of the Population')
     comment = models.CharField(
         max_length=240, blank=True,
-        help_text='Additional comment for the VehicleSet',
+        help_text='Additional comment for the Population',
     )
     tags = models.CharField(max_length=240, blank=True)
     date_created = models.DateField(
-        auto_now_add=True, help_text='Creation date of the VehicleSet')
+        auto_now_add=True, help_text='Creation date of the population')
 
     def __str__(self):
         return self.name
 
     class Meta:
-        db_table = 'VehicleSet'
+        db_table = 'Population'
 
 
 class Vehicle(models.Model):
     """A Vehicle is an element of the road-network graph, representing a class
     of vehicle moving on the network.
 
-    :vehicle_set: VehicleSet instance the Vehicle belongs to.
+    :project: Project instance the Vehicle belongs to.
     :vehicle_id int: Id of the Vehicle, as used by the users in the import
      files.
      Must be unique for a specific RoadNetwork.
@@ -682,7 +656,7 @@ class Vehicle(models.Model):
     speed and the second value represents the actual speed of the vehicle for
     this base speed.
     """
-    vehicle_set = models.ForeignKey(VehicleSet, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     vehicle_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the vehicle (must be unique)')
     name = models.CharField('Name', max_length=80,
@@ -874,8 +848,10 @@ class PopulationSegment(models.Model):
      the instances.
     :date_created datetime.date: Creation date of the PopulationSegment.
     """
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    population = models.ManyToManyField(Population)
+    # NB : Il faudrait que population.zone_set soit egal a od_matrix.zoneset
+    # quand on creara un segment.
+
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
     preferences = models.ForeignKey(Preferences, on_delete=models.CASCADE)
     od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
     random_seed = models.PositiveIntegerField(get_random_seed)
@@ -1074,8 +1050,8 @@ class Agent(models.Model):
     """
     agent_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the agent')
-    population_segment = models.ForeignKey(
-       PopulationSegment, on_delete=models.CASCADE)
+    population = models.ForeignKey(
+       Population, on_delete=models.CASCADE)
     # Origin - destination.
     origin_zone = models.ForeignKey(
         Zone, related_name='origin_zone', on_delete=models.CASCADE,
@@ -1099,7 +1075,7 @@ class Agent(models.Model):
     mode_choice_u = models.FloatField(blank=True, null=True)
     mode_choice_mu = models.FloatField(blank=True, null=True)
     # Schedule utility parameters.
-    t_star = models.DurationField()
+    t_star = models.DurationField(default=timedelta())
     delta = models.DurationField(default=timedelta())
     beta = models.FloatField()
     gamma = models.FloatField()
@@ -1274,7 +1250,6 @@ class Network(models.Model):
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    vehicle_set = models.ForeignKey(VehicleSet, on_delete=models.CASCADE)
     zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
     name = models.CharField(max_length=80, help_text='Name of the Network')
     comment = models.CharField(max_length=240, blank=True,
@@ -1284,7 +1259,7 @@ class Network(models.Model):
                                     help_text='Creation date of the Network')
 
     def __str__(self):
-        self.name
+        return self.name
 
     class Meta:
         db_table = 'Network'
@@ -1292,6 +1267,7 @@ class Network(models.Model):
 
 class ZoneNodeRelation(models.Model):
     """Link between an OD zone and a road-network node.
+       Links the zones to nodes on the road network from a CSV
     """
     network = models.ForeignKey(Network, on_delete=models.CASCADE)
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
