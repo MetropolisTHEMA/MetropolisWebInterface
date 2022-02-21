@@ -4,6 +4,18 @@
 {% block title %} Project {% endblock title %}
 
 {% block content %}
+
+
+{% block messages %}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}
+
 <div class="row">
 	<div class="col-md-4">
 		<div class="card card-body">
@@ -24,9 +36,9 @@
 					href="{% url 'upload_vehicle' project.pk %}">Upload Vehicles</a>
 
 				<a class="btn btn-outline-info  btn-sm btn-block"
-					href="{% url 'add_preferences' project.pk %}">Add Preferences</a>
+					href="{% url 'add_preferences' project.pk %}">Set Preferences</a>
 				<a class="btn btn-outline-info  btn-sm btn-block"
-					href="#">Upload Preferences</a>
+					href="{% url 'upload_preferences' project.pk %}">Upload Preferences</a>
 
 				<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'add_population' project.pk %}">Add Population</a>

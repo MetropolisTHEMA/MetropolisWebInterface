@@ -2,24 +2,46 @@
 {% block content %}
   {% include 'networks/upload.html' %}
 
-    <h3>Import Vehicle file </h3>
+    <h3>Import Agent file </h3>
     <hr>
-  <p>A Vehicle is an element of the road-network graph, representing a class
-    of vehicle moving on the network.</p>
+  <p>Generated agent ready to be used by MetroSim..</p>
 
   <h4>Vehicle attributes</h4>
   <ul>
-    <li><strong>network</strong> RoadNetwork: RoadNetwork instance the Vehicle belongs to.</li>
-    <li><strong>vehicle_id</strong> int: Id of the Vehicle, as used by the users in the import
-      files. Must be unique for a specific RoadNetwork.</li>
-    <li><strong>name</strong> str: Name of the Vehicle (default is '').</li>
-    <li><strong>length</strong> float: Front-to-front length of the Vehicle (in meters).</li>
-    <li><strong>speed_multiplicator</strong> float: Optional. If not None, the free-flow speed of
-      the vehicle on an edge is the base speed on the edge multiplied by this
-      value.</li>
-    <li><strong>speed_function</strong> 2-D array of float: Optional. If not None, it must be an
-      array of [float, float] arrays where the first value represents the base
-      speed <br> and the second value represents the actual speed of the vehicle for
-      this base speed.</li>
+   <li>
+    :agent_id int: Id of the agent, as used by the users in the import files.
+     Must be unique for a specific Population.
+    :population Population: Population instance the Agent belongs to.
+    :origin_zone Zone: Zone used as the origin of the agent for his trips.
+    :destination_zone Zone: Zone used as the destination of the agent for his
+     trips.
+    :mode_choice_model int: Type of mode-choice model for the agent (either
+     deterministic, logit or first).
+    :mode_choice_u float: Random value 0 <= u < 1 for the mode choice.
+    :mode_choice_mu float: Variance of the error term for a Logit mode-choice
+     model.
+    :t_star timedelta: Desired arrival at destination (or departure from
+     origin) of the agent (expressed as a duration since midnight).
+    :delta timedelta: Length of the desired arrival / departure time period.
+    :beta float: Penalty for early arrivals / departures (in utility / hour).
+    :gamma float: Penalty for late arrivals / departures (in utility / hour).
+    :desired_arrival bool: If True, t_star represents a desired arrival time at
+     destination, otherwise it represents a desired departure time from origin.
+    :vehicle Vehicle: Vehicle used by the agent for car trips.
+    :dep_time_car_model int: Type of departure-time model for the agent, by car
+     (either continuous logit or constant).
+    :dep_time_car_u float: Random value 0 <= u < 1 for the car departure-time
+     choice (if Logit).
+    :dep_time_car_mu float: Variance of the error term in the car
+     departure-time choice model (if Logit).
+    :dep_time_car_constant timedelta: Departure time of the agent by car (for
+     constant departure time).
+    :car_vot float: Value of time in a car (in utility / hour).
+    :origin_stop PTStop: PTStop of the public-transit network used as the
+     origin of the agent for public-transit trips.
+    :destination_stop PTStop: PTStop of the public-transit network used as the
+     destination of the agent for public-transit trips.
+    """
+   </li>
   </ul>
 {% endblock %}

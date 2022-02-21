@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from metro_app.forms import PreferencesForm
-from metro_app.models import Project, Preferences
+from metro_app.models import Project, Preferences, Vehicle
+from metro_app.forms import PreferencesFileForm
+import json
 
 
 def add_preferences(request, pk):
@@ -13,10 +16,153 @@ def add_preferences(request, pk):
             return redirect('project_details', current_project.pk)
 
     form = PreferencesForm(initial={'project': current_project})
+
     context = {
         'form': form,
     }
     return render(request, 'views/form.html', context)
+
+
+def upload_preferences(request, pk):
+    project = Project.objects.get(id=pk)
+    preferences = Preferences.objects.all()
+    if preferences.count() > 0:
+        messages.warning(request, "Fail! Agent already contains agents data. \
+                            Delete them before importing again")
+        return redirect('upload_preferences', pk)
+
+    if request.method == 'POST':
+        vehicles = Vehicle.objects.all()
+        vehicle_instance_dict = {vehicle.vehicle_id: vehicle for vehicle in vehicles}
+        form = PreferencesFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            list_preferences = []
+            file = request.FILES['my_file']
+            data = json.load(file)
+            if type(data) == list:
+                for feature in data:
+                    try:
+                        vehicle=vehicle_instance_dict[feature['vehicle']],
+                    except KeyError:
+                        messages.error(request, "vehicle ids don't match with vehicle table data")
+                        return redirect('project_details', pk)
+                    else:
+
+                        mode_choice = feature['mode_choice']
+                        if mode_choice == 'Deterministic':
+                            mode_choice_model = 0
+                            mode_choice_mu_distr=0
+                            mode_choice_mu_mean=0
+                            mode_choice_mu_std=0
+                        elif mode_choice == 'First':
+                            mode_choice_model = 2
+                            mode_choice_mu_distr=0
+                            mode_choice_mu_mean=0
+                            mode_choice_mu_std=0
+                        elif type(mode_choice) == dict:
+                            mode_choice_model_key = list(mode_choice.keys())[0]
+                            if mode_choice_model_key == 'Logit':
+                                mode_choice_model = 1
+                                mode_choice_mu_distr = 2
+                                mode_choice_mu_mean = mode_choice['Logit']['mu']['Normal']['mean']
+                                mode_choice_mu_std = mode_choice['Logit']['mu']['Normal']['std']
+
+                        departure_time_model = feature['departure_time_model']
+                        departure_time_model_distribution = list(departure_time_model.keys())[0]
+                        if departure_time_model_distribution == 'Logit':
+                            dep_time_car_constant_distr = 1
+                            dep_time_car_constant_mean = departure_time_model["Logit"]['mu']['Normal']['mean']
+                            dep_time_car_constant_std = departure_time_model["Logit"]['mu']['Normal']['std']
+                        
+                        elif departure_time_model_distribution == 'Constant':
+                            distribution = departure_time_model["Constant"]
+                            dep_time_car_choice_model = 1
+                            if distribution == 'Constant':
+                                dep_time_car_constant_distr = 0
+                                dep_time_car_constant_mean = 0
+                                dep_time_car_constant_std = 0
+                            elif distribution == 'Uniform':
+                                dep_time_car_constant_distr = 1
+                                dep_time_car_constant_mean = distribution['Uniform']['mean']
+                                dep_time_car_constant_std = distribution['Uniform']['std']
+                            elif distribution == 'Normal':
+                                dep_time_car_constant_distr = 2
+                                dep_time_car_constant_mean = distribution['Normal']['mean']
+                                dep_time_car_constant_std = distribution['Normal']['std']
+                            elif distribution == 'Log-normal':
+                                dep_time_car_constant_distr = 3
+                                dep_time_car_constant_mean = distribution['Log-normal']['mean']
+                                dep_time_car_constant_std = distribution['Log-normal']['std']
+                            
+                            delta = feature['delta']
+                            delta_distribution = list(delta.keys())[0]
+                            if delta_distribution == 'Constant':
+                                delta_distr = 1
+                                delta_mean = delta['Constant']
+                                delta_std = "125"
+                            
+                            dep_time_car_mu_distr = feature.get('dep_time_car_mu_dist', 1)
+                            dep_time_car_mu_mean = feature.get('dep_time_car_mu_mean', None)
+                            dep_time_car_mu_std = feature.get('dep_time_car_mu_std', None)
+                            
+                        preference_instance = Preferences(
+                            project=project,
+                            mode_choice_model=mode_choice_model,
+                            mode_choice_mu_distr=mode_choice_mu_distr,
+                            mode_choice_mu_mean=mode_choice_mu_mean,
+                            mode_choice_mu_std=mode_choice_mu_std,
+                            t_star_distr= 1,
+                            t_star_mean=feature['t_star']['Uniform']['mean'],
+                            t_star_std=feature['t_star']['Uniform']['std'],
+                            delta_distr=delta_distr,
+                            delta_mean=delta['Constant'],
+                            delta_std=delta_std,
+                            beta_distr=2,
+                            beta_mean=feature['beta']['Normal']['mean'],
+                            beta_std=feature['beta']['Normal']['std'],
+                            gamma_distr=2,
+                            gamma_mean=feature['gamma']['Normal']['mean'],
+                            gamma_std=feature['gamma']['Normal']['std'],
+                            desired_arrival=feature['desired_arrival'],
+                            vehicle=vehicle,
+                            dep_time_car_choice_model=dep_time_car_choice_model,
+                            dep_time_car_mu_distr=dep_time_car_mu_distr,
+                            dep_time_car_mu_mean=dep_time_car_mu_mean,
+                            dep_time_car_mu_std=dep_time_car_mu_std,
+                            #dep_time_car_constant_distr=dep_time_car_constant_distr,
+                            #dep_time_car_constant_mean=dep_time_car_constant_mean,
+                            #dep_time_car_constant_std=dep_time_car_constant_std,
+                            car_vot_distr=3,
+                            car_vot_mean=feature['car_vot']['Log-normal']['mean'],
+                            car_vot_std=feature['car_vot']['Log-normal']['std'],
+                            name=feature.get('name', None),
+                            comment=feature.get('comment', 'No comment'),
+                            tags=feature.get('tags', 'No tags')               
+                        )
+                        list_preferences.append(preference_instance)
+            elif type(data) == dict:
+                pass
+            try:
+                Preferences.objects.bulk_create(list_preferences)
+            except Exception as e:
+                messages.error(request, e)
+                return redirect('upload_preferences', pk)
+            else:
+                preferences = Preferences.objects.all()
+                if preferences.count() > 0:
+                    messages.success(request, 'preferences file successfully\
+                                            uploaded')
+                    return redirect('project_details', pk)
+                else:
+                    messages.warning(request, 'No data is uploaded')
+                    return redirect('project_details', pk)
+    
+    form = PreferencesFileForm()
+    context = {
+        'form': form
+    }
+    return render(request, 'preferences/preferences.html', context)
+
 
 
 def update_preferences(request, pk):

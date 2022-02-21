@@ -15,8 +15,8 @@ from metro_app.vehicle.views import (upload_vehicle, add_vehicle,
                                      update_vehicle, delete_vehicle,
                                      create_vehicle_set, vehicle_set_details,
                                      update_vehicle_set, delete_vehicle_set)
-from metro_app.preferences.views import (add_preferences, update_preferences,
-                                         delete_preferences)
+from metro_app.preferences.views import (add_preferences, upload_preferences,
+                                         update_preferences, delete_preferences)
 from metro_app.population.views import (add_population, update_population,
                                         population_details,
                                         create_population_segment,
@@ -84,6 +84,8 @@ urlpatterns = [
      path('delete_vehicle/<str:pk>/', delete_vehicle, name='delete_vehicle'),
      path('preferences/project/<str:pk>/', add_preferences,
           name='add_preferences'),
+     path('project/<str:pk>/upload_preferences/', upload_preferences,
+          name='upload_preferences'),
      path('update_preferences/<str:pk>', update_preferences,
           name='update_preferences'),
      path('delete_preferences/<str:pk>/', delete_preferences,

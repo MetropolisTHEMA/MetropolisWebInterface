@@ -1,11 +1,19 @@
+from django.contrib import messages
+from django.shortcuts import render, redirect
 from metro_app.models import Project,  Vehicle
 from metro_app.forms import VehicleFileForm, VehicleForm
-from django.shortcuts import render, redirect
 import json
 
 
 def upload_vehicle(request, pk):
     current_project = Project.objects.get(id=pk)
+
+    vehicles = Vehicle.objects.all()
+    """if vehicles.count() > 0:
+        messages.warning(request, "Fail! Vehicle tabe already contains data. \
+                            Delete them before importing again")
+        return redirect('project_details', pk)"""
+
     if request.method == 'POST':
         list_vehicle = []
         form = VehicleFileForm(request.POST, request.FILES)
@@ -13,17 +21,30 @@ def upload_vehicle(request, pk):
             file = request.FILES['my_file']
             if file.name.endswith('.json'):
                 data = json.load(file)
-                for feature in data:
-                    vehicle = Vehicle(
+                if type(data) == list:
+                    for feature in data:
+                        vehicle_instance = Vehicle(
+                            project=current_project,
+                            vehicle_id=feature['id'],
+                            name=feature.get('name', None),
+                            length=feature.get('length', None),
+                            speed_multiplicator=feature.get(
+                                'speed_multiplicator', None),
+                            speed_function=feature.get('speed_function', None)
+                        )
+                        list_vehicle.append(vehicle_instance)
+                elif type(data) == dict:
+                    vehicle_instance = Vehicle(
                         project=current_project,
-                        vehicle_id=feature['id'],
-                        name=feature.get('name', None),
-                        length=feature.get('length', None),
-                        speed_multiplicator=feature.get(
-                            'speed_multiplicator', None),
-                        speed_function=feature.get('speed_function', None)
+                        vehicle_id=data['id'],
+                        name=data.get('name', None),
+                        length=data.get('length', None),
+                        speed_multiplicator=data.get(
+                                'speed_multiplicator', None),
+                        speed_function=data.get('speed_function', None)
                     )
-                    list_vehicle.append(vehicle)
+                    list_vehicle.append(vehicle_instance)
+
             Vehicle.objects.bulk_create(list_vehicle)
             return redirect('project_details', pk)
 

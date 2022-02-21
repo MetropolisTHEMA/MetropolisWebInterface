@@ -51,7 +51,7 @@ def upload_agent(request, pk):
                         messages.error(request, 'Either a wrong file is imported,\
                                          either origin, destination or/and\
                                          vehicle are missing')
-                        return redirect('population_details', pk)
+                        return redirect('upload_agent', pk)
                     else:
                         mode_choice = feature['mode_choice']
                         if mode_choice == 'First':
@@ -102,13 +102,14 @@ def upload_agent(request, pk):
             else:
                 messages.error(request, 'File extension is not recognized,\
                                please select a good one')
+                return redirect('upload_agent', pk)
             try:
                 Agent.objects.bulk_create(list_agent)
-            except exeption as e:
+            except Exception as e:
                 messages.error(request, e)
                 return redirect('upload_agent', pk)
             else:
-                messages.success(request, 'agents file has been successfully upoloaded')
+                messages.success(request, 'agents file successfully upoloaded')
                 return redirect('population_details', pk)
     form = AgentFileForm()
     context = {

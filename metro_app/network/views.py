@@ -46,6 +46,11 @@ def network2_details(request, pk):
 
 def upload_zone_node_relation(request, pk):
     network = Network.objects.get(id=pk) # RaodNetWork as FK
+    zn = ZoneNodeRelation.objects.all()
+    if zn.count() > 0:
+        messages.warning(request, 'ZoneNodeRelation already contains data')
+        return redirect('network2_details', pk)
+
     if request.method == 'POST':
         zones = Zone.objects.filter(zone_set=network.zone_set) # Zone has Zonset as FK
         nodes = Node.objects.filter(network=network.road_network) # RoadNetwork as FK
@@ -60,31 +65,24 @@ def upload_zone_node_relation(request, pk):
                 data = file.read().decode('utf-8').splitlines()
                 data = csv.DictReader(data, delimiter=',')
                 for row in data:
-                    node = node_instance_dict[int(row['node'])]
-                    zone = zone_instance_dict[int(row['zone'])]
-                    zone_node_relation_instance = ZoneNodeRelation(
-                        network=network,
-                        zone=zone,
-                        node=node)
-                    list_zone_node_relation.append(zone_node_relation_instance)
-
-            ZoneNodeRelation.objects.bulk_create(list_zone_node_relation)
-            messages.success(request, "file successfully uploaded")
-            return redirect('network2_details', pk)
-
-            """try:
-                        node = node_instance_dict[row['node']]
-                        zone = zone_instance_dict[row['zone']]
+                    try:
+                        node = node_instance_dict[int(row['node'])]
+                        zone = zone_instance_dict[int(row['zone'])]
                     except KeyError:
-                        mess
+                        pass
                     else:
                         zone_node_relation_instance = ZoneNodeRelation(
                             network=network,
-                            zone=node,
-                            Node=node
-            )"""
-
-                    
+                            zone=zone,
+                            node=node)
+                        list_zone_node_relation.append(zone_node_relation_instance)
+            try:
+                ZoneNodeRelation.objects.bulk_create(list_zone_node_relation)
+            except exeption as e:
+                messages.error(request, e)
+            else:
+                messages.success(request, "ZoneNodeRelation file successfully uploaded")
+                return redirect('network2_details', pk)
 
     form = ZoneNodeRelationFileForm()
     context = {

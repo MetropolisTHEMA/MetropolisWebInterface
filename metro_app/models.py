@@ -748,8 +748,7 @@ class Preferences(models.Model):
      the instances.
     :date_created datetime.date: Creation date of the Preferences.
     """
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    # Distributions.
+      # Distributions.
     CONSTANT = 0
     UNIFORM = 1
     NORMAL = 2
@@ -769,6 +768,14 @@ class Preferences(models.Model):
         (LOGIT_MODE, 'Logit'),
         (FIRST_MODE, 'First'),
     )
+
+    LOGIT_DEP_TIME = 0
+    CONSTANT_DEP_TIME = 1
+    DEP_TIME_CHOICES = (
+        (LOGIT_DEP_TIME, 'Continuous Logit'),
+        (CONSTANT_DEP_TIME, 'Constant'),
+    )
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     mode_choice_model = models.SmallIntegerField(
         default=0, choices=MODE_CHOICES)
     mode_choice_mu_distr = models.SmallIntegerField(
@@ -791,12 +798,6 @@ class Preferences(models.Model):
     desired_arrival = models.BooleanField(default=True)
     # Car mode.
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
-    LOGIT_DEP_TIME = 0
-    CONSTANT_DEP_TIME = 1
-    DEP_TIME_CHOICES = (
-        (LOGIT_DEP_TIME, 'Continuous Logit'),
-        (CONSTANT_DEP_TIME, 'Constant'),
-    )
     dep_time_car_choice_model = models.SmallIntegerField(
         default=0, choices=DEP_TIME_CHOICES)
     dep_time_car_mu_distr = models.SmallIntegerField(
@@ -1272,6 +1273,12 @@ class ZoneNodeRelation(models.Model):
     network = models.ForeignKey(Network, on_delete=models.CASCADE)
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{}".format(self.network)
+
+    class Meta:
+        db_table = 'ZoneNodeRelation'
 
 
 class BackgroundTask(models.Model):

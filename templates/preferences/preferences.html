@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% include 'networks/upload.html' %}
+
+    <h3>Import Agent file </h3>
+    <hr>
+  <p>Distribution of preferences describing a set of agents</p>
+
+  <h4>Preferences attributes</h4>
+  <ul>
+   <li>
+    :project Project: Project the Preferences instance belongs to.
+    :mode_choice_model int: Model used for the mode choice (either
+     Deterministic, Logit, or First).
+    :mode_choice_mu_distr int: Distribution for the value of mu in the mode
+     choice model (only relevant if mode_choice_model is Logit).
+    :mode_choice_mu_mean float: Mean value of mu in the mode choice model (only
+     relevant if mode_choice_model is Logit).
+    :mode_choice_mu_std float: Standard-deviation of mu in the mode choice
+     model (only relevant if mode_choice_model is Logit and
+     mode_choice_mu_distr is not Constant).
+    :t_star_distr int: Distribution for the value of tstar.
+    :t_star_mean timedelta: Mean value of tstar.
+    :t_star_std timedelta: Standard-deviation of tstar (only relevant if
+     t_star_distr is not Constant).
+    :delta_distr int: Distribution for the value of delta.
+    :delta_mean timedelta: Mean value of delta.
+    :delta_std timedelta: Standard-deviation of delta (only relevant if
+     delta_distr is not Constant).
+    :beta_distr int: Distribution for the value of beta.
+    :beta_mean float: Mean value of beta.
+    :beta_std float: Standard-deviation of beta (only relevant if
+     beta_distr is not Constant).
+    :gamma_distr int: Distribution for the value of gamma.
+    :gamma_mean float: Mean value of gamma.
+    :gamma_std float: Standard-deviation of gamma (only relevant if gamma_distr
+     is not Constant).
+    :desired_arrival bool: If True, tstar represents a desired time of arrival.
+     Otherwise, tstar represents a desired time of departure.
+    .vehicle Vehicle: Vehicle used by the agents.
+    :dep_time_car_choice_model int: Model used for the departure-time choice by
+     car (either Continuous Logit or Constant).
+    :dep_time_car_mu_distr int: Distribution for the value of mu in the
+     departure-time model (only relevant if dep_time_car_model is Continuous
+     Logit).
+    :dep_time_car_mu_mean float: Mean value of mu in the departure-time choice
+     model (only relevant if dep_time_car_model is Continuous Logit).
+    :dep_time_car_mu_std float: Standard-deviation of mu in the departure-time
+     choice model (only relevant if dep_time_car_model is Continuous Logit and
+     dep_time_car_mu_distr is not Constant).
+    :dep_time_car_constant_distr int: Distribution for the departure time of
+     the agents (only relevant if dep_time_car_model is Constant).
+    :dep_time_car_constant_mean timedelta: Mean of the departure time of the
+     agents (only relevant if dep_time_car_model is Constant).
+    :dep_time_car_constant_std timedelta: Standard-deviation of the departure
+     time of the agents (only relevant if dep_time_car_model is Constant and
+     dep_time_car_constant_distr is not Constant).
+    :car_vot_distr int: Distribution of the value of time by car.
+    :car_vot_mean float: Mean of the value of time by car.
+    :car_vot_std float: Standard-deviation of the value of time by car (only
+     relevant if car_vot_distr is not Constant).
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Preferences.
+   </li>
+  </ul>
+{% endblock %}

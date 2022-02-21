@@ -1,6 +1,6 @@
 from django import forms
 from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
-                     Vehicle, Preferences, Population, Agent,
+                     Vehicle, Preferences, Population, Agent, ParameterSet,
                      Network, PopulationSegment, ZoneNodeRelation
                      )
 
@@ -101,6 +101,10 @@ class PreferencesForm(forms.ModelForm):
         fields = '__all__'
 
 
+class PreferencesFileForm(forms.Form):
+    my_file = forms.FileField()
+    
+
 class PopulationForm(forms.ModelForm):
     class Meta:
         model = Population
@@ -131,4 +135,13 @@ class AgentForm(forms.ModelForm):
 
 
 class AgentFileForm(forms.Form):
+    my_file = forms.FileField()
+
+
+class ParameterSetForm(forms.ModelForm):
+    class Meta:
+        model = ParameterSet
+        fields = '__all__'
+
+class ParameterSetFileForm(forms.Form):
     my_file = forms.FileField()
