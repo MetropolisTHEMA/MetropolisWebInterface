@@ -24,7 +24,7 @@ class ProjectForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Give a name for the project'}),
-            'coment': forms.TextInput(attrs={'rows': 1}),
+            'comment': forms.TextInput(attrs={'rows': 1}),
         }
 
 
@@ -99,6 +99,7 @@ class PreferencesForm(forms.ModelForm):
     class Meta:
         model = Preferences
         fields = '__all__'
+        exclude = ('project',)
 
 
 class PreferencesFileForm(forms.Form):

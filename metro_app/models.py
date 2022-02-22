@@ -69,7 +69,7 @@ class Project(models.Model):
                                      through='Membership')
     public = models.BooleanField(default=False, help_text='Allow the project \
                                  to be viewed (not editable) by anyone')
-    name = models.CharField(max_length=80, help_text='Name of the project')
+    name = models.CharField(max_length=80)
     comment = models.CharField(max_length=240, blank=True,
                                help_text='Additional comment for the project')
     tags = models.CharField(max_length=240, blank=True)
@@ -77,7 +77,7 @@ class Project(models.Model):
                                     help_text='Creation date of the project')
 
     def __str__(self):
-        return self.name
+        return "{}".format(self.name)
 
     class Meta:
         db_table = 'Project'
@@ -776,6 +776,11 @@ class Preferences(models.Model):
         (CONSTANT_DEP_TIME, 'Constant'),
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    name = models.CharField(max_length=80, help_text='Name of the Preferences')
+    comment = models.CharField(max_length=240, blank=True,
+        help_text='Additional comment for the Preferences',
+    )
+    tags = models.CharField(max_length=240, blank=True)
     mode_choice_model = models.SmallIntegerField(
         default=0, choices=MODE_CHOICES)
     mode_choice_mu_distr = models.SmallIntegerField(
@@ -813,17 +818,11 @@ class Preferences(models.Model):
     car_vot_std = models.FloatField(blank=True, null=True)
     # Meta.
     locked = models.BooleanField(default=False)
-    name = models.CharField(max_length=80, help_text='Name of the Preferences')
-    comment = models.CharField(
-        max_length=240, blank=True,
-        help_text='Additional comment for the Preferences',
-    )
-    tags = models.CharField(max_length=240, blank=True)
     date_created = models.DateField(
         auto_now_add=True, help_text='Creation date of the preferences')
 
     def __str__(self):
-        return self.name
+        return f'{self.name}'
 
     class Meta:
         db_table = 'Preferences'

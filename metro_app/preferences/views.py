@@ -42,7 +42,7 @@ def upload_preferences(request, pk):
             if type(data) == list:
                 for feature in data:
                     try:
-                        vehicle=vehicle_instance_dict[feature['vehicle']],
+                        vehicle=vehicle_instance_dict[feature['vehicle']]
                     except KeyError:
                         messages.error(request, "vehicle ids don't match with vehicle table data")
                         return redirect('project_details', pk)
@@ -73,7 +73,6 @@ def upload_preferences(request, pk):
                             dep_time_car_constant_distr = 1
                             dep_time_car_constant_mean = departure_time_model["Logit"]['mu']['Normal']['mean']
                             dep_time_car_constant_std = departure_time_model["Logit"]['mu']['Normal']['std']
-                        
                         elif departure_time_model_distribution == 'Constant':
                             distribution = departure_time_model["Constant"]
                             dep_time_car_choice_model = 1
@@ -104,16 +103,92 @@ def upload_preferences(request, pk):
                             dep_time_car_mu_distr = feature.get('dep_time_car_mu_dist', 1)
                             dep_time_car_mu_mean = feature.get('dep_time_car_mu_mean', None)
                             dep_time_car_mu_std = feature.get('dep_time_car_mu_std', None)
-                            
+
+                        t_star = feature['t_star']
+                        t_star_distribution = list(t_star.keys())[0]
+                        if t_star_distribution == 'Constant':
+                            t_star_distr = 0
+                            t_star_mean = t_star['Constant']
+                            t_star_std = 0
+                        elif t_star_distribution == 'Uniform':
+                            t_star_distr = 1
+                            t_star_mean = t_star['Uniform']['mean']
+                            t_star_std =t_star['Uniform']['std'],
+                        elif t_star_distribution == 'Normal':
+                            t_star_distr = 2,
+                            t_star_mean = t_star['Normal']['mean']
+                            t_star_std =t_star['Normal']['std'],
+                        elif t_star_distribution == 'Log-normal':
+                            t_star_distr = 3,
+                            t_star_mean = t_star['Uniform']['mean']
+                            t_star_std =t_star['Uniform']['std']
+
+                        beta = feature['beta']
+                        beta_distribution = list(beta.keys())[0]
+                        if beta_distribution == 'Constant':
+                            beta_distr = 0
+                            beta_mean = beta['Constant']
+                            beta_std = 0
+                        elif beta_distribution == 'Uniform':
+                            beta_distr = 1
+                            beta_mean = beta['Uniform']['mean']
+                            beta_std =beta['Uniform']['std'],
+                        elif beta_distribution == 'Normal':
+                            beta_distr = 2,
+                            beta_mean = beta['Normal']['mean']
+                            beta_std = beta['Normal']['std'],
+                        elif beta_distribution == 'Log-normal':
+                            beta_distr = 3,
+                            beta_mean = beta['Uniform']['mean']
+                            beta_std = beta['Uniform']['std'],
+
+                        gamma = feature['gamma']
+                        gamma_distribution = list(gamma.keys())[0]
+                        if gamma_distribution == 'Constant':
+                            gamma_distr = 0
+                            gamma_mean = gamma['Constant']
+                            gamma_std = 0
+                        elif gamma_distribution == 'Uniform':
+                            gamma_distr = 1
+                            gamma_mean = gamma['Uniform']['mean']
+                            gamma_std =gamma['Uniform']['std'],
+                        elif gamma_distribution == 'Normal':
+                            gamma_distr = 2,
+                            gamma_mean = gamma['Normal']['mean']
+                            gamma_std = gamma['Normal']['std'],
+                        elif gamma_distribution == 'Log-normal':
+                            gamma_distr = 3,
+                            gamma_mean = gamma['Uniform']['mean']
+                            gamma_std = gamma['Uniform']['std'],
+
+                        delta = feature['delta']
+                        delta_distribution = list(delta.keys())[0]
+                        if delta_distribution == 'Constant':
+                            delta_distr = 0
+                            delta_mean = delta['Constant']
+                            delta_std = "0"
+                        elif delta_distribution == 'Uniform':
+                            delta_distr = 1
+                            delta_mean = delta['Uniform']['mean']
+                            delta_std =delta['Uniform']['std'],
+                        elif delta_distribution == 'Normal':
+                            delta_distr = 2,
+                            delta_mean = delta['Normal']['mean']
+                            delta_std = delta['Normal']['std'],
+                        elif delta_distribution == 'Log-normal':
+                            delta_distr = 3,
+                            delta_mean = delta['Uniform']['mean']
+                            delta_std = delta['Uniform']['std']
+
                         preference_instance = Preferences(
                             project=project,
                             mode_choice_model=mode_choice_model,
                             mode_choice_mu_distr=mode_choice_mu_distr,
                             mode_choice_mu_mean=mode_choice_mu_mean,
                             mode_choice_mu_std=mode_choice_mu_std,
-                            t_star_distr= 1,
-                            t_star_mean=feature['t_star']['Uniform']['mean'],
-                            t_star_std=feature['t_star']['Uniform']['std'],
+                            t_star_distr=t_star_distr,
+                            t_star_mean=t_star_mean, # feature['t_star']['Uniform']['mean'],
+                            t_star_std=t_star_std, # feature['t_star']['Uniform']['std'],
                             delta_distr=delta_distr,
                             delta_mean=delta['Constant'],
                             delta_std=delta_std,
