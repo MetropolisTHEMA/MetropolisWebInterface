@@ -23,6 +23,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 from colorfield.fields import ColorField
 from django_q.tasks import fetch
 
@@ -160,19 +161,13 @@ class ParameterSet(models.Model):
      recorded.
     :learn_process str: Type of learning process for the day-to-day model.
      Possible values are exponential, linear, quadratic and genetic.
-    :learn_param float: Weight of the previous day in the learning process. The
-     exact meaning depends on the type of learning process.
-    :iter_check bool: If True, the run stops when the maximum number of
-     iterations is exceeded.
-    :iter_value int: Maximum number of iterations of the run.
-    :converg_check bool: If True, ther run stops when the convergence criteria
-     is smaller than the threshold value.
-    :converg_value float: Threshold of the convergence criteria.
-    :spillback_enable bool: If True, congestion can spread on upstream links
-     (i.e., queues are horizontal, not vertical).
-    :spillback_value float: Length of a base vehicle, in meters. Used to
-     compute the length of the trafic jams. Only relevant if spillback_enable
-     is True.
+    :learn_param float: Weight of the previous day in the learning process (if
+     exponential).
+    :max_iter int: Maximum number of iterations of the run.
+    :update_ratio float: Share of agents that can update their choice at each
+     iteration (value is between 0.0 and 1.0).
+    :random_seed int: Seed for the random number generator used in the
+     simulation.
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance.
@@ -196,31 +191,22 @@ class ParameterSet(models.Model):
         help_text='Time interval at which results are saved',
     )
     learn_process = models.PositiveSmallIntegerField(
-        default=0, choices=learning_process,
+        default=1, choices=learning_process,
         help_text='Type of learning process')
     learn_param = models.FloatField(
-        default=.1, help_text='Weight of the previous day')
-    iter_check = models.BooleanField(
-        default=True,
-        help_text=(
-            'Stop the simulation when the maximum number of iterations is'
-            ' exceeded'
-        ),
+        default=.1, help_text='Weight of the previous day',
+        validators=[MaxValueValidator(1.0), MinValueValidator(0.0)],
     )
-    iter_value = models.SmallIntegerField(
-        default=50, help_text='Maximum number of iterations')
-    converg_check = models.BooleanField(
-        default=True,
-        help_text=(
-            'Stop the simulation when the convergence criteria is reached'
-        ),
+    max_iter = models.PositiveSmallIntegerField(
+        default=50, help_text='Maximum number of iterations',
+        validators=[MaxValueValidator(1000), MinValueValidator(1)])
+    update_ratio = models.FloatField(
+        default=1.0,
+        help_text='Share of agents that can update their choice at each iteration',
+        validators=[MaxValueValidator(1.0), MinValueValidator(0.0)],
     )
-    converg_value = models.FloatField(
-        default=.01, help_text='Value of the convergence criteria')
-    spillback_enable = models.BooleanField(
-        default=True, help_text='Allow congestion to spread on upstream roads')
-    spillback_value = models.FloatField(
-        default=7.0, help_text='Length of a vehicle in meters')
+    random_seed = models.PositiveIntegerField(
+        blank=True, null=True, help_text='Seed of the random number generator')
     locked = models.BooleanField(default=False)
     name = models.CharField(
         max_length=80, help_text='Name of the parameter set')
@@ -237,20 +223,17 @@ class ParameterSet(models.Model):
 
     def get_learning_model(self):
         if self.learn_process == 0:
-            return {
-                'Exponential': {
-                    'alpha': self.learn_param,
-                }
-            }
+            return {'Exponential': 1.0 - self.learn_param}
+        elif self.learn_process == 1:
+            return 'Linear'
+        elif self.learn_process == 3:
+            return 'Genetic'
         else:
             raise 'Unsupported learning process: {}'.format(self.learn_process)
 
     def get_convergence_criteria(self):
         criteria = []
-        if self.iter_check:
-            criteria.append({'MaxIteration': self.iter_value})
-        assert len(criteria) > 0, \
-               'At least one convergence criteria must be enabled'
+        criteria.append({'MaxIteration': self.iter_value})
         return criteria
 
     class Meta:
@@ -915,12 +898,11 @@ class Run(models.Model):
     :date_created datetime.date: Creation date of the Run.
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
+    parameters = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     #  policy = models.ForeignKey(
     #      Policy, on_delete=models.CASCADE, null=True, blank=True)
-    network = models.ForeignKey(
-        RoadNetwork, on_delete=models.CASCADE, null=True, blank=True)
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
     #  pt_network = models.ForeignKey(
     #      PTNetwork, on_delete=models.CASCADE, null=True, blank=True)
     status_choices = (
@@ -1050,8 +1032,7 @@ class Agent(models.Model):
     """
     agent_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the agent')
-    population = models.ForeignKey(
-       Population, on_delete=models.CASCADE)
+    population = models.ForeignKey(Population, on_delete=models.CASCADE)
     # Origin - destination.
     origin_zone = models.ForeignKey(
         Zone, related_name='origin_zone', on_delete=models.CASCADE,
@@ -1146,31 +1127,17 @@ class Agent(models.Model):
             }
         }
 
-    def get_origin_node(self, road_network):
+    def get_origin_node(self, network):
         try:
-            relation = ZoneNodeCorrespondance.objects.get(
-                zone_set=self.origin_zone.zone_set, road_network=road_network)
-        except ZoneNodeCorrespondance.DoesNotExist:
-            return None
-        try:
-            link = self.origin_zone.zonenoderelation_set.get(relation=relation)
+            return network.zonenoderelation_set.get(zone=self.origin_zone)
         except ZoneNodeRelation.DoesNotExist:
             return None
-        return link.node
 
     def get_destination_node(self, road_network):
         try:
-            relation = ZoneNodeCorrespondance.objects.get(
-                zone_set=self.destination_zone.zone_set,
-                road_network=road_network)
-        except ZoneNodeCorrespondance.DoesNotExist:
-            return None
-        try:
-            link = self.destination_zone.zonenoderelation_set.get(
-                relation=relation)
+            return network.zonenoderelation_set.get(zone=self.destination_zone)
         except ZoneNodeRelation.DoesNotExist:
             return None
-        return link.node
 
     class Meta:
         db_table = 'Agent'
