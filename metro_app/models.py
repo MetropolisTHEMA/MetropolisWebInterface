@@ -482,7 +482,14 @@ class Edge(models.Model):
         return self.length * 1000.0
 
     def get_outflow(self):
-        return self.outflow or self.road_type.default_outflow
+        outflow = self.outflow or self.road_type.default_outflow
+        # Bottleneck outflow is expressed in vehicle-length per HOUR per lane
+        # on the interface but in vehicle-length per SECOND per lane in the
+        # simulator.
+        if outflow is not None:
+            return outflow / 3600.0
+        else:
+            return None
 
     def get_param1(self):
         return self.param1 or self.road_type.default_param1
@@ -492,6 +499,18 @@ class Edge(models.Model):
 
     def get_param3(self):
         return self.param3 or self.road_type.default_param3
+
+    def get_speed_density(self):
+        congestion = self.road_type.congestion
+        if congestion == self.road_type.FREEFLOW:
+            return "FreeFlow"
+        elif congestion == self.road_type.BOTTLENECK:
+            # Bottleneck capacity is expressed in vehicle-length per HOUR per
+            # lane on the interface but in vehicle-length per SECOND per lane
+            # in the simulator.
+            return {"Congestion": self.get_param1() / 3600.0}
+        else:
+            raise 'Unsupported congestion model: {}'.format(congestion)
 
 
 def get_random_seed():
