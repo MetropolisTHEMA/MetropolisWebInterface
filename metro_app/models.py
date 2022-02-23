@@ -876,6 +876,55 @@ class ODPair(models.Model):
         db_table = 'ODPair'
 
 
+class Network(models.Model):
+    """Class to link a road network, a vehicle set and a zone set (and
+    eventually, a public-transit network).
+
+    The road network and the zone set are further connected through
+    ZoneNodeRelations.
+
+    :project Project: Project the Network instance belongs to.
+    :road_network RoadNetwork: RoadNetwork of the Network.
+    :vehicle_set VehicleSet: VehicleSet of the Network.
+    :zone_set ZoneSet: ZoneSet of the Network.
+    :name str: Name of the Network.
+    :comment str: Description of the Network (default is '').
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the Network.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
+    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    name = models.CharField(max_length=80, help_text='Name of the Network')
+    comment = models.CharField(max_length=240, blank=True,
+                               help_text='Additional comment for the Network')
+    tags = models.CharField(max_length=240, blank=True)
+    date_created = models.DateField(auto_now_add=True,
+                                    help_text='Creation date of the Network')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'Network'
+
+
+class ZoneNodeRelation(models.Model):
+    """Link between an OD zone and a road-network node.
+       Links the zones to nodes on the road network from a CSV
+    """
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
+    zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{}".format(self.network)
+
+    class Meta:
+        db_table = 'ZoneNodeRelation'
+
+
 class Run(models.Model):
     """Class to represent a run of MetroSim.
 
@@ -1196,55 +1245,6 @@ class AgentRoadPath(models.Model):
 
     class Meta:
         db_table = 'AgentRoadPath'
-
-
-class Network(models.Model):
-    """Class to link a road network, a vehicle set and a zone set (and
-    eventually, a public-transit network).
-
-    The road network and the zone set are further connected through
-    ZoneNodeRelations.
-
-    :project Project: Project the Network instance belongs to.
-    :road_network RoadNetwork: RoadNetwork of the Network.
-    :vehicle_set VehicleSet: VehicleSet of the Network.
-    :zone_set ZoneSet: ZoneSet of the Network.
-    :name str: Name of the Network.
-    :comment str: Description of the Network (default is '').
-    :tags set of str: Tags describing the instance, used to search and filter
-     the instances.
-    :date_created datetime.date: Creation date of the Network.
-    """
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE)
-    zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
-    name = models.CharField(max_length=80, help_text='Name of the Network')
-    comment = models.CharField(max_length=240, blank=True,
-                               help_text='Additional comment for the Network')
-    tags = models.CharField(max_length=240, blank=True)
-    date_created = models.DateField(auto_now_add=True,
-                                    help_text='Creation date of the Network')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = 'Network'
-
-
-class ZoneNodeRelation(models.Model):
-    """Link between an OD zone and a road-network node.
-       Links the zones to nodes on the road network from a CSV
-    """
-    network = models.ForeignKey(Network, on_delete=models.CASCADE)
-    zone = models.ForeignKey(Zone, on_delete=models.CASCADE)
-    node = models.ForeignKey(Node, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{}".format(self.network)
-
-    class Meta:
-        db_table = 'ZoneNodeRelation'
 
 
 class BackgroundTask(models.Model):
