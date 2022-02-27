@@ -23,6 +23,12 @@ def add_preferences(request, pk):
     return render(request, 'views/form.html', context)
 
 
+def read_file_func(file):
+    data = json.load(file)
+    pass
+
+
+
 def upload_preferences(request, pk):
     project = Project.objects.get(id=pk)
     preferences = Preferences.objects.all()
@@ -39,7 +45,7 @@ def upload_preferences(request, pk):
             list_preferences = []
             file = request.FILES['my_file']
             data = json.load(file)
-            if type(data) == list:
+            
                 for feature in data:
                     try:
                         vehicle=vehicle_instance_dict[feature['vehicle']]
@@ -215,7 +221,7 @@ def upload_preferences(request, pk):
                             tags=feature.get('tags', 'No tags')               
                         )
                         list_preferences.append(preference_instance)
-            elif type(data) == dict:
+            elif type(data) == dif type(data) == list:ict:
                 pass
             try:
                 Preferences.objects.bulk_create(list_preferences)

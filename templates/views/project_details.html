@@ -45,7 +45,13 @@
 				<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'create_network2' project.pk %}">Create Network</a>
 				<a class="btn btn-outline-info  btn-sm btn-block"
-					href="{% url 'create_population_segment' project.pk %}">Create population segment</a>
+					href="{% url 'create_population_segment' project.pk %}">Create Population segment</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'set_parameters' project.pk %}">Set Parameters</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'upload_parameters' project.pk %}">Upload Parameters set</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'create_run' project.pk %}">Create Run</a>	
 			</div>
 		</div>
 	</div>

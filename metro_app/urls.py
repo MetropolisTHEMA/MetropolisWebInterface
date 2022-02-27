@@ -26,6 +26,8 @@ from metro_app.population.views import (add_population, update_population,
 from metro_app.network.views import (create_network2, update_network2,
                                      network2_details, upload_zone_node_relation)
 from metro_app.agent.views import (add_agent, upload_agent)
+from metro_app.parameters.views import (set_parameters, upload_parameters)
+from metro_app.run.views import (create_run,)
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
                        upoload_od_pair,)
 from .metrosim import upload_edges_results
@@ -114,5 +116,11 @@ urlpatterns = [
           name='population_segment_details'),
      path('population/<str:pk>/add_agent', add_agent, name='add_agent'),
      path('population/<str:pk>/upload_agent/', upload_agent,
-          name='upload_agent')
+          name='upload_agent'),
+     path('parameterset/project/<str:pk>/', set_parameters,
+          name='set_parameters'),
+     path('parameterset/<str:pk>/upload_parameters/', upload_parameters,
+          name='upload_parameters'),
+     path('project/<str:pk>/create_run/', create_run,
+          name='create_run'),
 ]

@@ -113,6 +113,7 @@ from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
                      Zone, ODMatrix, ODPair, Vehicle,
                      Preferences, Population, Network, PopulationSegment,
+                     ParameterSet,
                      BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
@@ -238,6 +239,7 @@ def project_details(request, pk):
     preferences = Preferences.objects.all()
     populations = Population.objects.all()
     networks = Network.objects.all()
+    parametersets = ParameterSet.objects.all()
     tasks = project.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
@@ -251,6 +253,7 @@ def project_details(request, pk):
         'vehicles': vehicles,
         'preferences': preferences,
         'populations': populations,
+        'parametersets': parametersets,
         'networks': networks,
         'tasks': tasks,
     }

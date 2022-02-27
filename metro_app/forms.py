@@ -1,7 +1,7 @@
 from django import forms
 from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
                      Vehicle, Preferences, Population, Agent, ParameterSet,
-                     Network, PopulationSegment, ZoneNodeRelation
+                     Network, PopulationSegment, ZoneNodeRelation, Run
                      )
 
 
@@ -143,6 +143,13 @@ class ParameterSetForm(forms.ModelForm):
     class Meta:
         model = ParameterSet
         fields = '__all__'
+        exclude = ('locked',)
 
 class ParameterSetFileForm(forms.Form):
     my_file = forms.FileField()
+
+
+class RunForm(forms.ModelForm):
+    class Meta:
+        model = Run
+        fields = '__all__'
