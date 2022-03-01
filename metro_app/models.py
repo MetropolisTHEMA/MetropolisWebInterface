@@ -595,6 +595,10 @@ class Population(models.Model):
     whose preferences and decisions are simulated.
     :project Project: Project the Population instance belongs to.
     :zone_set Zonset: Zoneset the populztion instance belongs
+    :random_seed int: Seed for the random number generator used to generate the
+     agents (default is a random integer).
+    :generated bool: If True, indicate that the set of agents corresponding to
+     the population segment has been generated.
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
@@ -604,6 +608,8 @@ class Population(models.Model):
     """
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     zone_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE)
+    random_seed = models.PositiveIntegerField(get_random_seed)
+    generated = models.BooleanField(default=False)
     locked = models.BooleanField(default=False)
     name = models.CharField(max_length=80, help_text='Name of the Population')
     comment = models.CharField(
@@ -820,10 +826,6 @@ class PopulationSegment(models.Model):
      distribution of preferences for this population segment.
     :od_matrix ODMatrix: ODMatrix instance representing the origin-destination
      matrix for this population segment.
-    :random_seed int: Seed for the random number generator used to generate the
-     agents (default is a random integer).
-    :generated bool: If True, indicate that the set of agents corresponding to
-     the population segment has been generated.
     :locked bool: If True, the instance cannot be modified (default is False).
     :name str: Name of the instance.
     :comment str: Description of the instance (default is '').
@@ -837,8 +839,6 @@ class PopulationSegment(models.Model):
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     preferences = models.ForeignKey(Preferences, on_delete=models.CASCADE)
     od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE)
-    random_seed = models.PositiveIntegerField(get_random_seed)
-    generated = models.BooleanField(default=False)
     locked = models.BooleanField(default=False)
     name = models.CharField(
         max_length=80, help_text='Name of the population segment')
@@ -1037,7 +1037,7 @@ class EdgeResults(models.Model):
     speed = models.FloatField()
 
     def __str__(self):
-        return "{}".format(self.run)
+        return str(self.run)
 
     class Meta:
         db_table = 'EdgesResults'
@@ -1199,27 +1199,32 @@ class AgentResults(models.Model):
     :run Run: Run instance from which the results are coming.
     :mode str: Mode chosen by the agent for the last iteration. Possible values
      are private vehicle, public transit and walking.
-    :departure_time datetime.time: Departure time of the agent for the last
+    :departure_time timedelta: Departure time of the agent for the last
      iteration.
-    :arrival_time datetime.time: Arrival time of the agent for the last
-     iteration.
+    :arrival_time timedelta: Arrival time of the agent for the last iteration.
     :travel_time timedelta: Travel time of the agent for the last iteration.
     :utility float: Utility level obtained by the agent for the last iteration.
     :real_cost float: Cost paid by the agent for the last iteration.
+    :surplus float: Expected utility of the agent in the pre-day model.
+    :car_exp_arrival_time timedelta: Expected arrival time at destination in
+     the pre-day model (for car users).
     """
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    mode_choices = (
-        (0, 'Private vehicle'),
-        (1, 'Public transit'),
-        (2, 'Walking'),
+    CAR = 0
+    PT = 1
+    MODE_CHOICES = (
+        (CAR, 'Car'),
+        (PT, 'Public-transit'),
     )
-    mode = models.PositiveSmallIntegerField()
-    departure_time = models.TimeField()
-    arrival_time = models.TimeField()
+    mode = models.PositiveSmallIntegerField(choices = MODE_CHOICES)
+    departure_time = models.DurationField()
+    arrival_time = models.DurationField()
     travel_time = models.DurationField()
     utility = models.FloatField()
     real_cost = models.FloatField()
+    surplus = models.FloatField()
+    car_exp_arrival_time = models.DurationField()
 
     class Meta:
         db_table = 'AgentResults'
