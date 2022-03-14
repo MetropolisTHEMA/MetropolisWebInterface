@@ -425,7 +425,6 @@ def upload_edge_func(roadnetwork, filepath):
     return message
 
 
-
 def upload_edge(request, pk):
     template = "networks/edge.html"
     roadnetwork = get_object_or_404(RoadNetwork, pk=pk)

@@ -195,7 +195,9 @@ LOGOUT_REDIRECT_URL = 'login'
 # AUTH_USER_MODEL = 'users.CustomUser'
 
 MESSAGE_LEVEL = message_constants.DEBUG
-MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+# MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+# MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 # DJANGO_TABLES2_PAGE_RANGE = 10
 

@@ -75,10 +75,13 @@ class ZoneFileForm(forms.Form):
 class ODMatrixForm(forms.ModelForm):
     class Meta:
         model = ODMatrix
-        fields = [
-            'zone_set', 'locked',
-            'name', 'comment', 'tags',
-        ]
+        fields = '__all__'
+
+        def __init__(self, current_project=None, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if current_project:
+                queryset = ZoneSet.objects.filter(project=current_project)
+                self.fields['zone_set'].queryset = queryset
 
 
 class ODPairFileForm(forms.Form):
@@ -152,4 +155,4 @@ class ParameterSetFileForm(forms.Form):
 class RunForm(forms.ModelForm):
     class Meta:
         model = Run
-        fields = '__all__'
+        exclude = ('status', 'start_date', 'end_date', 'time_taken', 'iterations')

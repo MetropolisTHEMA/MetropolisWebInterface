@@ -3,27 +3,40 @@ from django.contrib import messages
 from metro_app.models import Agent, Population, Vehicle, Zone
 from metro_app.forms import AgentForm, AgentFileForm
 import json
-
+from datetime import timedelta
 
 def add_agent(request, pk):
     population = Population.objects.get(id=pk)
-    agent = Agent(population=population)
+    population_segment = population.populationsegment_set.all()
 
-    if request.method == 'POST':
-        form = AgentForm(request.POST, instance = agent)
-        if form.is_valid():
-            form.save()
-            return redirect('population_details', pk)
-        
-    form = AgentForm(initial={'population': population})
-    context = {
-        'form': form
-    }
-    return render(request, 'views/form.html', context)
+    if population_segment.count() > 0:
+        messages.warning(request, 'There exists a population segment \
+            already created. So you can not create or add an agent.')
+        return redirect('population_details', pk)
+    else:
+        agent = Agent(population=population)
+        if request.method == 'POST':
+            form = AgentForm(request.POST, instance = agent)
+            if form.is_valid():
+                form.save()
+                return redirect('population_details', pk)
+            
+        form = AgentForm(initial={'population': population})
+        context = {
+            'form': form
+        }
+        return render(request, 'views/form.html', context)
 
 
 def upload_agent(request, pk):
     population = Population.objects.get(id=pk)
+    population_segment = population.populationsegment_set.all()
+
+    if population_segment.count() > 0:
+        messages.warning(request, 'There exists a population segment \
+            already created. So you can create or add an agent.')
+        return redirect('population_details', pk)
+
     agents = Agent.objects.all()
     if agents.count() > 0:
         messages.warning(request, "Fail! Agent already contains agents data. \
@@ -86,8 +99,8 @@ def upload_agent(request, pk):
                             mode_choice_model = mode_choice_model,
                             mode_choice_u=mode_choice_u,
                             mode_choice_mu=mode_choice_mu,
-                            t_star=feature.get('t_star', None),
-                            delta=feature['delta'],
+                            t_star=timedelta(seconds=feature.get('t_star', 0)),
+                            delta=timedelta(seconds=feature.get('delta', 0)),
                             beta=feature['beta'],
                             gamma=feature['gamma'],
                             desired_arrival=feature['desired_arrival'],

@@ -914,6 +914,14 @@ class Run(models.Model):
     :iterations int: Number of iterations of the run.
     :date_created datetime.date: Creation date of the Run.
     """
+    status_choices = (
+        (0, 'Not ready'),
+        (1, 'Ready'),
+        (2, 'In progress'),
+        (3, 'Finished'),
+        (4, 'Aborted'),
+        (5, 'Failed'),
+    )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
@@ -923,14 +931,6 @@ class Run(models.Model):
         RoadNetwork, on_delete=models.CASCADE, null=True, blank=True)
     #  pt_network = models.ForeignKey(
     #      PTNetwork, on_delete=models.CASCADE, null=True, blank=True)
-    status_choices = (
-        (0, 'Not ready'),
-        (1, 'Ready'),
-        (2, 'In progress'),
-        (3, 'Finished'),
-        (4, 'Aborted'),
-        (5, 'Failed'),
-    )
     status = models.PositiveSmallIntegerField(
         default=0, choices=status_choices)
     name = models.CharField(
@@ -1048,6 +1048,15 @@ class Agent(models.Model):
     :destination_stop PTStop: PTStop of the public-transit network used as the
      destination of the agent for public-transit trips.
     """
+    # Mode-choice parameters.
+    DETERMINISTIC_MODE = 0
+    LOGIT_MODE = 1
+    FIRST_MODE = 2
+    MODE_CHOICES = (
+        (DETERMINISTIC_MODE, 'Deterministic'),
+        (LOGIT_MODE, 'Logit'),
+        (FIRST_MODE, 'First'),
+    )
     agent_id = models.PositiveBigIntegerField(
         db_index=True, help_text='Id of the agent')
     population = models.ForeignKey(
@@ -1060,15 +1069,6 @@ class Agent(models.Model):
     destination_zone = models.ForeignKey(
         Zone, related_name='destination_zone', on_delete=models.CASCADE,
         help_text='Destination zone of the agent',
-    )
-    # Mode-choice parameters.
-    DETERMINISTIC_MODE = 0
-    LOGIT_MODE = 1
-    FIRST_MODE = 2
-    MODE_CHOICES = (
-        (DETERMINISTIC_MODE, 'Deterministic'),
-        (LOGIT_MODE, 'Logit'),
-        (FIRST_MODE, 'First'),
     )
     mode_choice_model = models.SmallIntegerField(
         default=0, choices=MODE_CHOICES)
@@ -1306,9 +1306,11 @@ class BackgroundTask(models.Model):
     start_date = models.DateTimeField(auto_now_add=True)
     time_taken = models.DurationField(null=True, blank=True)
     result = models.TextField(null=True, blank=True)
-
     # Optional Foreign Keys.
     road_network = models.ForeignKey(RoadNetwork, on_delete=models.CASCADE,
+                                     blank=True, null=True)
+    # Optional Foreign Keys.
+    population = models.ForeignKey(Population, on_delete=models.CASCADE,
                                      blank=True, null=True)
 
     def get_status(self):
@@ -1317,6 +1319,8 @@ class BackgroundTask(models.Model):
     def instance(self):
         if self.road_network:
             return str(self.road_network)
+        elif self.population:
+            return str(self.population)
         return ''
 
     class Meta:

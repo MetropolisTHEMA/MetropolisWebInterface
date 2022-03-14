@@ -16,7 +16,7 @@ Supported distributions are:
 """
 
 
-def generate_value(rng, distr, mean, std, size):
+def generate_values(rng, distr, mean, std, size):
     if isinstance(mean, timedelta):
         mean = mean.total_seconds()
     if isinstance(std, timedelta):
@@ -45,12 +45,13 @@ def generate_value(rng, distr, mean, std, size):
 the database.
 """
 
-
+from time import sleep
 def generate_agents(population_segment):
-    preferences = population_segment.preferences
-    od_matrix = population_segment.od_matrix
+    sleep(10)
+    preferences = population_segment[0].preferences
+    od_matrix = population_segment[0].od_matrix
     size = od_matrix.size
-    rng = np.random.default_rng(population_segment.random_seed)
+    rng = np.random.default_rng(population_segment[0].random_seed)
 
     # Generate random values.
     if preferences.mode_choice_model == preferences.DETERMINISTIC_MODE:
@@ -98,7 +99,7 @@ def generate_agents(population_segment):
         preferences.gamma_std,
         size,
     )
-    if preferences.dep_time_car_choice_model = preferences.LOGIT_DEP_TIME:
+    if preferences.dep_time_car_choice_model == preferences.LOGIT_DEP_TIME:
         dep_time_u = rng.uniform(0, 1, size=size)
         dep_time_mu = generate_values(
             rng,
@@ -128,7 +129,7 @@ def generate_agents(population_segment):
 
     agents = list()
     i = 0
-    for od_pair = od_matrix.odpair_set.all():
+    for od_pair in od_matrix.odpair_set.all():
         for _ in range(od_pair.size):
             agent = Agent(
                 agent_id=i + 1,
@@ -158,11 +159,10 @@ def generate_agents(population_segment):
                     seconds=dep_time_car_constant[i])
             agents.append(agent)
             i += 1
-
+    
     Agent.objects.bulk_create(agents)
-
     population_segment.generated = True
-    population_segment.save()
+    # population_segment.save()
 
 
 """
@@ -170,6 +170,7 @@ Create a JSON input file readable by the simulator from a Run.
 """
 
 
+# Generate input
 def to_input_json(parameters, population, road_network=None):
     network = dict()
 

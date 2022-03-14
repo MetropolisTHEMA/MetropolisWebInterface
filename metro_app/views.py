@@ -111,9 +111,8 @@ from django.template import loader
 from .forms import (ProjectForm, RoadTypeForm, RoadNetworkForm, ZoneSetForm,
                     ODMatrixForm)
 from .models import (Node, Edge, Project, RoadNetwork, RoadType, ZoneSet,
-                     Zone, ODMatrix, ODPair, Vehicle,
-                     Preferences, Population, Network, PopulationSegment,
-                     ParameterSet,
+                     Zone, ODMatrix, ODPair, Vehicle, Preferences, Population,
+                     Network, PopulationSegment, ParameterSet, Run,
                      BackgroundTask)
 from .networks import make_network_visualization, get_network_directory
 from .tables import (EdgeTable, NodeTable, RoadTypeTable, ZoneTable,
@@ -240,6 +239,7 @@ def project_details(request, pk):
     populations = Population.objects.all()
     networks = Network.objects.all()
     parametersets = ParameterSet.objects.all()
+    runs = Run.objects.all()
     tasks = project.backgroundtask_set.order_by('-start_date')[:5]
 
     context = {
@@ -255,6 +255,7 @@ def project_details(request, pk):
         'populations': populations,
         'parametersets': parametersets,
         'networks': networks,
+        'runs': runs,
         'tasks': tasks,
     }
 
@@ -304,7 +305,6 @@ def network_details(request, pk):
         'total_edges': total_edges,
         'tasks': tasks,
     }
-
     return render(request, 'views/details.html', context)
 
 
@@ -571,12 +571,14 @@ def zones_table(request, pk):
 def create_od_matrix(request, pk):
     """A roadnetwork depends on a project. It
      must be created inside the project"""
-
+    
     current_project = Project.objects.get(id=pk)
     form = ODMatrixForm(initial={'project': current_project})
     if request.method == 'POST':
-        zoneset = ODMatrix(project=current_project)
-        form = ODMatrixForm(request.POST, instance=zoneset)
+        print(request)
+        od_matrix = ODMatrix(project=current_project)
+        # form = ODMatrixForm(request.POST, instance=od_marix)
+        form = ODMatrixForm(data=request.POST, instance=od_matrix)
         if form.is_valid():
             form.save()
             return redirect('project_details', current_project.pk)

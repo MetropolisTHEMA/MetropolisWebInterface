@@ -59,12 +59,11 @@
 		   <a class="btn btn-outline-info  btn-sm btn-block"
 			href="{% url 'create_population_segment' population.pk %}">Create Popluation Segment</a>
 		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="#">Upload Population Segment</a>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
 			href="{% url 'add_agent'  population.pk %}">Add agent</a>
 		   <a class="btn btn-outline-info  btn-sm btn-block"
 			href="{% url 'upload_agent'  population.pk %}">Upload agent</a>
-		  
+		   <a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'generate_agent'  population.pk %}">Generate agent</a>
 
 		{% elif network %}
 			<h5>Network name : {{network.name}}</h5>
@@ -73,6 +72,14 @@
 		  		href="{% url 'update_network2' network.pk %}">Update network</a>
 			<a class="btn btn-outline-info  btn-sm btn-block"
 		 		href="{% url 'upload_zone_node_relation' network.pk %}">Zone Node Relation</a>
+
+		{% elif run %}
+			<h5>Run name : {{run.name}}</h5>
+			<hr>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="#">Update run</a>
+				<a class="btn btn-outline-info  btn-sm btn-block"
+					href="#">Generate Input</a>
 
        {% endif %}
 		</div>
@@ -117,6 +124,12 @@
 			<hr>
 			<p>Network tag : {{network.tags}}<br>
 			Network comment: {{network.comment}} </p>
+
+		{% elif run %}
+			<h5 style="text-align: center;">Network attributes</h5>
+			<hr>
+			<p>Run tag : {{run.tags}}<br>
+			Run comment: {{run.comment}} </p>
 
         {% endif %}
 		</div>
