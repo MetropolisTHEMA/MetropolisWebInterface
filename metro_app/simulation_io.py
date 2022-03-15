@@ -14,7 +14,7 @@ Supported distributions are:
 - 2: normal
 - 3: log-normal
 """
-def generate_value(rng, distr, mean, std, size):
+def generate_values(rng, distr, mean, std, size):
     if isinstance(mean, timedelta):
         mean = mean.total_seconds()
     if isinstance(std, timedelta):
@@ -66,6 +66,7 @@ def generate_agents(population_segment):
     else:
         msg = 'Unsupported distribution for mode choice: {}'
         raise msg.format(preferences.mode_choice_model)
+        
     t_star = generate_values(
         rng,
         preferences.t_star_distr,
@@ -94,7 +95,7 @@ def generate_agents(population_segment):
         preferences.gamma_std,
         size,
     )
-    if preferences.dep_time_car_choice_model = preferences.LOGIT_DEP_TIME:
+    if preferences.dep_time_car_choice_model == preferences.LOGIT_DEP_TIME:
         dep_time_u = rng.uniform(0, 1, size=size)
         dep_time_mu = generate_values(
             rng,
@@ -124,15 +125,15 @@ def generate_agents(population_segment):
 
     agents = list()
     i = 0
-    for od_pair = od_matrix.odpair_set.all():
+    for od_pair in od_matrix.odpair_set.all():
         for _ in range(od_pair.size):
             agent = Agent(
                 agent_id=i + 1,
-                population_segment=population_segment,
+                population=population,
                 origin_zone=od_pair.origin,
                 destination_zone=od_pair.destination,
                 mode_choice_model=preferences.mode_choice_model,
-                t_star=timedelta(seconds=tstar[i]),
+                t_star=timedelta(seconds=t_star[i]),
                 delta=timedelta(seconds=delta[i]),
                 beta=beta[i],
                 gamma=gamma[i],
@@ -159,6 +160,7 @@ def generate_agents(population_segment):
 
     population_segment.generated = True
     population_segment.save()
+
 
 
 

@@ -114,7 +114,7 @@ def population_segment_details(request, pk):
 def generate_agents_input(request, pk):
     population = Population.objects.get(id=pk)
     population_segment = population.populationsegment_set.all()
-    task_id = async_task(generate_agents, population_segment,  hook=str_hook)
+    task_id = async_task(generate_agents, population_segment[0],  hook=str_hook)
     description = 'Generaton agents'
     db_task = BackgroundTask(project=population.project,
                              id=task_id,

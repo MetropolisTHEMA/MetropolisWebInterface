@@ -955,7 +955,7 @@ class Run(models.Model):
         (5, 'Failed'),
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    parameters = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
+    parameter_set = models.ForeignKey(ParameterSet, on_delete=models.CASCADE)
     population = models.ForeignKey(Population, on_delete=models.CASCADE)
     #  policy = models.ForeignKey(
     #      Policy, on_delete=models.CASCADE, null=True, blank=True)

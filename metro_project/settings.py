@@ -31,7 +31,7 @@ SECRET_KEY = settings.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = settings.get('debug', True)
 
-ALLOWED_HOSTS = settings.get('allowed_hosts', ['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = settings.get('allowed_hosts', ['localhost', '127.0.0.1', '0.0.0.0'])
 
 # Application definition
 
@@ -162,8 +162,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+# TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 USE_I18N = True
 
 USE_L10N = True
@@ -172,7 +172,7 @@ USE_TZ = True
 
 # Cors (django core header)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
+    "http://localhost:8000"
 ]
 
 # Static files (CSS, JavaScript, Images)

@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404 
+from django.http import Http404
 from django.contrib import messages
 from metro_app.models import (Run, Project, Population, RoadNetwork,
     ParameterSet, PopulationSegment, BackgroundTask, Agent)
@@ -7,8 +8,13 @@ from metro_app.forms import RunForm
 
 def create_run(request, pk):
     current_project = Project.objects.get(id=pk)
-    population = Population.objects.get(project=current_project)
-    road_network = RoadNetwork.objects.get(project=current_project)
+    try:
+        population = Population.objects.get(project=current_project)
+        road_network = RoadNetwork.objects.get(project=current_project)
+    except Population.DoesNotExist:
+        raise Http404("Create a population first")
+    except RoadNetwork.DoesNotExist:
+        raise Http404('There is no road net work created yet')
     
     if request.method == 'POST':
         run = Run(project=current_project)

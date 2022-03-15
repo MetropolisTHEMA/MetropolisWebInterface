@@ -798,7 +798,7 @@ def upoload_od_pair(request, pk):
                         destination = zone_instance_dict[
                             int(row['destination'])]
                     except KeyError:
-                        compteur = compteur+1
+                        compteur +=1
                     else:
                         od_pair_instance = ODPair(
                             origin=origin,
@@ -810,7 +810,6 @@ def upoload_od_pair(request, pk):
                 ODPair.objects.bulk_create(list_od_pair_instance)
                 message = "Your ODPair file has been successfully imported !"
                 messages.success(request, message)
-                print(compteur)
                 if compteur > 0:
                     message = "{} haven't been imported".format(compteur)
                     messages.warning(request, message)
