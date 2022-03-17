@@ -4,6 +4,7 @@ from django.contrib import messages
 from metro_app.models import (Run, Project, Population, RoadNetwork,
     ParameterSet, PopulationSegment, BackgroundTask, Agent)
 from metro_app.forms import RunForm
+from metro_app.simulation_io import to_input_json
 
 
 def create_run(request, pk):
@@ -58,3 +59,11 @@ def delete_run(request, pk):
         'run_to_delete': run_to_delete
     }
     return render(request, 'delete.html', context)
+
+
+def generate_run_input(request, pk):
+    run = Run.objects.get(id=pk)
+    to_input_json(run)
+    return redirect('run_details', pk)
+
+

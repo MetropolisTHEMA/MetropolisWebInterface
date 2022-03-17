@@ -54,7 +54,7 @@ def upload_parameters(request, pk):
                         period_interval=timedelta(seconds=data.get("period_interval", 0)),
                         learn_process=learn_process,
                         learn_param=data.get("learn_param", .1),
-                        iter_value=data.get("max_iter", 50)
+                        max_iter=data.get("max_iter", 50)
                     )
                     list_parameter_set.append(parameter_set_instance)
                 elif type(data) == list:
@@ -82,7 +82,7 @@ def upload_parameters(request, pk):
                             period_interval=timedelta(seconds=feature.get("period_interval", 0)),
                             learn_process=learn_process,
                             learn_param=feature.get("learn_param", .1),
-                            iter_value=feature.get("max_iter", 50)
+                            max_iter=feature.get("max_iter", 50)
                         )
                         list_parameter_set.append(parameter_set_instance)
 

@@ -28,10 +28,11 @@ from metro_app.network.views import (create_network2, update_network2,
                                      network2_details, upload_zone_node_relation)
 from metro_app.agent.views import (add_agent, upload_agent)
 from metro_app.parameters.views import (set_parameters, upload_parameters)
-from metro_app.run.views import (create_run, run_details, delete_run,)
+from metro_app.run.views import (create_run, run_details, delete_run, generate_run_input)
 from .networks import (upload_edge, upload_node, upload_road_type, upload_zone,
                        upoload_od_pair,)
 from .metrosim import upload_edges_results
+
 
 urlpatterns = [
      path('', index, name='home'),
@@ -74,7 +75,7 @@ urlpatterns = [
           name='update_od_matrix'),
      path('delete_od_matrix/<str:pk>/', delete_od_matrix,
           name='delete_od_matrix'),
-     path('odpair/<str:pk>/upoload_od_pair/', upoload_od_pair,
+     path('odmatrix/<str:pk>/upoload_od_pair/', upoload_od_pair,
           name='upoload_od_pair'),
      path('table/odmatrix/<str:pk>/odpair/', od_pair_table,
           name='od_pair'),
@@ -130,4 +131,6 @@ urlpatterns = [
           name='delete_run'),
      path('population/<str:pk>/generate_agent/', generate_agents_input,
           name='generate_agent'),
+     path('run/<str:pk>/generate_run_input/', generate_run_input,
+          name='generate_run_input'),
 ]

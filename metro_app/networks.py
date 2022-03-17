@@ -753,6 +753,18 @@ def upload_zone(request, pk):
         return render(request, template, {'form': form})
 
 
+def read_od_pair_file(file):
+    if file.name.endswith('.csv'):
+        file = file.read().decode('utf-8').splitlines()
+        file = csv.DictReader(file)
+    elif file.name.endswith('.tsv'):
+        file = file.read().decode('utf-8').splitlines()
+        file = csv.DictReader(file, delimiter='\t')
+    else:
+        return HttpResponse("Error: Uploaded file format not recongnized")
+
+    return file
+
 def upoload_od_pair(request, pk):
     template = "networks/od_pair.html"
     od_matrix = ODMatrix.objects.get(id=pk)
@@ -764,60 +776,36 @@ def upoload_od_pair(request, pk):
     if request.method == 'POST':
         form = ODPairFileForm(request.POST, request.FILES)
         if form.is_valid():
-            datafile = request.FILES['my_file']
-            if datafile.name.endswith('.csv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile)
-                for row in datafile:
-                    try:
-                        origin = zone_instance_dict[int(row['origin'])]
-                        destination = zone_instance_dict[
-                            int(row['destination'])]
-                    except KeyError:
-                        compteur = compteur+1
-                    else:
-                        od_pair_instance = ODPair(
-                            origin=origin,
-                            destination=destination,
-                            size=row['size'],
-                            matrix=od_matrix,
-                        )
-                        list_od_pair_instance.append(od_pair_instance)
-                ODPair.objects.bulk_create(list_od_pair_instance)
-                if compteur > 0:
-                    message = "{} haven't been imported".format(compteur)
-                    messages.warning(request, message)
-                return redirect('od_matrix_details', od_matrix.pk)
+            my_file = request.FILES['my_file']
+            file = read_od_pair_file(my_file)
+            od_matrix_size=0
+            for row in file:
+                try:
+                    origin = zone_instance_dict[int(row['origin'])]
+                    destination = zone_instance_dict[int(row['destination'])]
+                except TypeError:
+                    messages.error(request, 'Uploaded file format not recongnized')
+                    return redirect('upoload_od_pair', pk)
+                except KeyError:
+                    compteur = compteur+1
+                else:
+                    od_matrix_size += int(row['size'])
+                    od_pair_instance = ODPair(
+                        origin=origin,
+                        destination=destination,
+                        size=row['size'],
+                        matrix=od_matrix,
+                    )
+                    list_od_pair_instance.append(od_pair_instance)
+            ODPair.objects.bulk_create(list_od_pair_instance)
+            od_matrix.size = od_matrix_size
+            od_matrix.save()
 
-            elif datafile.name.endswith('.tsv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile, delimiter='\t')
-                for row in datafile:
-                    try:
-                        origin = zone_instance_dict[int(row['origin'])]
-                        destination = zone_instance_dict[
-                            int(row['destination'])]
-                    except KeyError:
-                        compteur +=1
-                    else:
-                        od_pair_instance = ODPair(
-                            origin=origin,
-                            destination=destination,
-                            size=row['size'],
-                            matrix=od_matrix,
-                        )
-                        list_od_pair_instance.append(od_pair_instance)
-                ODPair.objects.bulk_create(list_od_pair_instance)
-                message = "Your ODPair file has been successfully imported !"
-                messages.success(request, message)
-                if compteur > 0:
-                    message = "{} haven't been imported".format(compteur)
-                    messages.warning(request, message)
-                return redirect('od_matrix_details', od_matrix.pk)
-            else:
-                messages.error(request, "Uploaded file format \
-                                 not recongnized")
-                return redirect('upoload_od_pair', od_matrix.pk)
+            if compteur > 0:
+                message = "{} haven't been imported".format(compteur)
+                messages.warning(request, message)
+            return redirect('od_matrix_details', od_matrix.pk)
+            
     else:
         form = ODPairFileForm()
         return render(request, template, {'form': form})
