@@ -45,6 +45,8 @@ def upload_vehicle(request, pk):
                     )
                     list_vehicle.append(vehicle_instance)
 
+            msg = "Vehicles successfully uploaded"
+            messages.success(request, msg)
             Vehicle.objects.bulk_create(list_vehicle)
             return redirect('project_details', pk)
 
@@ -69,6 +71,8 @@ def add_vehicle(request, pk):
     context = {
         'form': form,
     }
+    msg = "Vehicle successfully added"
+    messages.success(request, msg)
     return render(request, 'views/form.html', context)
 
 

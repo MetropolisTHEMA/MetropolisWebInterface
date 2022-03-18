@@ -46,8 +46,14 @@ def read_field_func(field, std=0):
 
 
 def upload_preferences(request, pk):
-    storage = messages.get_messages(request)
-    storage.used = True
+    # storage = messages.get_messages(request)
+    # storage.used = True
+    vehicles = Vehicle.objects.all()
+    if not vehicles.exists():
+        msg = "Please upload or set Vehicle first"
+        messages.warning(request, msg)
+        return redirect('project_details', pk)
+
     project = Project.objects.get(id=pk)
     preferences = Preferences.objects.all()
     if preferences.count() > 0:
@@ -55,7 +61,6 @@ def upload_preferences(request, pk):
         return redirect('upload_preferences', pk)
 
     if request.method == 'POST':
-        vehicles = Vehicle.objects.all()
         vehicle_instance_dict = {vehicle.vehicle_id: vehicle for vehicle in vehicles}
         form = PreferencesFileForm(request.POST, request.FILES)
         if form.is_valid():

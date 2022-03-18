@@ -39,7 +39,7 @@
     		<a class="btn btn-outline-info  btn-sm btn-block"
             	href="{% url 'update_zoneset' zoneset.pk %}">Update zone set</a>
             <a class="btn btn-outline-info  btn-sm btn-block"
-           href="{% url 'upload_zone' zoneset.pk %}">Import zone</a>
+           href="{% url 'upload_zone' zoneset.pk %}">Upload zones</a>
 	
 
         {% elif od_matrix %}
@@ -169,6 +169,22 @@
 
 {% if roadnetwork %}
 <a href="{% url 'project_details' roadnetwork.project_id %}">Back</a>
+{% elif zoneset %}
+<a href="{% url 'project_details' zoneset.project_id %}">Back</a>
+{% elif od_matrix %}
+<a href="{% url 'project_details' od_matrix.project_id %}">Back</a>
+{% elif preferences %}
+<a href="{% url 'project_details' preferences.project_id %}">Back</a>
+{% elif population %}
+<a href="{% url 'project_details' population.project_id %}">Back</a>
+{% elif network %}
+<a href="{% url 'project_details' network.project_id %}">Back</a>
+{% elif parameter_set %}
+<a href="{% url 'project_details' parameter_set.project_id %}">Back</a>
+{% elif run %}
+<a href="{% url 'project_details' run.project_id %}">Back</a>
+{% elif network %}
+<a href="{% url 'project_details' network.project_id %}">Back</a>
 {% endif %}
 
 <script src="{% static '/js/refresh_tag.js' %}"></script>

@@ -233,7 +233,7 @@ class ParameterSet(models.Model):
 
     def get_convergence_criteria(self):
         criteria = []
-        criteria.append({'MaxIteration': self.iter_value})
+        criteria.append({'MaxIteration': self.max_iter})
         return criteria
 
     class Meta:
@@ -668,7 +668,7 @@ class Vehicle(models.Model):
     def get_speed_function(self):
         if self.speed_multiplicator:
             {'Multiplicator': self.speed_multiplicator}
-        elif len(self.speed_function) > 0:
+        elif self.speed_function is not  None and len(self.speed_function) > 0:
             {'Piecewise': self.speed_function}
         else:
             'Base'
@@ -1284,7 +1284,11 @@ class BackgroundTask(models.Model):
     # Optional Foreign Keys.
     population = models.ForeignKey(Population, on_delete=models.CASCADE,
                                      blank=True, null=True)
+    # Optional Foreign Key
+    run = models.ForeignKey(Run, on_delete=models.CASCADE,
+                           blank=True, null=True)
 
+    
     def get_status(self):
         return self.STATUS_CHOICES[self.status][1]
 
@@ -1293,6 +1297,10 @@ class BackgroundTask(models.Model):
             return str(self.road_network)
         elif self.population:
             return str(self.population)
+        elif self.run:
+            return str(self.run)
+        else:
+            return 'Unknown instance'
         return ''
 
     class Meta:

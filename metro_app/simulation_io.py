@@ -222,9 +222,9 @@ def to_input_json(run):
     for agent in run.population.agent_set.all():
         modes = list()
         # Add Car mode.
-        car_origin = node_map[agent.get_origin_node(run.network)]
-        car_destination = node_map[agent.get_destination_node(run.network)]
-        vehicle_id = vehicle_map[agent.vehicle]
+        car_origin = node_map[agent.get_origin_node(run.network).id]
+        car_destination = node_map[agent.get_destination_node(run.network).id]
+        vehicle_id = vehicle_map[agent.vehicle.id]
         try:
             car = {
                 'origin': car_origin,
@@ -254,27 +254,27 @@ def to_input_json(run):
     })
 
     parameters = dict()
-    parameters['period'] = [run.parameters.period_start.total_seconds(),
-                                 run.parameters.period_end.total_seconds()]
-    parameters['learning_model'] = run.parameters.get_learning_model()
+    parameters['period'] = [run.parameter_set.period_start.total_seconds(),
+                                 run.parameter_set.period_end.total_seconds()]
+    parameters['learning_model'] = run.parameter_set.get_learning_model()
     parameters['convergence_criteria'] = \
-        run.parameters.get_convergence_criteria()
-    if run.parameters.random_seed:
-        parameters['random_seed'] = run.parameters.random_seed
-    parameters['update_ratio'] = run.parameters.update_ratio
+        run.parameter_set.get_convergence_criteria()
+    if run.parameter_set.random_seed:
+        parameters['random_seed'] = run.parameter_set.random_seed
+    parameters['update_ratio'] = run.parameter_set.update_ratio
     breakpoints = np.arange(
-        run.parameters.period_start.total_seconds(),
-        run.parameters.period_end.total_seconds() + 1.0,
-        run.parameters.period_interval.total_seconds(),
+        run.parameter_set.period_start.total_seconds(),
+        run.parameter_set.period_end.total_seconds() + 1.0,
+        run.parameter_set.period_interval.total_seconds(),
         dtype=np.float64,
     )
-    parameters['weights_simplification'] = {'Fixed': breakpoints}
+    parameters['weights_simplification'] = {'Fixed': list(breakpoints)}
     parameters['skims_simplification'] = {'MaxError': 1.0}
 
     simulation = {
         'network': network,
         'agents': agents,
-        'parameters': parameters_data,
+        'parameters': parameters,
     }
     return json.dumps(simulation)
 

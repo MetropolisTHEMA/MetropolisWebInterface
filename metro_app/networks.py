@@ -675,6 +675,10 @@ def upload_zone(request, pk):
     template = "networks/zone.html"
     list_zone_instance = []
     zoneset = ZoneSet.objects.get(id=pk)
+    zone = zoneset.zone_set.all()
+    if zone.exists():
+        messages.warning(request, "Zone already contains data")
+        return redirect('zoneset_details', pk)
     if request.method == 'POST':
         # File must be included when creating the form
         form = ZoneFileForm(request.POST, request.FILES)
@@ -716,6 +720,7 @@ def upload_zone(request, pk):
                     list_zone_instance.append(zone_instance)
 
                 Zone.objects.bulk_create(list_zone_instance)
+                messages.success(request, "Zones successfully uploaded")
                 return redirect('zoneset_details', zoneset.pk)
 
             elif datafile.name.endswith('.csv'):
@@ -768,8 +773,17 @@ def read_od_pair_file(file):
 def upoload_od_pair(request, pk):
     template = "networks/od_pair.html"
     od_matrix = ODMatrix.objects.get(id=pk)
+    od_pair = od_matrix.odpair_set.all()
+    if od_pair.exists():
+        messages.warning(request, "ODPair already contains data")
+        return redirect('od_matrix_details', pk)
     zoneset = od_matrix.zone_set
     zones = Zone.objects.filter(zone_set=zoneset)
+    if not zones.exists():
+        msg = "Please upload Zone first before uploading OD pair !"
+        messages.warning(request, msg)
+        return redirect('od_matrix_details', pk)
+
     list_od_pair_instance = []
     compteur = 0
     zone_instance_dict = {zone.zone_id: zone for zone in zones}
@@ -801,9 +815,9 @@ def upoload_od_pair(request, pk):
             od_matrix.size = od_matrix_size
             od_matrix.save()
 
-            if compteur > 0:
-                message = "{} haven't been imported".format(compteur)
-                messages.warning(request, message)
+            # msg= "{} haven't been imported".format(compteur)
+            msg = "OD Pair successfully imported"
+            messages.success(request, msg)
             return redirect('od_matrix_details', od_matrix.pk)
             
     else:

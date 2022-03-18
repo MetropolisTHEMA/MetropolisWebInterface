@@ -7,6 +7,7 @@ from metro_app.simulation_io import generate_agents
 from django_q.tasks import async_task
 from metro_app.hooks import str_hook
 
+
 def add_population(request, pk):
     current_project = Project.objects.get(id=pk)
     population = Population(project=current_project)
@@ -14,7 +15,8 @@ def add_population(request, pk):
         form = PopulationForm(request.POST, instance=population)
         if form.is_valid():
             form.save()
-            return redirect('project_details', pk)
+            messages.success(request, 'Population successfully added')
+            return redirect('population_details', population.pk)
 
     form = PopulationForm(initial={'project':current_project})
     context = {
@@ -41,7 +43,7 @@ def update_population(request, pk):
 
 def population_details(request, pk):
     population = Population.objects.get(id=pk)
-    project = population.project
+    #project = population.project
     tasks = population.backgroundtask_set.order_by('-start_date')[:5]
     context = {
         'population': population,
@@ -54,7 +56,7 @@ def create_population_segment(request, pk):
     population = Population.objects.get(id=pk)
     agent = population.agent_set.all()
 
-    if agent.count() > 0:
+    if agent.exists():
         messages.warning(request, 'There exists an agent already created. \
         So you can not create or add an popuation segment.')
         return redirect('population_details', pk)
@@ -66,7 +68,7 @@ def create_population_segment(request, pk):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'Population segment created')
-                return redirect('project_details', pk)
+                return redirect('population_details', pk)
 
         form = PopulationSegmentForm(initial={'population': population})
         context = {
@@ -112,14 +114,15 @@ def population_segment_details(request, pk):
 
 
 def generate_agents_input(request, pk):
-    population = Population.objects.get(id=pk)
+    population = Population.objects.get(id=pk)    
     # population_segment = population.populationsegment_set.all()
     task_id = async_task(generate_agents, population,  hook=str_hook)
     description = 'Generating agents'
-    db_task = BackgroundTask(project=population.project,
-                             id=task_id,
-                             description=description,
-                             population=population)
+    db_task = BackgroundTask(
+        project=population.project,
+        id=task_id,
+        description=description,
+        population=population)
     db_task.save()
     messages.success(request, "Task successfully started")
     return redirect('population_details', pk)

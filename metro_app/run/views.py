@@ -1,21 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404 
 from django.http import Http404
 from django.contrib import messages
-from metro_app.models import (Run, Project, Population, RoadNetwork,
+from metro_app.models import (Run, Project, Population, Network,
     ParameterSet, PopulationSegment, BackgroundTask, Agent)
 from metro_app.forms import RunForm
 from metro_app.simulation_io import to_input_json
+from django_q.tasks import async_task
+from metro_app.hooks import str_hook
 
 
 def create_run(request, pk):
     current_project = Project.objects.get(id=pk)
-    try:
-        population = Population.objects.get(project=current_project)
-        road_network = RoadNetwork.objects.get(project=current_project)
+    population = Population.objects.filter(project=current_project)
+    network = Network.objects.filter(project=current_project)
+    if not population.exists() or not network.exists():
+        msg = "There is no population or/and netwwork"
+        messages.error(request, msg)
+    """"try:
+        population = Population.objects.filter(project=current_project)
+        road_network = RoadNetwork.objects.filter(project=current_project)
     except Population.DoesNotExist:
         raise Http404("Create a population first")
     except RoadNetwork.DoesNotExist:
-        raise Http404('There is no road net work created yet')
+        raise Http404('There is no road net work created yet')"""
     
     if request.method == 'POST':
         run = Run(project=current_project)
@@ -32,8 +39,6 @@ def create_run(request, pk):
 
     form = RunForm(initial={
         'project': current_project,
-        'population': population,
-        'network': road_network,
         })
     context = {
         'form': form
@@ -43,8 +48,10 @@ def create_run(request, pk):
 
 def run_details(request, pk):
     run = Run.objects.get(id=pk)
+    tasks = run.backgroundtask_set.order_by('-start_date')[:5]
     context = {
-        'run': run
+        'run': run,
+        'tasks': tasks,
     }
     return render(request, 'views/details.html', context)
 
@@ -63,7 +70,17 @@ def delete_run(request, pk):
 
 def generate_run_input(request, pk):
     run = Run.objects.get(id=pk)
-    to_input_json(run)
+    #print(to_input_json(run))
+    task_id = async_task(to_input_json, run, hook=str_hook)
+    description = 'Generating input'
+    db_task = BackgroundTask(
+        run=run,
+        project=run.project,
+        id=task_id,
+        description=description,
+    )
+    db_task.save()
+    messages.success(request, "Task successfully started")
     return redirect('run_details', pk)
 
 

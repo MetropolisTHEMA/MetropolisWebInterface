@@ -11,7 +11,9 @@ def create_network2(request, pk):
         form = NetworkForm(request.POST, instance=network)
         if form.is_valid():
             form.save()
-            return redirect('project_details', pk)
+            msg= "Network successfully created"
+            messages.success(request, msg)
+            return redirect('network2_details', network.pk)
 
     form = NetworkForm(initial={'project':current_project})
     context = {
@@ -47,13 +49,23 @@ def network2_details(request, pk):
 def upload_zone_node_relation(request, pk):
     network = Network.objects.get(id=pk) # RaodNetWork as FK
     zn = ZoneNodeRelation.objects.all()
-    if zn.count() > 0:
+    if zn.exists():
         messages.warning(request, 'ZoneNodeRelation already contains data')
         return redirect('network2_details', pk)
 
     if request.method == 'POST':
         zones = Zone.objects.filter(zone_set=network.zone_set) # Zone has Zonset as FK
         nodes = Node.objects.filter(network=network.road_network) # RoadNetwork as FK
+
+        if not zones:
+            msg = "Please upload zones first"
+            messages.error(request, msg)
+            return redirect('network2_details', pk)
+        if not nodes:
+            msg = "Please upload nodes first"
+            messages.error(request, msg)
+            return redirect('network2_details', pk)
+
         node_instance_dict = {node.node_id: node for node in nodes}
         zone_instance_dict = {zone.zone_id: zone for zone in zones}
         

@@ -191,6 +191,8 @@ def create_project(request):
             # Set the project owner to the user who made the request.
             project.owner = request.user
             project.save()
+            msg = "Project successfully created"
+            messages.success(request, msg)
             return redirect('home')
 
     form = ProjectForm()
@@ -284,7 +286,8 @@ def create_network(request, pk):
             form = RoadNetworkForm(request.POST, instance=network)
             if form.is_valid():
                 form.save()
-                return redirect('project_details', current_project.pk)
+                messages.success(request, "road network successfully created")
+                return redirect('network_details', network.pk)
 
     context = {'form': form}
     return render(request, 'views/form.html', context)
@@ -493,7 +496,8 @@ def create_zoneset(request, pk):
             form = ZoneSetForm(request.POST, instance=zoneset)
             if form.is_valid():
                 form.save()
-                return redirect('project_details', current_project.pk)
+                messages.success(request, "Zones successfully created")
+                return redirect('zoneset_details', zoneset.pk)
 
     form = ZoneSetForm(initial={'project': current_project})
     context = {'form': form}
@@ -581,7 +585,8 @@ def create_od_matrix(request, pk):
         form = ODMatrixForm(data=request.POST, instance=od_matrix)
         if form.is_valid():
             form.save()
-            return redirect('project_details', current_project.pk)
+            messages.success(request, "OD matrix cessfully created")
+            return redirect('od_matrix_details', od_matrix.pk)
 
     context = {'form': form}
     return render(request, 'views/form.html', context)
