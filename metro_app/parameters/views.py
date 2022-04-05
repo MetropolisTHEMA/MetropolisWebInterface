@@ -17,9 +17,10 @@ def set_parameters(request, pk):
     form = ParameterSetForm(initial={'project': current_project})
 
     context = {
+        'project': current_project,
         'form': form,
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
 def upload_parameters(request, pk):

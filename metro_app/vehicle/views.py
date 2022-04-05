@@ -65,15 +65,16 @@ def add_vehicle(request, pk):
         form = VehicleForm(request.POST, instance=vehicle)
         if form.is_valid():
             form.save()
+            msg = "Vehicle successfully added"
+            messages.success(request, msg)
             return redirect('project_details', pk)
 
     form = VehicleForm(initial={'project': current_project})
     context = {
+        'project': current_project,
         'form': form,
     }
-    msg = "Vehicle successfully added"
-    messages.success(request, msg)
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
 def update_vehicle(request, pk):

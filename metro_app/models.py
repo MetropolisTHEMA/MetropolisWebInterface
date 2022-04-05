@@ -1150,7 +1150,7 @@ class Agent(models.Model):
         }
 
     def get_mode_choice_model(self):
-        if self.mode_choice_model == self.DETERMINISTIC:
+        if self.mode_choice_model == self.DETERMINISTIC_MODE:
             return {
                 'Deterministic': {
                     'u': self.mode_choice_u,
@@ -1182,7 +1182,7 @@ class Agent(models.Model):
         except ZoneNodeRelation.DoesNotExist:
             return None
 
-    def get_destination_node(self, road_network):
+    def get_destination_node(self, network):
         try:
             return network.zonenoderelation_set.get(zone=self.destination_zone)
         except ZoneNodeRelation.DoesNotExist:

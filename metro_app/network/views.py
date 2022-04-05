@@ -4,7 +4,20 @@ from metro_app.models import Project, Network, Node, Zone,ZoneNodeRelation
 from metro_app.forms import NetworkForm, ZoneNodeRelationFileForm
 import csv
 
-def create_network2(request, pk):
+def list_of_networks(request, pk):
+    current_project = Project.objects.get(id=pk)
+    networks = Network.objects.filter(project=current_project)
+    total_networks = networks.count()
+    context = {
+        'current_project': current_project,
+        'networks': networks,
+        'total_populations': total_networks,
+
+    }
+    return render(request, 'list.html', context)
+
+
+def create_network(request, pk):
     current_project = Project.objects.get(id=pk)
     network = Network(project=current_project)
     if request.method == 'POST':
@@ -13,22 +26,23 @@ def create_network2(request, pk):
             form.save()
             msg= "Network successfully created"
             messages.success(request, msg)
-            return redirect('network2_details', network.pk)
+            return redirect('network_details', network.pk)
 
     form = NetworkForm(initial={'project':current_project})
     context = {
+        'project': current_project,
         'form': form
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
-def update_network2(request, pk):
+def update_network(request, pk):
     network = Network.objects.get(id=pk)
     if request.method == 'POST':
         form = NetworkForm(request.POST, instance=network)
         if form.is_valid():
             form.save()
-            return redirect('project_details', network.project.pk)
+            return redirect('list_of_networks', network.project.pk)
 
     form = NetworkForm(instance=network)
     context = {
@@ -37,13 +51,12 @@ def update_network2(request, pk):
     }
     return render(request, 'update.html', context)
 
-
-def network2_details(request, pk):
+def network_details(request, pk):
     network = Network.objects.get(id=pk)
     context = {
         'network': network
     }
-    return  render(request, 'views/details.html', context)
+    return  render(request, 'details.html', context)
 
 
 def upload_zone_node_relation(request, pk):

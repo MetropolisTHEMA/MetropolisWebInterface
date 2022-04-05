@@ -41,9 +41,10 @@ def create_run(request, pk):
         'project': current_project,
         })
     context = {
+        'project': current_project,
         'form': form
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
 def run_details(request, pk):
@@ -53,14 +54,28 @@ def run_details(request, pk):
         'run': run,
         'tasks': tasks,
     }
-    return render(request, 'views/details.html', context)
+    return render(request, 'details.html', context)
 
+def update_run(request, pk):
+    run = Run.objects.get(id=pk)
+    if request.method == 'POST':
+        form = RunForm(request.POST, instance=run)
+        if form.is_valid():
+            form.save()
+            return redirect('list_of_runs', run.project.pk)
+
+    form = RunForm(instance=run)
+    context = {
+        'form': form,
+        'parent_template': 'index.html'
+    }
+    return render(request, 'update.html', context)
 
 def delete_run(request, pk):
     run_to_delete = Run.objects.get(id=pk)
     if request.method == 'POST':
         run_to_delete.delete()
-        return redirect('project_details', run_to_delete.project.pk)
+        return redirect('list_of_runs', run_to_delete.project.pk)
     
     context = {
         'run_to_delete': run_to_delete

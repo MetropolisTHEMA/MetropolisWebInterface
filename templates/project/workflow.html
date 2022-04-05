@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Project {% endblock title %}
+
+{% block content %}
+
+<div class="tree">
+	<ol>
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_network' project.pk %}">Create Road Network</a>
+			<ul>
+				<li>Upload Roads Types</li>
+				<li>Upload Nodes</li>
+				<li>Upload Edges</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_road_networks' project.pk %}">View</a></li>
+			</ul>
+		</li>
+		<br>
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_zoneset' project.pk %}">Create Zone set</a>
+			<ul>
+				<li>Upload Zones</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_zonesets' project.pk %}">View</a></li>
+			</ul>
+		</li>
+
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_od_matrix' project.pk %}">
+				Create Origin Destination Matrix</a>
+			<ul>
+				<li>Upload Origin Destination Pair</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_od_matrix' project.pk %}">View</a></li>
+			</ul>
+		</li>
+
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'add_vehicle' project.pk %}">Add Vehicle</a>
+			<ul>
+				<li>Upload Vehicles</li>
+			</ul>
+		</li>
+
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'add_preferences' project.pk %}">Set Preferences</a>
+			<ul>
+				<li>Upload Upload Preferences</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_preferences' project.pk %}">View</a></li>
+			</ul>
+		</li>
+		<br>
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'add_population' project.pk %}">Add Population</a>
+			<ul>
+				<li>Create Population Segment</li>
+				<li>Add Agents</li>
+				<li>Upload Agents</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_populations' project.pk %}">View</a></li></li>
+			</ul>
+		</li>
+		<br>
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_network' project.pk %}">Create Network</a>
+			<ul>
+				<li>Upload Zones Nodes Relation</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_networks' project.pk %}">View</a></li>
+			</ul>
+		</li>
+
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'set_parameters' project.pk %}">Set Parameters</a>
+			<ul>
+				<li>Upload Parameters Set</li>
+			</ul>
+		</li>
+
+		<li><a class="btn btn-outline-info  btn-sm btn-block"
+			href="{% url 'create_run' project.pk %}">Create Run</a>
+			<ul>
+				<li>Upload Parameters Set</li>
+				<li><a class="btn btn-outline-info  btn-sm btn-block"
+					href="{% url 'list_of_runs' project.pk %}">View</a></li>
+			</ul>
+		</li>
+
+	</ol>
+</div>
+
+{% endblock %}

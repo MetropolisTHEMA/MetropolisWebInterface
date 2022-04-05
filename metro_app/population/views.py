@@ -20,9 +20,10 @@ def add_population(request, pk):
 
     form = PopulationForm(initial={'project':current_project})
     context = {
+        'project': current_project,
         'form': form
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
 def update_population(request, pk):
@@ -31,7 +32,7 @@ def update_population(request, pk):
         form = PopulationForm(request.POST, instance=population)
         if form.is_valid():
             form.save()
-            return redirect('project_details', population.project.pk)
+            return redirect('list_of_populations', population.project.pk)
 
     form = PopulationForm(instance=population)
     context = {
@@ -39,7 +40,6 @@ def update_population(request, pk):
         'parent_template': 'index.html'
     }
     return render(request, 'update.html', context)
-
 
 def population_details(request, pk):
     population = Population.objects.get(id=pk)
@@ -49,7 +49,19 @@ def population_details(request, pk):
         'population': population,
         'tasks': tasks,
     }
-    return render(request, 'views/details.html', context)
+    return render(request, 'details.html', context)
+
+def delete_population(request, pk):
+    population = Population.objects.get(id=pk)
+    if request.method == 'POST':
+        population.delete()
+        return redirect('list_of_populations', population.project.pk)
+
+    context = {
+        'population_to_delete': population,
+    }
+    return render(request, 'delete.html', context)
+
 
 
 def create_population_segment(request, pk):

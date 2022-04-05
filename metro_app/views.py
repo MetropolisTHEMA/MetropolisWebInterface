@@ -178,6 +178,20 @@ def delete_roads_types(request, pk):
     }
     return render(request, 'delete.html', context)
 
+def delete_zones(request, pk):
+    zoneset = ZoneSet.objects.get(id=pk)
+    zones = Zone.objects.filter(zone_set=zoneset)
+    if request.method == 'POST':
+        zones.delete()
+        messages.success(request, "Zones successfully deleted")
+        return redirect('zoneset_details', zoneset.pk)
+    
+    context = {
+        'zoneset': zoneset,
+        'zones_to_delete': zones
+    }
+    return render(request, 'delete.html', context)
+
 # ............................................................................#
 #                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
 # ............................................................................#
@@ -190,13 +204,21 @@ def create_project(request):
             project = form.save(commit=False)
             # Set the project owner to the user who made the request.
             project.owner = request.user
-            project.save()
-            msg = "Project successfully created"
-            messages.success(request, msg)
-            return redirect('home')
+            try:
+                project.save()
+            except Exception as e:
+                messages.error(request, e)
+                return redirect('create_project')
+            else:
+                msg = "Project <{}> successfully created".format(project.name)
+                messages.success(request, msg)
+                return redirect('home')
 
     form = ProjectForm()
-    return render(request, 'views/form.html', {'form': form})
+    context = {
+        'form': form,
+    }
+    return render(request, 'form.html', context)
 
 
 def update_project(request, pk):
@@ -261,88 +283,7 @@ def project_details(request, pk):
         'tasks': tasks,
     }
 
-    return render(request, 'views/project_details.html', context)
-
-# ........................................................................... #
-#                      VIEW OF CREATING A ROADNETWORK                         #
-# ............................................................................#
-
-
-def create_network(request, pk):
-    """A roadnetwork depends on a project. It
-     must be created inside the project"""
-
-    current_project = Project.objects.get(id=pk)
-    form = RoadNetworkForm(initial={'project': current_project})
-    if request.method == 'POST':
-        srid = int(request.POST.get('srid'))
-        try:
-            CRS.from_user_input(srid)
-        except CRSError:
-            messages.warning(request, 'Invalid Coordinates Reference System')
-            return redirect('create_network', current_project.pk)
-        else:
-            network = RoadNetwork(project=current_project)
-            form = RoadNetworkForm(request.POST, instance=network)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "road network successfully created")
-                return redirect('network_details', network.pk)
-
-    context = {'form': form}
-    return render(request, 'views/form.html', context)
-
-
-def network_details(request, pk):
-
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    total_nodes = Node.objects.select_related(
-        'network)').filter(network_id=pk).count()
-    total_edges = Edge.objects.select_related(
-        'network').filter(network_id=pk).count()
-    tasks = roadnetwork.backgroundtask_set.order_by('-start_date')[:5]
-
-    context = {
-        'roadnetwork': roadnetwork,
-        'total_nodes': total_nodes,
-        'total_edges': total_edges,
-        'tasks': tasks,
-    }
-    return render(request, 'views/details.html', context)
-
-
-def update_network(request, pk):
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    form = RoadNetworkForm(instance=roadnetwork)
-    if request.method == 'POST':
-        form = RoadNetworkForm(request.POST, instance=roadnetwork)
-        srid = int(request.POST.get('srid'))
-        try:
-            CRS.from_user_input(srid)
-        except CRSError:
-            messages.warning(request, 'Invalid Coordinates Reference System')
-            return redirect('update_network', roadnetwork.pk)
-        else:
-            if form.is_valid():
-                form.save()
-                return redirect('project_details', roadnetwork.project.pk)
-
-    context = {
-        'form': form,
-        'parent_template': 'base.html',
-        }
-    return render(request, 'update.html', context)
-
-
-def delete_network(request, pk):
-    network_to_delete = RoadNetwork.objects.get(id=pk)
-    if request.method == 'POST':
-        network_to_delete.delete()
-        return redirect('project_details', network_to_delete.project.pk)
-
-    context = {'network_to_delete': network_to_delete}
-    return render(request, 'delete.html', context)
-
+    return render(request, 'project/workflow.html', context)
 
 def visualization(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
@@ -500,8 +441,11 @@ def create_zoneset(request, pk):
                 return redirect('zoneset_details', zoneset.pk)
 
     form = ZoneSetForm(initial={'project': current_project})
-    context = {'form': form}
-    return render(request, 'views/form.html', context)
+    context = {
+        'project': current_project,
+        'form': form
+    }
+    return render(request, 'form.html', context)
 
 
 def zoneset_details(request, pk):
@@ -510,7 +454,7 @@ def zoneset_details(request, pk):
     context = {
         'zoneset': zoneset,
     }
-    return render(request, 'views/details.html', context)
+    return render(request, 'details.html', context)
 
 
 def update_zoneset(request, pk):
@@ -527,7 +471,7 @@ def update_zoneset(request, pk):
         else:
             if form.is_valid():
                 form.save()
-                return redirect('project_details', zoneset.project.pk)
+                return redirect('list_of_zonesets', zoneset.project.pk)
 
     context = {
         'form': form,
@@ -540,7 +484,7 @@ def delete_zoneset(request, pk):
     zoneset_to_delete = ZoneSet.objects.get(id=pk)
     if request.method == 'POST':
         zoneset_to_delete.delete()
-        return redirect('project_details', zoneset_to_delete.project.pk)
+        return redirect('list_of_zonesets', zoneset_to_delete.project.pk)
 
     context = {
         'zoneset_to_delete': zoneset_to_delete
@@ -588,8 +532,10 @@ def create_od_matrix(request, pk):
             messages.success(request, "OD matrix cessfully created")
             return redirect('od_matrix_details', od_matrix.pk)
 
-    context = {'form': form}
-    return render(request, 'views/form.html', context)
+    context = {
+        'project': current_project,
+        'form': form}
+    return render(request, 'form.html', context)
 
 
 def od_matrix_details(request, pk):
@@ -597,7 +543,7 @@ def od_matrix_details(request, pk):
     context = {
         'od_matrix': od_matrix,
     }
-    return render(request, 'views/details.html', context)
+    return render(request, 'details.html', context)
 
 
 def update_od_matrix(request, pk):
@@ -607,7 +553,7 @@ def update_od_matrix(request, pk):
         form = ODMatrixForm(request.POST, instance=od_matrix)
         if form.is_valid():
             form.save()
-            return redirect('project_details', od_matrix.project.pk)
+            return redirect('list_of_od_matrix', od_matrix.project.pk)
 
     context = {
         'form': form,
@@ -620,7 +566,7 @@ def delete_od_matrix(request, pk):
     od_matrix_to_delete = ODMatrix.objects.get(id=pk)
     if request.method == 'POST':
         od_matrix_to_delete.delete()
-        return redirect('project_details', od_matrix_to_delete.project.pk)
+        return redirect('list_of_od_matrix', od_matrix_to_delete.project.pk)
 
     context = {
         'od_matrix_to_delete': od_matrix_to_delete

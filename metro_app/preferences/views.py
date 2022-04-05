@@ -19,9 +19,10 @@ def add_preferences(request, pk):
     form = PreferencesForm(initial={'project': current_project})
 
     context = {
+        'project': current_project,
         'form': form,
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
 
 
 def read_field_func(field, std=0):
@@ -203,7 +204,7 @@ def update_preferences(request, pk):
         form = PreferencesForm(request.POST, instance=preference)
         if form.is_valid():
             form.save()
-            return redirect('project_details', preference.project.pk)
+            return redirect('list_of_preferences', preference.project.pk)
 
     form = PreferencesForm(instance=preference)
     context = {
@@ -217,7 +218,7 @@ def delete_preferences(request, pk):
     preference_to_delete = Preferences.objects.get(id=pk)
     if request.method == 'POST':
         preference_to_delete.delete()
-        return redirect('project_details', preference_to_delete.project.pk)
+        return redirect('list_of_preferences', preference_to_delete.project.pk)
 
     context = {
         'preference_to_delete': preference_to_delete

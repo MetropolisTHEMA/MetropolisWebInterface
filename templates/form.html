@@ -45,6 +45,14 @@
 		<div class="mb-3">
 			{{form|crispy}}
 			<button type="submit" class="btn btn-success" name="button">Create</button>
+			<button type="submit" class="btn btn-secondary" name="button">
+				{% if project %}
+					<a href="{% url 'project_details' project.pk %}">Back</a>
+				{% else %}
+				<a href="{% url 'home' %}">Back</a>
+				{% endif %}
+			</button>
+			
 		</div>
 	</form>
 
