@@ -3,10 +3,20 @@ from django.contrib import messages
 from metro_app.forms import PopulationForm, PopulationSegmentForm
 from metro_app.models import (Project, Population, PopulationSegment, 
                               Agent, BackgroundTask)
-from metro_app.simulation_io import generate_agents
-from django_q.tasks import async_task
-from metro_app.hooks import str_hook
+                              
 
+
+def list_of_populations(request, pk):
+    current_project = Project.objects.get(id=pk)
+    populations = Population.objects.filter(project=current_project)
+    total_populations = populations.count()
+    context = {
+        'current_project': current_project,
+        'populations': populations,
+        'total_populations': total_populations,
+
+    }
+    return render(request, 'list.html', context)
 
 def add_population(request, pk):
     current_project = Project.objects.get(id=pk)
@@ -62,8 +72,6 @@ def delete_population(request, pk):
     }
     return render(request, 'delete.html', context)
 
-
-
 def create_population_segment(request, pk):
     population = Population.objects.get(id=pk)
     agent = population.agent_set.all()
@@ -84,10 +92,10 @@ def create_population_segment(request, pk):
 
         form = PopulationSegmentForm(initial={'population': population})
         context = {
+            'population': population,
             'form': form,
         }
-        return render(request, 'views/form.html', context)
-
+        return render(request, 'form.html', context)
 
 def update_population_segment(request, pk):
     population_segment = PopulationSegment.objects.get(id=pk)
@@ -104,7 +112,6 @@ def update_population_segment(request, pk):
     }
     return render(request, 'update.html', context)
 
-
 def delete_population_segment(request, pk):
     population_segment_to_delete = PopulationSegment.objects.get(id=pk)
     if request.method == 'POST':
@@ -116,7 +123,6 @@ def delete_population_segment(request, pk):
     }
     return render(request, 'delete.html', context)
 
-
 def population_segment_details(request, pk):
     population_segment = PopulationSegment.objects.get(id=pk)
     context = {
@@ -124,18 +130,3 @@ def population_segment_details(request, pk):
     }
     return render(request, 'views/details.html', context)
 
-
-def generate_agents_input(request, pk):
-    population = Population.objects.get(id=pk)    
-    # population_segment = population.populationsegment_set.all()
-    task_id = async_task(generate_agents, population,  hook=str_hook)
-    description = 'Generating agents'
-    db_task = BackgroundTask(
-        project=population.project,
-        id=task_id,
-        description=description,
-        population=population)
-    db_task.save()
-    messages.success(request, "Task successfully started")
-    return redirect('population_details', pk)
-    

@@ -3,52 +3,54 @@ from django.shortcuts import render, redirect
 from metro_app.models import Project,  Vehicle
 from metro_app.forms import VehicleFileForm, VehicleForm
 import json
-
+from django_tables2 import RequestConfig
+from metro_app.filters import VehicleFilter
+from metro_app.tables import VehicleTable
 
 def upload_vehicle(request, pk):
+
     current_project = Project.objects.get(id=pk)
-
-    vehicles = Vehicle.objects.all()
-    """if vehicles.count() > 0:
-        messages.warning(request, "Fail! Vehicle tabe already contains data. \
-                            Delete them before importing again")
-        return redirect('project_details', pk)"""
-
-    if request.method == 'POST':
-        list_vehicle = []
-        form = VehicleFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = request.FILES['my_file']
-            if file.name.endswith('.json'):
-                data = json.load(file)
-                if type(data) == list:
-                    for feature in data:
+    vehicles = Vehicle.objects.filter(project=current_project)
+    if vehicles:
+        msg = 'Vehicles already uploaded'
+        messages.warning(request, msg)
+        return redirect('project_details', pk)
+    else:
+        if request.method == 'POST':
+            list_vehicle = []
+            form = VehicleFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                file = request.FILES['my_file']
+                if file.name.endswith('.json'):
+                    data = json.load(file)
+                    if type(data) == list:
+                        for feature in data:
+                            vehicle_instance = Vehicle(
+                                project=current_project,
+                                vehicle_id=feature['id'],
+                                name=feature.get('name', None),
+                                length=feature.get('length', None),
+                                speed_multiplicator=feature.get(
+                                    'speed_multiplicator', None),
+                                speed_function=feature.get('speed_function', None)
+                            )
+                            list_vehicle.append(vehicle_instance)
+                    elif type(data) == dict:
                         vehicle_instance = Vehicle(
                             project=current_project,
-                            vehicle_id=feature['id'],
-                            name=feature.get('name', None),
-                            length=feature.get('length', None),
-                            speed_multiplicator=feature.get(
-                                'speed_multiplicator', None),
-                            speed_function=feature.get('speed_function', None)
+                            vehicle_id=data['id'],
+                            name=data.get('name', None),
+                            length=data.get('length', None),
+                            speed_multiplicator=data.get(
+                                    'speed_multiplicator', None),
+                            speed_function=data.get('speed_function', None)
                         )
                         list_vehicle.append(vehicle_instance)
-                elif type(data) == dict:
-                    vehicle_instance = Vehicle(
-                        project=current_project,
-                        vehicle_id=data['id'],
-                        name=data.get('name', None),
-                        length=data.get('length', None),
-                        speed_multiplicator=data.get(
-                                'speed_multiplicator', None),
-                        speed_function=data.get('speed_function', None)
-                    )
-                    list_vehicle.append(vehicle_instance)
 
-            msg = "Vehicles successfully uploaded"
-            messages.success(request, msg)
-            Vehicle.objects.bulk_create(list_vehicle)
-            return redirect('project_details', pk)
+                msg = "Vehicles successfully uploaded"
+                messages.success(request, msg)
+                Vehicle.objects.bulk_create(list_vehicle)
+                return redirect('project_details', pk)
 
     form = VehicleFileForm()
     context = {
@@ -156,3 +158,22 @@ def delete_vehicle_set(request, pk):
         'vehicle_set_to_delete': vehicle_set_to_delete,
     }
     return render(request, 'delete.html', context)
+
+def vehicle_table(request, pk):
+    current_project = Project.objects.get(id=pk)
+    vehicles = Vehicle.objects.filter(project=current_project)
+    my_filter = VehicleFilter(request.GET, queryset=vehicles)
+    table = VehicleTable(my_filter.qs)
+    RequestConfig(request).configure(table)
+
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
+    context = {
+        "vehicle": vehicles.first(),
+        "table": table,
+        "filter": my_filter,
+        "project": current_project,
+        "network_attribute": network_attribute
+    }
+    return render(request, 'table/table.html', context)

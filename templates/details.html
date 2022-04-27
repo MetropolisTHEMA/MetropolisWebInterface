@@ -1,4 +1,4 @@
-{% extends 'index_project_details.html' %}>
+{% extends 'project/index.html' %}>
 {% load static %}
 {% block title %} Network {% endblock title %}
 
@@ -15,23 +15,29 @@
 {% endblock %}
 <br>
 <div class="row">
-	<div class="col-md">
+	<div class="col-md-5">
 		<div class="card card-body">
       {% if roadnetwork %}
         <h5 style="text-align: center;">Network name : {{roadnetwork.name}}</h5>
   		<hr>
         <div class="row">
-          <div class="col-md-4">
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'roadtype' roadnetwork.pk %}">Create Road Type</a>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_road' roadnetwork.pk %}">Upload Road Type</a>
+          <div class="col-md">
+			<a class="btn-sm btn-block"
+				href="{% url 'roadtype' roadnetwork.pk %}">Create Road Type</a>
+			<a class="btn-sm btn-block"
+				href="{% url 'upload_road_type' roadnetwork.pk %}">Upload Road Type</a>
+			<a class="btn-sm btn-block"
+				href="{% url 'delete_roads_types' roadnetwork.pk %}">Remove Road type</a>
 		  </div>
-          <div class="col-md-4">
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_node' roadnetwork.pk %}">Upload Node</a>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'upload_edge' roadnetwork.pk %}">Upload Edge</a>
+          <div class="col-md">
+			<a class="btn-sm btn-block"
+				href="{% url 'upload_node' roadnetwork.pk %}">Upload Nodes</a> <br>
+			<a class="btn-sm btn-block"
+				href="{% url 'delete_nodes' roadnetwork.pk %}">Remove Nodes</a>
 		  </div>
-          <div class="col-md-4">
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_nodes' roadnetwork.pk %}">Remove Node</a>
-			<a class="btn btn-outline-info  btn-sm btn-block" href="{% url 'delete_roads_types' roadnetwork.pk %}">Remove Road types</a>
+          <div class="col-md">
+			<a class="btn-sm btn-block"
+				href="{% url 'upload_edge' roadnetwork.pk %}">Upload Edge</a>
 		  </div>
         </div>
 		
@@ -39,44 +45,62 @@
         {% elif zoneset %}
   			<h5>Zone set name : {{zoneset.name}}</h5>
   			<hr>
+			<br>
     		<div class="row">
-				<a class="btn btn-outline-info  btn-sm btn-block"
+				<div class="col-md-4">
+					<a class="btn btn-outline-info  btn-sm btn-block"
 				href="{% url 'update_zoneset' zoneset.pk %}">Update zone set</a>
+				</div>
 				
-				<div class="col-md-6">
+				<div class="col-md-4">
 					<a class="btn btn-outline-info  btn-sm btn-block"
            			href="{% url 'upload_zone' zoneset.pk %}">Upload zones</a>
 				</div>
-            	<div class="col-md-6">
+            	<div class="col-md-4">
 					<a class="btn btn-outline-info  btn-sm btn-block"
 					href="{% url 'delete_zones' zoneset.pk %}">Remove zones</a>
 				</div>
-				
 			</div>
-	
+
 
         {% elif od_matrix %}
     		<h5 style="text-align: center;">OD matrix name : {{od_matrix.name}}</h5>
     		<hr>
-      		<a class="btn btn-outline-info  btn-sm btn-block"
-              href="{% url 'update_od_matrix' od_matrix.pk %}">Update OD matrix</a>
-            <a class="btn btn-outline-info  btn-sm btn-block"
-             href="{% url 'upoload_od_pair' od_matrix.pk %}">Upload OD Pair</a>
-
+			<div class="row">
+				<div class="col-md">
+					<a class="btn-sm btn-block"
+						href="{% url 'update_od_matrix' od_matrix.pk %}">Update OD matrix</a>
+					<a class="btn-sm btn-block"
+						href="{% url 'upoload_od_pair' od_matrix.pk %}">Upload OD Pair</a>
+					<a class="btn-sm btn-block"
+						href="{% url 'delete_od_pair' od_matrix.pk %}">delete OD Pair</a>
+				</div>
+			</div>
 
 		{% elif population %}
 		   <h5 style="text-align: center;">Population: {{population.name}}</h5>
 		   <hr>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="{% url 'update_population' population.pk %}">Update population</a>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="{% url 'create_population_segment' population.pk %}">Create Popluation Segment</a>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="{% url 'add_agent'  population.pk %}">Add agent</a>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="{% url 'upload_agent'  population.pk %}">Upload agent</a>
-		   <a class="btn btn-outline-info  btn-sm btn-block"
-			href="{% url 'generate_agent'  population.pk %}">Generate agent</a>
+		   <div class="row">
+				<div class="col-md-4">
+					<a class="btn-sm btn-block"
+						href="{% url 'update_population' population.pk %}">Update population</a>
+					<a class="btn-sm btn-block"
+						href="{% url 'create_population_segment' population.pk %}">Create Segment</a>
+				</div>
+			
+				<div class="col-md-4">
+					<a class="btn-sm btn-block"
+						href="{% url 'add_agent'  population.pk %}">Add agent</a> <br>
+					<a class="btn-sm btn-block"
+						href="{% url 'upload_agent'  population.pk %}">Upload agent</a>
+				</div>
+				<div class="col-md-4">
+					<a class="btn-sm btn-block"
+						href="{% url 'generate_agent'  population.pk %}">Generate agent</a>
+					<a class="btn-sm btn-block"
+						href="{% url 'delete_agents'  population.pk %}">Remove agent</a>	
+				</div>
+		   </div>
 
 		{% elif network %}
 			<h5>Network name : {{network.name}}</h5>
@@ -98,7 +122,7 @@
 		</div>
 	</div>
 
-	<div class="col-md">
+	<div class="col-md-4">
 		<div class="card card-body">
 			<h5 style="text-align: center; ">Owner Information</h5>
 			<hr>
@@ -107,7 +131,7 @@
 		</div>
 	</div>
 
-	<div class="col-md">
+	<div class="col-md-3">
 		<div class="card card-body">
         {% if roadnetwork %}
         <h5 style="text-align: center;">Network attributes</h5>
@@ -172,7 +196,7 @@
 				<tbody>
 					{% for task in tasks %}
                     <tr id="row-task-{{ task.id }}">
-                        {% include 'views/task.html' %}
+                        {% include 'background_task/task.html' %}
 					</tr>
 					{% endfor %}
 				</tbody>
@@ -183,19 +207,19 @@
 {% endif %}
 
 {% if roadnetwork %}
-<a href="{% url 'list_of_road_networks' roadnetwork.project_id %}">Back</a>
+	<a href="{% url 'list_of_road_networks' roadnetwork.project_id %}">Back</a>
 {% elif zoneset %}
-<a href="{% url 'list_of_zonesets' zoneset.project_id %}">Back</a>
+	<a href="{% url 'list_of_zonesets' zoneset.project_id %}">Back</a>
 {% elif od_matrix %}
-<a href="{% url 'list_of_od_matrix' od_matrix.project_id %}">Back</a>
+	<a href="{% url 'list_of_od_matrix' od_matrix.project_id %}">Back</a>
 {% elif preferences %}
-<a href="{% url 'list_of_preferences' preferences.project_id %}">Back</a>
-{% elif populations %}
-<a href="{% url 'project_details' population.project_id %}">Back</a>
-{% elif networks %}
-<a href="{% url 'list_of_networks' network.project_id %}">Back</a>
+	<a href="{% url 'list_of_preferences' preferences.project_id %}">Back</a>
+{% elif population %}
+	<a href="{% url 'list_of_populations' population.project_id %}">Back</a>
+{% elif network %}
+	<a href="{% url 'list_of_networks' network.project_id %}">Back</a>
 {% elif run %}
-<a href="{% url 'list_of_runs' run.project_id %}">Back</a>
+	<a href="{% url 'list_of_runs' run.project_id %}">Back</a>
 
 {% endif %}
 

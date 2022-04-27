@@ -9,6 +9,19 @@ from django_q.tasks import async_task
 from metro_app.hooks import str_hook
 
 
+
+def list_of_runs(request, pk):
+    current_project = Project.objects.get(id=pk)
+    runs = Run.objects.filter(project=current_project)
+    total_runs = runs.count()
+    context = {
+        'current_project': current_project,
+        'runs': runs,
+        'total_runs': total_runs,
+
+    }
+    return render(request, 'list.html', context)
+
 def create_run(request, pk):
     current_project = Project.objects.get(id=pk)
     population = Population.objects.filter(project=current_project)
@@ -85,7 +98,6 @@ def delete_run(request, pk):
 
 def generate_run_input(request, pk):
     run = Run.objects.get(id=pk)
-    #print(to_input_json(run))
     task_id = async_task(to_input_json, run, hook=str_hook)
     description = 'Generating input'
     db_task = BackgroundTask(

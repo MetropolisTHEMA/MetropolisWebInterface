@@ -1079,6 +1079,15 @@ class Agent(models.Model):
     :destination_stop PTStop: PTStop of the public-transit network used as the
      destination of the agent for public-transit trips.
     """
+
+    def validate_decimals(value):
+        try:
+            return round(float(value), 2)
+        except:
+            raise ValidationError(
+                _('%(value)s is not an integer or a float  number'),
+                params={'value': value},
+            )
     # Mode-choice parameters.
     DETERMINISTIC_MODE = 0
     LOGIT_MODE = 1
@@ -1102,13 +1111,15 @@ class Agent(models.Model):
     )
     mode_choice_model = models.SmallIntegerField(
         default=0, choices=MODE_CHOICES)
-    mode_choice_u = models.FloatField(blank=True, null=True)
-    mode_choice_mu = models.FloatField(blank=True, null=True)
+    mode_choice_u = models.FloatField(blank=True, null=True,
+                                      validators=[validate_decimals])
+    mode_choice_mu = models.FloatField(blank=True, null=True,
+                                       validators=[validate_decimals])
     # Schedule utility parameters.
     t_star = models.DurationField(default=timedelta())
     delta = models.DurationField(default=timedelta())
-    beta = models.FloatField()
-    gamma = models.FloatField()
+    beta = models.FloatField(validators=[validate_decimals])
+    gamma = models.FloatField(validators=[validate_decimals])
     desired_arrival = models.BooleanField(default=True)
     # Car mode.
     vehicle = models.ForeignKey(
@@ -1125,6 +1136,12 @@ class Agent(models.Model):
     dep_time_car_mu = models.FloatField(blank=True, null=True)
     dep_time_car_constant = models.DurationField(blank=True, null=True)
     car_vot = models.FloatField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.mode_choice_u = round(self.mode_choice_u, 2)
+        self.beta = round(self.beta, 2)
+        self.gamma = round(self.gamma, 2)
+        super(Agent, self).save(*args, **kwargs)
 
     def __str__(self):
         return 'Agent {}'.format(self.agent_id)
@@ -1287,8 +1304,16 @@ class BackgroundTask(models.Model):
     # Optional Foreign Key
     run = models.ForeignKey(Run, on_delete=models.CASCADE,
                            blank=True, null=True)
+    # Optional Foreign Key
+    od_matrix = models.ForeignKey(ODMatrix, on_delete=models.CASCADE,
+                           blank=True, null=True)
+    # Optional Foreign Key
+    zoneset_set = models.ForeignKey(ZoneSet, on_delete=models.CASCADE,
+                           blank=True, null=True)
+    # Optional Foreign Key
+    network = models.ForeignKey(Network, on_delete=models.CASCADE,
+                           blank=True, null=True)
 
-    
     def get_status(self):
         return self.STATUS_CHOICES[self.status][1]
 
@@ -1299,6 +1324,10 @@ class BackgroundTask(models.Model):
             return str(self.population)
         elif self.run:
             return str(self.run)
+        elif self.od_matrix:
+            return str(self.od_matrix)
+        elif self.zoneset_set:
+            return str(self.zoneset_set)
         else:
             return 'Unknown instance'
         return ''

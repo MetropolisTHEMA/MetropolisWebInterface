@@ -1,5 +1,6 @@
 import django_tables2 as tables
-from .models import Edge, Node, RoadType, Zone, ODPair
+from .models import (Edge, Node, RoadType, Zone, ODPair,
+                     Agent, ZoneNodeRelation, Vehicle)
 
 
 class EdgeTable(tables.Table):
@@ -61,3 +62,22 @@ class ODPairTable(tables.Table):
     class Meta:
         model = ODPair
         fields = ('origin', 'destination', 'size')
+
+
+class AgentTable(tables.Table):
+    
+    class Meta:
+        model = Agent
+        exclude = ('population', 'id')
+
+
+class ZoneNodeRelationTable(tables.Table):
+    class Meta:
+        model = ZoneNodeRelation
+        exclude = ('tags', 'date_created')
+
+
+class VehicleTable(tables.Table):
+    class Meta:
+        model = Vehicle
+        exclude =('project', 'id')

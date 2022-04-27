@@ -7,6 +7,18 @@ import json
 from datetime import timedelta
 
 
+def list_of_preferences(request, pk):
+    current_project = Project.objects.get(id=pk)
+    preferences = Preferences.objects.filter(project=current_project)
+    total_preferences = preferences.count()
+    context = {
+        'current_project': current_project,
+        'preferences': preferences,
+        'total_preferences': total_preferences,
+
+    }
+    return render(request, 'list.html', context)
+
 def add_preferences(request, pk):
     current_project = Project.objects.get(id=pk)
     if request.method == 'POST':

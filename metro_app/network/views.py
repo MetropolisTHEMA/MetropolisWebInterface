@@ -2,6 +2,9 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from metro_app.models import Project, Network, Node, Zone,ZoneNodeRelation
 from metro_app.forms import NetworkForm, ZoneNodeRelationFileForm
+from metro_app.filters import ZoneNodeRelationFilter
+from metro_app.tables import ZoneNodeRelationTable
+from django_tables2 import RequestConfig
 import csv
 
 def list_of_networks(request, pk):
@@ -64,23 +67,20 @@ def upload_zone_node_relation(request, pk):
     zn = ZoneNodeRelation.objects.all()
     if zn.exists():
         messages.warning(request, 'ZoneNodeRelation already contains data')
-        return redirect('network2_details', pk)
+        return redirect('network_details', pk)
 
     if request.method == 'POST':
-        zones = Zone.objects.filter(zone_set=network.zone_set) # Zone has Zonset as FK
-        nodes = Node.objects.filter(network=network.road_network) # RoadNetwork as FK
+        zones = Zone.objects.select_related().filter(zone_set=network.zone_set) # Zone has Zonset as FK
+        nodes = Node.objects.select_related().filter(network=network.road_network) # RoadNetwork as FK
 
         if not zones:
             msg = "Please upload zones first"
             messages.error(request, msg)
-            return redirect('network2_details', pk)
+            return redirect('network_details', pk)
         if not nodes:
             msg = "Please upload nodes first"
             messages.error(request, msg)
-            return redirect('network2_details', pk)
-
-        node_instance_dict = {node.node_id: node for node in nodes}
-        zone_instance_dict = {zone.zone_id: zone for zone in zones}
+            return redirect('network_details', pk)
         
         list_zone_node_relation = []
         form = ZoneNodeRelationFileForm(request.POST, request.FILES)
@@ -88,7 +88,12 @@ def upload_zone_node_relation(request, pk):
             file = request.FILES['my_file']
             if file.name.endswith('.csv'):
                 data = file.read().decode('utf-8').splitlines()
-                data = csv.DictReader(data, delimiter=',')
+                data = csv.DictReader(data)
+
+                node_instance_dict = {node.node_id: node for node in nodes}
+                zone_instance_dict = {zone.zone_id: zone for zone in zones}
+        
+                compteur = 0
                 for row in data:
                     try:
                         node = node_instance_dict[int(row['node'])]
@@ -101,16 +106,43 @@ def upload_zone_node_relation(request, pk):
                             zone=zone,
                             node=node)
                         list_zone_node_relation.append(zone_node_relation_instance)
-            try:
-                ZoneNodeRelation.objects.bulk_create(list_zone_node_relation)
-            except exeption as e:
-                messages.error(request, e)
-            else:
-                messages.success(request, "ZoneNodeRelation file successfully uploaded")
-                return redirect('network2_details', pk)
+
+            
+                if list_zone_node_relation:
+                    try:
+                        ZoneNodeRelation.objects.bulk_create(list_zone_node_relation)
+                    except exeption as e:
+                        messages.error(request, e)
+                        return redirect('network_details', pk)
+                    else:
+                        messages.success(request, "ZoneNodeRelation file successfully uploaded")
+                        return redirect('network_details', pk)
+                else:
+                    messages.error(request, "No data uploaded")
+                    return redirect('upload_zone_node_relation', pk)
 
     form = ZoneNodeRelationFileForm()
     context = {
         'form': form,
     }
     return render(request, 'network/zone_node_relation.html', context)
+
+
+def zone_node_relation_table(request, pk):
+    network = Network.objects.get(id=pk)
+    zone_node_relation = ZoneNodeRelation.objects.select_related().filter(network=network)
+    my_filter = ZoneNodeRelationFilter(request.GET, queryset=zone_node_relation)
+    table = ZoneNodeRelationTable(my_filter.qs)
+    #table.paginate(page=request.GET.get("page", 1), per_page=15)
+    RequestConfig(request).configure(table)
+
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+
+    context = {
+        "table": table,
+        "filter": my_filter,
+        "network": network,
+        "network_attribute": network_attribute
+    }
+    return render(request, 'table/table.html', context)

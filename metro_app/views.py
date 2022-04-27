@@ -258,13 +258,19 @@ def project_details(request, pk):
     total_zonesets = zonesets.count()
     od_matrix = project.odmatrix_set.all()
     total_od_matrix = od_matrix.count()
-    vehicles = Vehicle.objects.all()
-    preferences = Preferences.objects.all()
-    populations = Population.objects.all()
-    networks = Network.objects.all()
-    parametersets = ParameterSet.objects.all()
-    runs = Run.objects.all()
+    vehicles = Vehicle.objects.filter(project=project)
+    preferences = Preferences.objects.filter(project=project)
+    populations = Population.objects.filter(project=project)
+    networks = Network.objects.filter(project=project)
+    parametersets = ParameterSet.objects.filter(project=project)
+    runs = Run.objects.filter(project=project)
     tasks = project.backgroundtask_set.order_by('-start_date')[:5]
+
+    is_od_matrix_disabled = not zonesets
+    is_preferences_disabled = not vehicles
+    is_network_disabled = not populations or not roadnetwork
+    is_population_disabled = not preferences or not od_matrix
+    is_run_disabled = not populations or not networks or not parametersets
 
     context = {
         'project': project,
@@ -281,6 +287,13 @@ def project_details(request, pk):
         'networks': networks,
         'runs': runs,
         'tasks': tasks,
+        
+        # boolean fields
+        'is_od_matrix_disabled': is_od_matrix_disabled,
+        'is_preferences_disabled': is_preferences_disabled,
+        'is_network_disabled': is_network_disabled,
+        'is_population_disabled': is_population_disabled,
+        'is_run_disabled': is_run_disabled,
     }
 
     return render(request, 'project/workflow.html', context)
@@ -309,25 +322,6 @@ def visualization(request, pk):
     return render(request, 'index-visualization.html', context)
 
 
-# ........................................................................... #
-#                      VIEW OF CREATING A ROAD TYPE                           #
-# ............................................................................#
-
-
-def create_roadtype(request, pk):
-    """A roadtype depends on a project. It
-     must be created inside the roadnetwork"""
-
-    current_network = RoadNetwork.objects.get(id=pk)
-    form = RoadTypeForm(initial={'roadnetwork': current_network})
-    if request.method == 'POST':
-        road_type = RoadType(network=current_network)
-        form = RoadTypeForm(request.POST, instance=road_type)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-
-    return render(request, 'views/form.html', {'form': form})
 
 # ........................................................................... #
 #             VIEW OF RETURNIGNG EDGES GeoJSON FILE                           #
@@ -347,260 +341,9 @@ def edges_point_geojson(request, pk):
         # edges=json.dumps(edges)
         return HttpResponse(edges, content_type="application/json")
 
-
-def edges_table(request, pk):
-    """
-    This function is for displaying database Edges table in front end UI.
-    Users can sort, filter and paginate through pages
-    """
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    edges = Edge.objects.select_related().filter(network=roadnetwork)
-    filter = EdgeFilter(request.GET, queryset=edges)
-    table = EdgeTable(filter.qs)
-    RequestConfig(request).configure(table)  # For sorting table column
-    table.paginate(page=request.GET.get("page", 1), per_page=15)
-
-    current_path = request.get_full_path()
-    network_attribute = current_path.split("/")[4]
-
-    context = {
-        "table": table,
-        "filter": filter,
-        "roadnetwork": roadnetwork,
-        "network_attribute": network_attribute
-               }
-    return render(request, 'views/edges_table.html', context)
-
-
-def nodes_table(request, pk):
-    """
-    This function is for displaying database Node table in front end UI.
-    Users can sort, filter and paginate through pages
-    """
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    nodes = Node.objects.select_related().filter(network=roadnetwork)
-    filter = NodeFilter(request.GET, queryset=nodes)
-    table = NodeTable(filter.qs)
-    RequestConfig(request).configure(table)
-    # table.paginate(page=request.Get.get("page", 1), per_page=15)
-
-    current_path = request.get_full_path()
-    network_attribute = current_path.split("/")[4]
-
-    context = {
-        "table": table,
-        "filter": filter,
-        "roadnetwork": roadnetwork,
-        "network_attribute": network_attribute
-    }
-    return render(request, 'views/edges_table.html', context)
-
-
-def road_type_table(request, pk):
-    """
-    This function is for displaying database RoadType table in front end UI.
-    Users can sort, filter and paginate through pages
-    """
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    roadtype = RoadType.objects.select_related().filter(network=roadnetwork)
-    filter = RoadTypeFilter(request.GET, queryset=roadtype)
-    table = RoadTypeTable(filter.qs)
-    RequestConfig(request).configure(table)
-    # table.paginate(page=request.Get.get("page", 1), per_page=15)
-
-    current_path = request.get_full_path()
-    network_attribute = current_path.split("/")[4]
-
-    context = {
-        "table": table,
-        "filter": filter,
-        "roadnetwork": roadnetwork,
-        "network_attribute": network_attribute
-    }
-    return render(request, 'views/edges_table.html', context)
-
-
-def create_zoneset(request, pk):
-    """A zoneset depends on a project. It
-     must be created inside the project"""
-
-    current_project = Project.objects.get(id=pk)
-    if request.method == 'POST':
-        srid = int(request.POST.get('srid'))
-        try:
-            CRS.from_user_input(srid)
-        except CRSError:
-            messages.warning(request, 'Invalid Coordinates Reference System')
-            return redirect('create_network', current_project.pk)
-        else:
-            zoneset = ZoneSet(project=current_project)
-            form = ZoneSetForm(request.POST, instance=zoneset)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Zones successfully created")
-                return redirect('zoneset_details', zoneset.pk)
-
-    form = ZoneSetForm(initial={'project': current_project})
-    context = {
-        'project': current_project,
-        'form': form
-    }
-    return render(request, 'form.html', context)
-
-
-def zoneset_details(request, pk):
-
-    zoneset = ZoneSet.objects.get(id=pk)
-    context = {
-        'zoneset': zoneset,
-    }
-    return render(request, 'details.html', context)
-
-
-def update_zoneset(request, pk):
-    zoneset = ZoneSet.objects.get(id=pk)
-    form = ZoneSetForm(instance=zoneset)
-    if request.method == 'POST':
-        form = ZoneSetForm(request.POST, instance=zoneset)
-        srid = int(request.POST.get('srid'))
-        try:
-            CRS.from_user_input(srid)
-        except CRSError:
-            messages.warning(request, 'Invalid Coordinates Reference System')
-            return redirect('update_zoneset', zoneset.pk)
-        else:
-            if form.is_valid():
-                form.save()
-                return redirect('list_of_zonesets', zoneset.project.pk)
-
-    context = {
-        'form': form,
-        'parent_template': 'base.html',
-        }
-    return render(request, 'update.html', context)
-
-
-def delete_zoneset(request, pk):
-    zoneset_to_delete = ZoneSet.objects.get(id=pk)
-    if request.method == 'POST':
-        zoneset_to_delete.delete()
-        return redirect('list_of_zonesets', zoneset_to_delete.project.pk)
-
-    context = {
-        'zoneset_to_delete': zoneset_to_delete
-    }
-    return render(request, 'delete.html', context)
-
-
-def zones_table(request, pk):
-    """
-    This function is for displaying database Edges table in front end UI.
-    Users can sort, filter and paginate through pages
-    """
-    zoneset = ZoneSet.objects.get(id=pk)
-    zones = Zone.objects.select_related().filter(zone_set=zoneset)
-    filter = ZoneFilter(request.GET, queryset=zones)
-    table = ZoneTable(filter.qs)
-    RequestConfig(request).configure(table)  # For sorting table column
-    table.paginate(page=request.GET.get("page", 1), per_page=15)
-
-    current_path = request.get_full_path()
-    network_attribute = current_path.split("/")[4]
-
-    context = {
-        "table": table,
-        "filter": filter,
-        'zoneset': zoneset,
-        "network_attribute": network_attribute
-    }
-    return render(request, 'views/edges_table.html', context)
-
-
-def create_od_matrix(request, pk):
-    """A roadnetwork depends on a project. It
-     must be created inside the project"""
-    
-    current_project = Project.objects.get(id=pk)
-    form = ODMatrixForm(initial={'project': current_project})
-    if request.method == 'POST':
-        print(request)
-        od_matrix = ODMatrix(project=current_project)
-        # form = ODMatrixForm(request.POST, instance=od_marix)
-        form = ODMatrixForm(data=request.POST, instance=od_matrix)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "OD matrix cessfully created")
-            return redirect('od_matrix_details', od_matrix.pk)
-
-    context = {
-        'project': current_project,
-        'form': form}
-    return render(request, 'form.html', context)
-
-
-def od_matrix_details(request, pk):
-    od_matrix = ODMatrix.objects.get(id=pk)
-    context = {
-        'od_matrix': od_matrix,
-    }
-    return render(request, 'details.html', context)
-
-
-def update_od_matrix(request, pk):
-    od_matrix = ODMatrix.objects.get(id=pk)
-    form = ODMatrixForm(instance=od_matrix)
-    if request.method == 'POST':
-        form = ODMatrixForm(request.POST, instance=od_matrix)
-        if form.is_valid():
-            form.save()
-            return redirect('list_of_od_matrix', od_matrix.project.pk)
-
-    context = {
-        'form': form,
-        'parent_template': 'base.html',
-    }
-    return render(request, 'update.html', context)
-
-
-def delete_od_matrix(request, pk):
-    od_matrix_to_delete = ODMatrix.objects.get(id=pk)
-    if request.method == 'POST':
-        od_matrix_to_delete.delete()
-        return redirect('list_of_od_matrix', od_matrix_to_delete.project.pk)
-
-    context = {
-        'od_matrix_to_delete': od_matrix_to_delete
-    }
-    return render(request, 'delete.html', context)
-
-
-def od_pair_table(request, pk):
-    """
-    This function is for displaying database Edges table in front end UI.
-    Users can sort, filter and paginate through pages
-    """
-    od_matrix = ODMatrix.objects.get(id=pk)
-    od_pair = ODPair.objects.select_related().filter(matrix=od_matrix)
-    filter = ODPairFilter(request.GET, queryset=od_pair)
-    table = ODPairTable(filter.qs)
-    RequestConfig(request).configure(table)  # For sorting table column
-    table.paginate(page=request.GET.get("page", 1), per_page=15)
-
-    current_path = request.get_full_path()
-    network_attribute = current_path.split("/")[4]
-
-    context = {
-        "table": table,
-        "filter": filter,
-        'od_matrix': od_matrix,
-        "network_attribute": network_attribute
-    }
-    return render(request, 'views/edges_table.html', context)
-
-
 def fetch_task(request, task_id):
     task = get_object_or_404(BackgroundTask, pk=task_id)
-    template = loader.get_template('views/task.html')
+    template = loader.get_template('background_task/task.html')
     html = template.render({"task": task}, request)
     data = {
         "finished": task.status != task.INPROGRESS,

@@ -45,7 +45,7 @@ def get_network_directory(roadnetwork):
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 # ............................................................................#
 
-
+"""
 def upload_road_type(request, pk):
     template = "networks/roadtype.html"
     roadnetwork = RoadNetwork.objects.get(id=pk)
@@ -118,7 +118,7 @@ def upload_road_type(request, pk):
     else:
         form = RoadTypeFileForm()
         return render(request, template, {'form': form})
-
+"""
 
 def upload_node_func(roadnetwork, filepath):
     dtype = {'id': int, 'x': float, 'y': float}
@@ -670,7 +670,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
         # edges_gdf.to_file(
         #    os.path.join(directory, "edges.geojson"), driver='GeoJSON')
 
-
+"""
 def upload_zone(request, pk):
     template = "networks/zone.html"
     list_zone_instance = []
@@ -756,7 +756,7 @@ def upload_zone(request, pk):
     else:
         form = ZoneFileForm()
         return render(request, template, {'form': form})
-
+"""
 
 def read_od_pair_file(file):
     if file.name.endswith('.csv'):
@@ -770,6 +770,7 @@ def read_od_pair_file(file):
 
     return file
 
+"""
 def upoload_od_pair(request, pk):
     template = "networks/od_pair.html"
     od_matrix = ODMatrix.objects.get(id=pk)
@@ -823,3 +824,4 @@ def upoload_od_pair(request, pk):
     else:
         form = ODPairFileForm()
         return render(request, template, {'form': form})
+"""
