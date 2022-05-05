@@ -46,7 +46,7 @@ from metro_app.agent.views import (add_agent, upload_agent, agent_table,
 from metro_app.parameters.views import (set_parameters, upload_parameters)
 from metro_app.run.views import (create_run, update_run, run_details,
                                  delete_run, generate_run_input,
-                                 list_of_runs,
+                                 list_of_runs, start_run
                                  )
 from .networks import (upload_edge, upload_node)
 from .metrosim import upload_edges_results
@@ -92,7 +92,7 @@ urlpatterns = [
      path('roadnetwork/<str:pk>/upload_road_type/', upload_road_type, name='upload_road_type'
           ),
      path('roadnetwork/<str:pk>/edges.geojson/', edges_point_geojson),
-     path('metrosim/network/<str:pk>/upload_edges_results/',
+     path('metrosim/roadnetwork/<str:pk>/upload_edges_results/',
           upload_edges_results),
      path('table/road_network/<str:pk>/edges/', edges_table, name='edges'),
      path('table/road_network/<str:pk>/nodes/', nodes_table, name='nodes'),
@@ -180,6 +180,7 @@ urlpatterns = [
           name='generate_agent'),
      path('run/<str:pk>/generate_run_input/', generate_run_input,
           name='generate_run_input'),
+     path('run/<str:pk>/start_run/', start_run, name='start_run'),
      path('table/population/<str:pk>/agent/', agent_table,
           name='agent_table'),
      path('table/network/<str:pk>/zone_node_relation/', zone_node_relation_table,

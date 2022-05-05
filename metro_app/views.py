@@ -155,7 +155,7 @@ def delete_nodes(request, pk):
     if request.method == 'POST':
         nodes.delete()
         messages.success(request, 'Nodes types deleted!')
-        return redirect('network_details', pk)
+        return redirect('road_network_details', pk)
 
     context = {
         'roadnetwork': roadnetwork,
@@ -170,7 +170,7 @@ def delete_roads_types(request, pk):
     if request.method == 'POST':
         roads_types.delete()
         messages.success(request, 'Roads types deleted!')
-        return redirect('network_details', pk)
+        return redirect('road_network_details', pk)
 
     context = {
         'roadnetwork': roadnetwork,
@@ -268,7 +268,7 @@ def project_details(request, pk):
 
     is_od_matrix_disabled = not zonesets
     is_preferences_disabled = not vehicles
-    is_network_disabled = not populations or not roadnetwork
+    is_network_disabled = not populations or not roadnetworks
     is_population_disabled = not preferences or not od_matrix
     is_run_disabled = not populations or not networks or not parametersets
 
@@ -307,7 +307,7 @@ def visualization(request, pk):
 
     if total_edges == 0 or total_nodes == 0:
         messages.warning(request, "Edges are not uploaded !")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
 
     directory = get_network_directory(roadnetwork)
     data_full_path = os.path.join(directory, "edges.geojson")

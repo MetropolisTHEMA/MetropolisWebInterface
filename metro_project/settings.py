@@ -61,6 +61,7 @@ INSTALLED_APPS = [
                     # Access-Control-Allow-Origin' header
                     # For javascript api
     'django_q',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [

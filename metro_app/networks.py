@@ -237,13 +237,13 @@ def upload_node(request, pk):
     roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
     if Node.objects.filter(network_id=pk).exists():
         messages.warning(request, "The road network already contains nodes.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if BackgroundTask.objects.filter(
             road_network=roadnetwork, status=BackgroundTask.INPROGRESS
     ).exists():
         messages.warning(
             request, "A task is in progress for this road network.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
 
     if request.method == 'POST':
         # We need to include the files when creating the form
@@ -269,7 +269,7 @@ def upload_node(request, pk):
         else:
             messages.error(
                 request, "Invalid request. Did you upload the file correctly?")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         form = NodeForm()
         return render(request, template, {'form': form})
@@ -430,17 +430,17 @@ def upload_edge(request, pk):
     roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
     if Edge.objects.filter(network_id=pk).exists():
         messages.warning(request, "The road network already contains edges.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if (not Node.objects.filter(network_id=pk).exists()
             or not RoadType.objects.filter(network_id=pk).exists()):
         messages.warning(request, "You must import nodes and roadtypes first.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if BackgroundTask.objects.filter(
             road_network=roadnetwork, status=BackgroundTask.INPROGRESS
     ).exists():
         messages.warning(
             request, "A task is in progress for this road network.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
@@ -463,7 +463,7 @@ def upload_edge(request, pk):
         else:
             messages.error(
                 request, "Invalid request. Did you upload the file correctly?")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         form = EdgeForm()
         return render(request, template, {'form': form})
@@ -556,7 +556,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
     edges_df = pd.DataFrame.from_records(values, columns=columns)
 
     if edges.count() == 0 or nodes.count() == 0:
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         # Retrieve all Road type of a network as DataFrame
         rtypes = RoadType.objects.filter(network=roadnetwork)

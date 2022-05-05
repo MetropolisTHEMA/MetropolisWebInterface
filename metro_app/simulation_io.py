@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 import numpy as np
+import os
 
 from metro_app.models import *
 
@@ -14,6 +15,14 @@ Supported distributions are:
 - 2: normal
 - 3: log-normal
 """
+
+
+def get_input_directory(run):
+    return os.path.join(
+        settings.BASE_DIR, 'input_dir', str(run.id)
+    )
+
+
 def generate_values(rng, distr, mean, std, size):
     if isinstance(mean, timedelta):
         mean = mean.total_seconds()
@@ -276,7 +285,17 @@ def to_input_json(run):
         'agents': agents,
         'parameters': parameters,
     }
-    return json.dumps(simulation)
+
+    # Create and save agents in json file
+    directory = get_input_directory(run)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    
+    with open(os.path.join(directory, "simulation.json"), 'w') as file:
+        # Saving the file
+        json.dump(simulation, file)
+
+    # return json.dumps(simulation)
 
 
 """

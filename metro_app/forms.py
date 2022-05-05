@@ -103,7 +103,26 @@ class PreferencesForm(forms.ModelForm):
     class Meta:
         model = Preferences
         fields = '__all__'
-        exclude = ('project',)
+        exclude = ('project', 'locked')
+    
+    def __init__(self, *args, **kwargs):
+        # first call parent's constructor
+        super(PreferencesForm, self).__init__(*args, **kwargs)
+        # there's a `fields` property now
+        self.fields['mode_choice_mu_distr'].required = False
+        self.fields['mode_choice_mu_mean'].required = False
+        self.fields['mode_choice_mu_std'].required = False
+        self.fields['t_star_std'].required = False
+        self.fields['delta_std'].required = False
+        self.fields['beta_std'].required = False
+        self.fields['gamma_std'].required = False
+        self.fields['car_vot_std'].required = False
+        self.fields['dep_time_car_mu_distr'].required = False
+        self.fields['dep_time_car_mu_mean'].required = False
+        self.fields['dep_time_car_mu_std'].required = False
+        self.fields['dep_time_car_constant_distr'].required = False
+        self.fields['dep_time_car_constant_mean'].required = False
+        self.fields['dep_time_car_constant_std'].required = False
 
 
 class PreferencesFileForm(forms.Form):

@@ -25,7 +25,7 @@ def set_parameters(request, pk):
 
 def upload_parameters(request, pk):
     current_project = Project.objects.get(id=pk)
-    parameters = ParameterSet.objects.all()
+    parameters = ParameterSet.objects.filter(project=current_project)
     if parameters.count() > 0:
         messages.warning(request, "Fail !!! ParameterSet table already contains data")
         return redirect('project_details', pk)

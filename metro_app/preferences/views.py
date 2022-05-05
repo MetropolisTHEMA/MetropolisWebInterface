@@ -24,38 +24,99 @@ def add_preferences(request, pk):
     if request.method == 'POST':
         preference = Preferences(project=current_project)
         form = PreferencesForm(request.POST, instance=preference)
+        print(form)
         if form.is_valid():
             form.save()
             return redirect('project_details', current_project.pk)
-
+   
     form = PreferencesForm(initial={'project': current_project})
 
+    current_path = request.get_full_path()
     context = {
         'project': current_project,
         'form': form,
+        'url_path': current_path
     }
     return render(request, 'form.html', context)
 
-
 def read_field_func(field, std=0):
-    field_distribution = list(field.keys())[0]
-    if field_distribution == 'Constant':
+
+    try:
+        isinstance(field.keys, dict)
+    except AttributeError:
         field_distr = 0
-        field_mean = field['Constant']
+        field_mean = 0
         field_std = std
-    elif  field_distribution == 'Uniform':
-        field_distr = 1
-        field_mean = field['Uniform']['mean']
-        field_std = field['Uniform']['std']
-    elif field_distribution == 'Normal':
-        field_distr = 2
-        field_mean = field['Normal']['mean']
-        field_std = field['Normal']['std']
-    elif field_distribution == 'Log-normal':
-        field_distr = 3
-        field_mean = field['Uniform']['mean']
-        field_std = field['Uniform']['std']
-    return field_distr, field_mean, field_std, field_distribution
+        #raise Exception('error of pring')
+        return field_distr, field_mean, field_std
+    else:
+
+        field_distribution = list(field.keys())[0]
+        if field_distribution == 'Constant':
+            field_distr = 0
+            field_mean = field['Constant']
+            field_std = std
+        elif  field_distribution == 'Uniform':
+            field_distr = 1
+            field_mean = field['Uniform']['mean']
+            field_std = field['Uniform']['std']
+        elif field_distribution == 'Normal':
+            field_distr = 2
+            field_mean = field['Normal']['mean']
+            field_std = field['Normal']['std']
+        elif field_distribution == 'Log-normal':
+            field_distr = 3
+            field_mean = field['Uniform']['mean']
+            field_std = field['Uniform']['std']
+        return field_distr, field_mean, field_std, field_distribution
+
+def read_field_func2(field, std=0):
+
+    try:
+        list(field.keys())[0]
+    except AttributeError:
+        field_model = 1
+        field_distr = 0
+        field_mean = 0
+        field_std = std
+        return field_distr, field_mean, field_std, field_model
+    else:
+        field_distribution = list(field.keys())[0]
+        if field_distribution == 'Logit':
+            field_model = 1
+            field_distr = 1
+            field_mean = field["Logit"]['mu']['Normal']['mean']
+            field_std = field["Logit"]['mu']['Normal']['std']
+
+        elif field_distribution == 'Constant':
+            distribution = field['Constant']
+            field_model = 1
+            try:
+                list(distribution.keys())[0]
+            except AttributeError:
+                field_distr = 0
+                field_mean = 0
+                field_std = 0
+                return field_distr, field_mean, field_std,field_model
+            else:
+                if list(distribution.keys())[0] == 'Constant':
+                    field_distr = 0
+                    field_mean = 0
+                    field_std = 0
+                elif list(distribution.keys())[0] == 'Uniform':
+                    field_distr = 1 
+                    field_mean = distribution['Uniform']['mean']
+                    field_std = distribution['Uniform']['std']
+                elif list(distribution.keys())[0] == 'Normal':
+                    field_distr = 2
+                    field_mean = distribution['Normal']['mean']
+                    field_std = distribution['Normal']['std']
+                elif list(distribution.keys())[0] == 'Log-normal':
+                    field_distr = 3
+                    field_mean = distribution['Log-normal']['mean']
+                    field_std = distribution['Log-normal']['std']     
+
+    return field_distr, field_mean, field_std, field_model
 
 
 def upload_preferences(request, pk):
@@ -68,8 +129,8 @@ def upload_preferences(request, pk):
         return redirect('project_details', pk)
 
     project = Project.objects.get(id=pk)
-    preferences = Preferences.objects.all()
-    if preferences.count() > 0:
+    preferences = Preferences.objects.filter(project=project)
+    if not preferences:
         messages.warning(request, "Fail! Preferences already contains data.")
         return redirect('upload_preferences', pk)
 
@@ -107,32 +168,9 @@ def upload_preferences(request, pk):
                                 mode_choice_mu_mean = mode_choice['Logit']['mu']['Normal']['mean']
                                 mode_choice_mu_std = mode_choice['Logit']['mu']['Normal']['std']
 
-                        departure_time_model = feature['departure_time_model']
-                        departure_time_model_distribution = list(departure_time_model.keys())[0]
-                        if departure_time_model_distribution == 'Logit':
-                            dep_time_car_constant_distr = 1
-                            dep_time_car_constant_mean = departure_time_model["Logit"]['mu']['Normal']['mean']
-                            dep_time_car_constant_std = departure_time_model["Logit"]['mu']['Normal']['std']
-                        elif departure_time_model_distribution == 'Constant':
-                            distribution = departure_time_model["Constant"]
-                            dep_time_car_choice_model = 1
-                            if list(distribution.keys())[0] == 'Constant':
-                                dep_time_car_constant_distr = 0
-                                dep_time_car_constant_mean = 0
-                                dep_time_car_constant_std = 0
-                            elif list(distribution.keys())[0] == 'Uniform':
-                                dep_time_car_constant_distr = 1
-                                dep_time_car_constant_mean = distribution['Uniform']['mean']
-                                dep_time_car_constant_std = distribution['Uniform']['std']
-                            elif distribution == 'Normal':
-                                dep_time_car_constant_distr = 2
-                                dep_time_car_constant_mean = distribution['Normal']['mean']
-                                dep_time_car_constant_std = distribution['Normal']['std']
-                            elif distribution == 'Log-normal':
-                                dep_time_car_constant_distr = 3
-                                dep_time_car_constant_mean = distribution['Log-normal']['mean']
-                                dep_time_car_constant_std = distribution['Log-normal']['std']
-                            
+                        # departure_time_model_distribution
+                        dep_time_model = feature['departure_time_model']
+                        dep_time_model = read_field_func2(dep_time_model)
                             
                         dep_time_car_mu_distr = feature.get('dep_time_car_mu_dist', 1)
                         dep_time_car_mu_mean = feature.get('dep_time_car_mu_mean', None)
@@ -140,13 +178,11 @@ def upload_preferences(request, pk):
 
                         t_star = feature['t_star']
                         t_star = read_field_func(t_star, 0)
-
                         beta = feature['beta']
                         beta = read_field_func(beta, 0)
-
                         gamma = feature['gamma']
                         gamma = read_field_func(gamma)
-                       
+                    
                         delta = feature['delta']
                         delta = read_field_func(delta,0)
 
@@ -170,13 +206,13 @@ def upload_preferences(request, pk):
                             gamma_std=gamma[2],
                             desired_arrival=feature['desired_arrival'],
                             vehicle=vehicle,
-                            dep_time_car_choice_model=dep_time_car_choice_model,
+                            dep_time_car_choice_model=1,  # dep_time_model[3],
                             dep_time_car_mu_distr=dep_time_car_mu_distr,
                             dep_time_car_mu_mean=dep_time_car_mu_mean,
                             dep_time_car_mu_std=dep_time_car_mu_std,
-                            dep_time_car_constant_distr=dep_time_car_constant_distr,
-                            dep_time_car_constant_mean=timedelta(seconds=dep_time_car_constant_mean),
-                            dep_time_car_constant_std=timedelta(seconds=dep_time_car_constant_std),
+                            dep_time_car_constant_distr=dep_time_model[0],
+                            dep_time_car_constant_mean=timedelta(seconds=dep_time_model[1]),
+                            dep_time_car_constant_std=timedelta(seconds=dep_time_model[2]),
                             car_vot_distr=3,
                             car_vot_mean=feature['car_vot']['Log-normal']['mean'],
                             car_vot_std=feature['car_vot']['Log-normal']['std'],
