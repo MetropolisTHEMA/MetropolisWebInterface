@@ -1,8 +1,7 @@
 from django.core.files.storage import default_storage
-
 from datetime import timedelta
-
 from .models import BackgroundTask
+
 
 def str_hook(task):
     """Hook for async task that return a string."""

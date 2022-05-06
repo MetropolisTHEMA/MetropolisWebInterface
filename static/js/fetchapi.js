@@ -12,7 +12,8 @@ fetch(`${window.location.protocol}//${window.location.host}/api/network/${networ
 }).then((data) => edges_data_api=data)*/
 
 var edges_results;
-fetch(`http://127.0.0.1:8000/api/run/1/edges_results/`)
+/*fetch(`http://127.0.0.1:8000/api/run/1/edges_results/`)*/
+fetch(`${window.location.protocol}//${window.location.host}/api/run/1/edges_results/`)
   .then((response) => {
     return response.json()
 }).then((edges) => edges_results=edges)

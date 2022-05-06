@@ -66,6 +66,12 @@ class RunAdmin(admin.OSMGeoAdmin):
 class EdgeResultsAdmin(admin.OSMGeoAdmin):
     pass
 
+
+@admin.register(Network)
+class Network(admin.OSMGeoAdmin):
+    pass
+
+
 @admin.register(BackgroundTask)
-class EdgeResultsAdmin(admin.OSMGeoAdmin):
+class BackgroundTaskAdmin(admin.OSMGeoAdmin):
     pass

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+
+
+	{% if 'roadnetwork' in request.get_full_path %}
+		<h4> Creating a  Road network </h4>
+
+	{% elif 'zoneset' in request.get_full_path %}
+		<h4> Creating a Zone set </h4>
+
+	{% elif 'odmatrix' in request.get_full_path %}
+		<h4> Creating an OD matrix </h4>
+
+	{% elif 'roadtype' in request.get_full_path %}
+		<h4> Creating a roadtype </h4>
+
+	{% elif 'vehicle' in request.get_full_path %}
+		<h4> Adding vehicle </h4>
+
+	{% elif 'preferences' in url_path %}
+		<h4> Adding preferences </h4>
+
+	{% elif 'psegment' in request.get_full_path %}
+		<h4>Creating a population segment</h4>
+	
+	{% elif 'population' in request.get_full_path %}
+	<h4> Creating a population </h4>
+
+	{% elif 'parameterset' in request.get_full_path %}
+	<h4> Setting Parameters </h4>
+
+	{% elif 'network' in request.get_full_path %}
+	<h4> Creating a  Network </h4>
+
+
+	{% elif 'project' in request.get_full_path %}
+		<h4> Creating a project </h4>
+
+	{% endif %}
+	<hr>
+
+	{% if 'preferences' in url_path %}
+	
+			{% include 'preferences/set_preferences.html' %}
+
+	{% else %}
+		<form class="" action="" method="post"  enctype="multipart/form-data">{% csrf_token %}
+			<div class="mb-3">
+				{{form|crispy}}
+				<button type="submit" class="btn btn-success" name="button">Create</button>
+				<button type="submit" class="btn btn-secondary" name="button">
+					{% if project %}
+						<a href="{% url 'project_details' project.pk %}">Back</a>
+					{% elif roadnetwork %}
+						<a href="{% url 'road_network_details' roadnetwork.pk %}">Back</a>
+
+						{% elif population %}
+						<a href="{% url 'population_details' population.pk %}">Back</a>
+					{% else %}
+					<a href="{% url 'home' %}">Back</a>
+					{% endif %}
+				</button>
+				
+			</div>
+		</form>
+	{% endif %}
+
+	{% for message in messages %}
+		<li>{{message}}</li>
+	{% endfor %}
+
+{% endblock %}

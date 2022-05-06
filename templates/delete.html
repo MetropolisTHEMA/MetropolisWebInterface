@@ -6,59 +6,125 @@
 	<div class="col-md">
 		<div class="card card-body">
 			{% if project_to_delete %}
-				<p>You're about to delete {{project_to_delete}}. Are you sure ? </p>
-	      <form class="" action="{% url 'delete_project' project_to_delete.pk %}" method="post"
-					enctype="multipart/form-data"> {% csrf_token %}
-	        <a class="btn btn-info" href="{% url 'home' %}">Cancel</a>
-	        <input class="btn btn-danger" type="submit" name="" value="Confirm">
-	      </form>
+			<p>You're about to delete {{project_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_project' project_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'home' %}">Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
 
-			{% elif network_to_delete %}
-	      <p>You're about to delete {{network_to_delete}}. Are you sure ? </p>
-	      <form class="" action="{% url 'delete_network' network_to_delete.pk %}"
-					method="post" enctype="multipart/form-data"> {% csrf_token %}
-	        <a class="btn btn-info" href="{% url 'project_details' network_to_delete.project_id %}">Cancel</a>
-	        <input class="btn btn-danger" type="submit" name="" value="Confirm">
-	      </form>
+			{% elif road_network_to_delete %}
+			<p>You're about to delete {{road_network_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_road_network' road_network_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_road_networks' road_network_to_delete.project_id %}">Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
 			{% elif zoneset_to_delete %}
-				<p>You're about to delete {{zoneset_to_delete}}. Are you sure ? </p>
-				<form class="" action="{% url 'delete_zoneset' zoneset_to_delete.pk %}"
-					method="post" enctype="multipart/form-data"> {% csrf_token %}
-					<a class="btn btn-info"
-					 href="{% url 'project_details' zoneset_to_delete.project_id %}">
-					 Cancel</a>
-					<input class="btn btn-danger" type="submit" name="" value="Confirm">
-				</form>
+			<p>You're about to delete {{zoneset_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_zoneset' zoneset_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_zonesets' zoneset_to_delete.project_id %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
 
 			{% elif od_matrix_to_delete %}
-				<p>You're about to delete {{od_matrix_to_delete}}. Are you sure ? </p>
-	      <form class="" action="{% url 'delete_od_matrix' od_matrix_to_delete.pk %}" method="post"
-					enctype="multipart/form-data"> {% csrf_token %}
-	        <a class="btn btn-info" href="{% url 'project_details' od_matrix_to_delete.project.pk  %}">
-						Cancel</a>
-	        <input class="btn btn-danger" type="submit" name="" value="Confirm">
-	      </form>
+			<p>You're about to delete {{od_matrix_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_od_matrix' od_matrix_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_od_matrix' od_matrix_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
 
-				{% elif nodes_to_delete %}
-					<p>You're about to delete nodes. Are you sure ? </p>
-		      <form class="" action="{% url 'delete_nodes' roadnetwork.pk %}" method="post"
-						enctype="multipart/form-data"> {% csrf_token %}
-		        <a class="btn btn-info" href="{% url 'network_details' roadnetwork.pk  %}">
-							Cancel</a>
-		        <input class="btn btn-danger" type="submit" name="" value="Confirm">
-		      </form>
+			{% elif nodes_to_delete %}
+			<p>You're about to delete nodes. Are you sure ? </p>
+			<form class="" action="{% url 'delete_nodes' roadnetwork.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'network_details' roadnetwork.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
 
-					{% elif roads_types_to_delete %}
-						<p>You're about to delete roads types. Are you sure ? </p>
-			      <form class="" action="{% url 'delete_roads_types' roadnetwork.pk %}" method="post"
-							enctype="multipart/form-data"> {% csrf_token %}
-			        <a class="btn btn-info" href="{% url 'network_details' pk=17  %}">
-								Cancel</a>
-			        <input class="btn btn-danger" type="submit" name="" value="Confirm">
-			      </form>
+			{% elif zones_to_delete %}
+			<p>You're about to delete Zones. Are you sure ? </p>
+			<form class="" action="{% url 'delete_zones' zoneset.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'zoneset_details' zoneset.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
+
+			{% elif roads_types_to_delete %}
+			<p>You're about to delete roads types. Are you sure ? </p>
+			<form class="" action="{% url 'delete_roads_types' roadnetwork.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'network_details' roadnetwork.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
+
+			{% elif vehicle_to_delete %}
+			<p>You're about to delete {{vehicle_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_vehicle' vehicle_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'project_details' pk=3  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
+
+			{% elif vehicle_set_to_delete %}
+			<p>You're about to delete {{vehicle_set_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_vehicle_set' vehicle_set_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'project_details' vehicle_set_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif preference_to_delete %}
+			<p>You're about to delete {{preference_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_preferences' preference_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_preferences' preference_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif population_to_delete %}
+			<p>You're about to delete {{population_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_population' population_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_populations' population_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif population_segment_to_delete %}
+			<p>You're about to delete {{population_segment_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_population_segment' population_segment_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'project_details' population_segment_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif run_to_delete %}
+			<p>You're about to delete {{run_to_delete}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_run' run_to_delete.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'list_of_runs' run_to_delete.project.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif agents_to_delete %}
+			<p>You're about to delete angent of {{population.name}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_agents' population.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'population_details' population.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
+			{% elif od_pair_to_delete %}
+			<p>You're about to delete od_pair of {{od_matrix.name}}. Are you sure ? </p>
+			<form class="" action="{% url 'delete_od_pair' od_matrix.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'od_matrix_details' od_matrix.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="#" value="Confirm">
+			</form>
+
 
 			{% endif %}
-    </div>
- </div>
+		</div>
+	</div>
 </div>
 {% endblock %}

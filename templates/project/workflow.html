@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Project {% endblock title %}
+
+{% block content %}
+
+
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<div class="tree">
+	<table class="table">
+		
+		<tbody>
+			<tr>
+				<td class="#">Vehicle
+					<ul>
+						<li class="nav-item"><a class="btn btn-outline-info btn-sm mt-2"
+							href="{% url 'add_vehicle' project.pk %}">Add Vehicles</a></li>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'upload_vehicle' project.pk %}">Upload Vehicles</a></li>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'vehicle_table' project.pk %}">View Vehicles</a></li>
+					</ul>
+				</td>
+				<td class="#" colspan="2">Zone Set
+					<ul>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+						  href="{% url 'create_zoneset' project.pk %}">Create Zone Set</a>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_zonesets' project.pk %}">View Zones Sets</a>
+					  </ul>
+				</td>
+				<td class="#">Road Network
+					<ul>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'create_road_network' project.pk %}">
+							Create Road Net.</a>
+						</li>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_road_networks' project.pk %}">
+						  View Road Net.
+						</a></li>
+						</li>
+					</ul>
+				</td>
+=
+			</tr>
+			<tr>
+				<td class="{% if not vehicles %}table-secondary{% endif %}">Preferences
+					<ul>
+						<li><a class="btn {% if not vehicles %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+						   href="{% url 'add_preferences' project.pk %}">Set Preferences</a></li>
+					   <li><a class="btn {% if not vehicles %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'upload_preferences' project.pk %}">Upload Preferences</a></li>
+				   </ul>
+				</td>
+				<td class="{% if is_od_matrix_disabled %}table-secondary{% endif %}">OD Matrix
+					<ul>
+						<li><a class="btn {% if is_od_matrix_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+						  href="{% url 'create_od_matrix' project.pk %}">
+							  Create OD Matrix</a></li>
+						<li><a class="btn {% if is_od_matrix_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_od_matrix' project.pk %}">View OD Matrix</a></li>
+						</ul>
+				</td>
+				<td> --</td>
+				<td colspan="2">--</td>
+				<td rowspan="2">Parameter Set
+					<ul>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+						  href="{% url 'set_parameters' project.pk %}">Set Parameters</a></li>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'upload_parameters' project.pk %}">Upload Parameters</a></li>
+					  </ul>
+				</td>
+			</tr>
+			<tr>
+				<td class="{% if is_population_disabled %}table-secondary{% endif %}" colspan="2">Population
+					<ul>
+						<li><a class="btn {% if is_population_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+						  href="{% url 'add_population' project.pk %}">
+							Create Population</a></li>
+						<li><a class="btn {% if is_population_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_populations' project.pk %}">View Populations</a></li>
+					</ul>
+				</td>
+				<td class="{% if is_network_disabled %}table-secondary{% endif %}" colspan="3">Network
+					<ul>
+						<li><a class="btn {% if is_network_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+						  href="{% url 'create_network' project.pk %}">Create Network</a></li>
+						<li><a class="btn {% if is_network_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_networks' project.pk %}">View Networks</a></li>
+					  </ul>
+				</td>
+			</tr>
+			<tr>
+				<td class="{% if is_run_disabled %}table-secondary{% endif %}" colspan="6">Run
+					<ul>
+						<li><a class="btn {% if is_run_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'create_run' project.pk %}">Create run</a></li>
+						<li><a class="btn {% if is_run_disabled %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_runs' project.pk %}">View Runs</a></li>
+					</ul>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<hr>
+
+	<div class="comments">
+		<p>
+			Please you should respect the project workflow order <br>
+			Please you should respect the project workflow order <br>
+			Please you should respect the project workflow order <br>
+			Please you should respect the project workflow order <br>
+		</p>
+	</div>
+</div>
+
+
+
+{% endblock %}

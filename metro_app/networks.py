@@ -45,7 +45,7 @@ def get_network_directory(roadnetwork):
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 # ............................................................................#
 
-
+"""
 def upload_road_type(request, pk):
     template = "networks/roadtype.html"
     roadnetwork = RoadNetwork.objects.get(id=pk)
@@ -118,7 +118,7 @@ def upload_road_type(request, pk):
     else:
         form = RoadTypeFileForm()
         return render(request, template, {'form': form})
-
+"""
 
 def upload_node_func(roadnetwork, filepath):
     dtype = {'id': int, 'x': float, 'y': float}
@@ -237,13 +237,13 @@ def upload_node(request, pk):
     roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
     if Node.objects.filter(network_id=pk).exists():
         messages.warning(request, "The road network already contains nodes.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if BackgroundTask.objects.filter(
             road_network=roadnetwork, status=BackgroundTask.INPROGRESS
     ).exists():
         messages.warning(
             request, "A task is in progress for this road network.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
 
     if request.method == 'POST':
         # We need to include the files when creating the form
@@ -269,7 +269,7 @@ def upload_node(request, pk):
         else:
             messages.error(
                 request, "Invalid request. Did you upload the file correctly?")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         form = NodeForm()
         return render(request, template, {'form': form})
@@ -425,23 +425,22 @@ def upload_edge_func(roadnetwork, filepath):
     return message
 
 
-
 def upload_edge(request, pk):
     template = "networks/edge.html"
     roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
     if Edge.objects.filter(network_id=pk).exists():
         messages.warning(request, "The road network already contains edges.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if (not Node.objects.filter(network_id=pk).exists()
             or not RoadType.objects.filter(network_id=pk).exists()):
         messages.warning(request, "You must import nodes and roadtypes first.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if BackgroundTask.objects.filter(
             road_network=roadnetwork, status=BackgroundTask.INPROGRESS
     ).exists():
         messages.warning(
             request, "A task is in progress for this road network.")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     if request.method == 'POST':
         form = EdgeForm(request.POST, request.FILES)
         if form.is_valid():
@@ -464,7 +463,7 @@ def upload_edge(request, pk):
         else:
             messages.error(
                 request, "Invalid request. Did you upload the file correctly?")
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         form = EdgeForm()
         return render(request, template, {'form': form})
@@ -557,7 +556,7 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
     edges_df = pd.DataFrame.from_records(values, columns=columns)
 
     if edges.count() == 0 or nodes.count() == 0:
-        return redirect('network_details', roadnetwork.pk)
+        return redirect('road_network_details', roadnetwork.pk)
     else:
         # Retrieve all Road type of a network as DataFrame
         rtypes = RoadType.objects.filter(network=roadnetwork)
@@ -671,11 +670,15 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
         # edges_gdf.to_file(
         #    os.path.join(directory, "edges.geojson"), driver='GeoJSON')
 
-
+"""
 def upload_zone(request, pk):
     template = "networks/zone.html"
     list_zone_instance = []
     zoneset = ZoneSet.objects.get(id=pk)
+    zone = zoneset.zone_set.all()
+    if zone.exists():
+        messages.warning(request, "Zone already contains data")
+        return redirect('zoneset_details', pk)
     if request.method == 'POST':
         # File must be included when creating the form
         form = ZoneFileForm(request.POST, request.FILES)
@@ -717,6 +720,7 @@ def upload_zone(request, pk):
                     list_zone_instance.append(zone_instance)
 
                 Zone.objects.bulk_create(list_zone_instance)
+                messages.success(request, "Zones successfully uploaded")
                 return redirect('zoneset_details', zoneset.pk)
 
             elif datafile.name.endswith('.csv'):
@@ -752,74 +756,72 @@ def upload_zone(request, pk):
     else:
         form = ZoneFileForm()
         return render(request, template, {'form': form})
+"""
 
+def read_od_pair_file(file):
+    if file.name.endswith('.csv'):
+        file = file.read().decode('utf-8').splitlines()
+        file = csv.DictReader(file)
+    elif file.name.endswith('.tsv'):
+        file = file.read().decode('utf-8').splitlines()
+        file = csv.DictReader(file, delimiter='\t')
+    else:
+        return HttpResponse("Error: Uploaded file format not recongnized")
 
+    return file
+
+"""
 def upoload_od_pair(request, pk):
     template = "networks/od_pair.html"
     od_matrix = ODMatrix.objects.get(id=pk)
+    od_pair = od_matrix.odpair_set.all()
+    if od_pair.exists():
+        messages.warning(request, "ODPair already contains data")
+        return redirect('od_matrix_details', pk)
     zoneset = od_matrix.zone_set
     zones = Zone.objects.filter(zone_set=zoneset)
+    if not zones.exists():
+        msg = "Please upload Zone first before uploading OD pair !"
+        messages.warning(request, msg)
+        return redirect('od_matrix_details', pk)
+
     list_od_pair_instance = []
     compteur = 0
     zone_instance_dict = {zone.zone_id: zone for zone in zones}
     if request.method == 'POST':
         form = ODPairFileForm(request.POST, request.FILES)
         if form.is_valid():
-            datafile = request.FILES['my_file']
-            if datafile.name.endswith('.csv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile)
-                for row in datafile:
-                    try:
-                        origin = zone_instance_dict[int(row['origin'])]
-                        destination = zone_instance_dict[
-                            int(row['destination'])]
-                    except KeyError:
-                        compteur = compteur+1
-                    else:
-                        od_pair_instance = ODPair(
-                            origin=origin,
-                            destination=destination,
-                            size=row['size'],
-                            matrix=od_matrix,
-                        )
-                        list_od_pair_instance.append(od_pair_instance)
-                ODPair.objects.bulk_create(list_od_pair_instance)
-                if compteur > 0:
-                    message = "{} haven't been imported".format(compteur)
-                    messages.warning(request, message)
-                return redirect('od_matrix_details', od_matrix.pk)
+            my_file = request.FILES['my_file']
+            file = read_od_pair_file(my_file)
+            od_matrix_size=0
+            for row in file:
+                try:
+                    origin = zone_instance_dict[int(row['origin'])]
+                    destination = zone_instance_dict[int(row['destination'])]
+                except TypeError:
+                    messages.error(request, 'Uploaded file format not recongnized')
+                    return redirect('upoload_od_pair', pk)
+                except KeyError:
+                    compteur = compteur+1
+                else:
+                    od_matrix_size += int(row['size'])
+                    od_pair_instance = ODPair(
+                        origin=origin,
+                        destination=destination,
+                        size=row['size'],
+                        matrix=od_matrix,
+                    )
+                    list_od_pair_instance.append(od_pair_instance)
+            ODPair.objects.bulk_create(list_od_pair_instance)
+            od_matrix.size = od_matrix_size
+            od_matrix.save()
 
-            elif datafile.name.endswith('.tsv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile, delimiter='\t')
-                for row in datafile:
-                    try:
-                        origin = zone_instance_dict[int(row['origin'])]
-                        destination = zone_instance_dict[
-                            int(row['destination'])]
-                    except KeyError:
-                        compteur = compteur+1
-                    else:
-                        od_pair_instance = ODPair(
-                            origin=origin,
-                            destination=destination,
-                            size=row['size'],
-                            matrix=od_matrix,
-                        )
-                        list_od_pair_instance.append(od_pair_instance)
-                ODPair.objects.bulk_create(list_od_pair_instance)
-                message = "Your ODPair file has been successfully imported !"
-                messages.success(request, message)
-                print(compteur)
-                if compteur > 0:
-                    message = "{} haven't been imported".format(compteur)
-                    messages.warning(request, message)
-                return redirect('od_matrix_details', od_matrix.pk)
-            else:
-                messages.error(request, "Uploaded file format \
-                                 not recongnized")
-                return redirect('upoload_od_pair', od_matrix.pk)
+            # msg= "{} haven't been imported".format(compteur)
+            msg = "OD Pair successfully imported"
+            messages.success(request, msg)
+            return redirect('od_matrix_details', od_matrix.pk)
+            
     else:
         form = ODPairFileForm()
         return render(request, template, {'form': form})
+"""

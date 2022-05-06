@@ -1,0 +1,280 @@
+{% load widget_tweaks %}
+{% block content %}
+   
+<div class="container">
+    <form action="" method="post" id="id_form">{% csrf_token %} {{ form.id }}
+        <div class="row">
+        
+            <center>
+                <h4>General</h4>
+            </center>
+            <div class="col">    
+                <label for="id_name" class="mt-3">Name</label>
+                <div class="input-group">
+                    {% render_field form.name class="form-control" %}
+                </div>
+            </div>
+            <div class="col">
+                <label for="id_comment" class="mt-3">Comment</label>
+                <div class="input-group">
+                    {% render_field form.comment class="form-control" %}
+                </div>
+            </div>
+            <div class="col">
+                <label for="id_tags" class="mt-3">Tags</label>
+                <div class="input-group">
+                    {% render_field form.tags class="form-control" %}
+                </div>
+            </div>
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Modal choice</h5>
+            </center>
+            
+            <div class="col-3">
+                <label for="id_mode_choice_model" class="mt-3">Mode choice model</label>
+                <div class="input-group">
+                    {% render_field form.mode_choice_model class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-3">
+                <label for="id_mode_choice_mu_distr" class="mt-3">Mode choice mu distribution</label>
+                <div class="input-group">
+                    {% render_field form.mode_choice_mu_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-3">
+                <label for="id_mode_choice_mu_mean" class="mt-3">Mode choice mu mean</label>
+                <div class="input-group">
+                    {% render_field form.mode_choice_mu_mean class="form-control" %}
+                </div>
+            </div>
+            <div class="col-3">
+                <label for="id_mode_choice_mu_std" class="mt-3">Mode choice mu std</label>
+                <div class="input-group">
+                    {% render_field form.mode_choice_mu_std class="form-control" %}
+                </div>
+            </div>
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">T star (*)</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_t_star_distr" class="mt-3">T star distribution</label>
+                <div class="input-group">
+                    {% render_field form.t_star_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_t_star_mean" class="mt-3">T star mean</label>
+                <div class="input-group">
+                    {% render_field form.t_star_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_t_star_std" class="mt-3">T star std</label>
+                <div class="input-group">
+                    {% render_field form.t_star_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Delta</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_delta_distr" class="mt-3">Delta distribution</label>
+                <div class="input-group">
+                    {% render_field form.delta_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for=id_delta_mean" class="mt-3">Delta mean</label>
+                <div class="input-group">
+                    {% render_field form.delta_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_delta_std" class="mt-3">Delta std</label>
+                <div class="input-group">
+                    {% render_field form.delta_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Beta</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_beta_distr" class="mt-3">Beta distribution</label>
+                <div class="input-group">
+                    {% render_field form.beta_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for=id_beta_mean" class="mt-3">Beta mean</label>
+                <div class="input-group">
+                    {% render_field form.beta_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_beta_std" class="mt-3">Beta std</label>
+                <div class="input-group">
+                    {% render_field form.beta_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Gamma</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_gamma_distr" class="mt-3">Gamma distribution</label>
+                <div class="input-group">
+                    {% render_field form.gamma_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for=id_gamma_mean" class="mt-3">Gamma mean</label>
+                <div class="input-group">
+                    {% render_field form.gamma_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_gamma_std" class="mt-3">Gamma std</label>
+                <div class="input-group">
+                    {% render_field form.gamma_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Depature and arrival time choice</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_dep_time_car_choice_model" class="mt-3">Departure time car choice model</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_choice_model class="form-control" %}
+                </div>
+            </div>
+            
+            <div class="col-4">
+                <label for="id_vehicle" class="mt-3">Vehicle choice</label>
+                <div class="input-group">
+                    {% render_field form.vehicle class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col">
+                <label for="id_desired_arrival" class="mt-3">Desired arrival time</label>
+                <div class="input-group">
+                    {% render_field form.desired_arrival %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_dep_time_car_mu_distr" class="mt-3">Departure time car mu distribution</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_mu_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_dep_time_car_mu_mean" class="mt-3">Departure time car mu mean</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_mu_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_dep_time_car_mu_std" class="mt-3">Departure time car mu std</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_mu_std class="form-control" %}
+                </div>
+            </div>    
+    
+            <div class="col-4">
+                <label for="id_dep_time_car_constant_distr" class="mt-3">Departure time car constant distribution</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_constant_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_dep_time_car_constant_mean" class="mt-3">Departure time car constant mean</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_constant_mean class="form-control" %}
+                </div>
+            </div>
+            <div class="col-4">
+                <label for="id_dep_time_car_constant_std" class="mt-3">Departure time car constant std</label>
+                <div class="input-group">
+                    {% render_field form.dep_time_car_constant_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <div class="row">
+            <center>
+                <h5 class="mt-5">Car vot</h5>
+            </center>
+            
+            <div class="col-4">
+                <label for="id_car_vot_distr" class="mt-3">Car vot distribution</label>
+                <div class="input-group">
+                    {% render_field form.car_vot_distr class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for=id_car_vot_mean" class="mt-3">Car vot mean</label>
+                <div class="input-group">
+                    {% render_field form.car_vot_mean class="form-control" %}
+                </div>
+            </div>
+    
+            <div class="col-4">
+                <label for="id_car_vot_std" class="mt-3">Car vot std</label>
+                <div class="input-group">
+                    {% render_field form.car_vot_std class="form-control" %}
+                </div>
+            </div>    
+        </div>
+    
+        <center>
+            <button type="submit" class="btn btn-primary btn-lg mt-5">
+                Save
+            </button>
+            <a type="button" class="btn btn-secondary mt-5"
+             href="{% url 'project_details' project.pk %}">
+             <span class="far fa-caret-square-left"></span>Back</a>
+        </center>
+    </form>
+</div>
+<br>
+
+
+{% endblock %}

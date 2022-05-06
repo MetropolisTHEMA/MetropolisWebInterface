@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% include 'networks/upload.html' %}
+
+    <h3>Import Agent file </h3>
+    <hr>
+  <p>Generated agent ready to be used by MetroSim..</p>
+
+  <h4>Parameters set attributes</h4>
+  <ul>
+   <li>
+    """Set of technical parameters used for a run.
+
+    :project Project: Project the ParameterSet instance belongs to.
+    :period_start timedelta: Earliest possible departure time (expressed as
+     time since midnight).
+    :period_end timedelta: Latest possible departure time (expressed as time
+     since midnight).
+    :period_interval  timedelta: Interval at which link-specific results are
+     recorded.
+    :learn_process str: Type of learning process for the day-to-day model.
+     Possible values are exponential, linear, quadratic and genetic.
+    :learn_param float: Weight of the previous day in the learning process. The
+     exact meaning depends on the type of learning process.
+    :iter_check bool: If True, the run stops when the maximum number of
+     iterations is exceeded.
+    :iter_value int: Maximum number of iterations of the run.
+    :converg_check bool: If True, ther run stops when the convergence criteria
+     is smaller than the threshold value.
+    :converg_value float: Threshold of the convergence criteria.
+    :spillback_enable bool: If True, congestion can spread on upstream links
+     (i.e., queues are horizontal, not vertical).
+    :spillback_value float: Length of a base vehicle, in meters. Used to
+     compute the length of the trafic jams. Only relevant if spillback_enable
+     is True.
+    :locked bool: If True, the instance cannot be modified (default is False).
+    :name str: Name of the instance.
+    :comment str: Description of the instance.
+    :tags set of str: Tags describing the instance, used to search and filter
+     the instances.
+    :date_created datetime.date: Creation date of the ParameterSet.
+    """
+  </li>
+  </ul>
+{% endblock %}
