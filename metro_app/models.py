@@ -479,7 +479,10 @@ class Edge(models.Model):
         return self.outflow or self.road_type.default_outflow
 
     def get_outflow_in_m_per_s(self):
-        return self.get_outflow() / 3600.0
+        if (outflow := self.get_outflow()) is not None:
+            return outflow / 3600.0
+        else:
+            return None
 
     def get_param1(self):
         return self.param1 or self.road_type.default_param1
@@ -675,13 +678,13 @@ class Vehicle(models.Model):
     def __str__(self):
         return self.name or 'Vehicle {}'.format(self.vehicle_id)
 
-    def get_speed_function(self):
+    def get_speed_input(self):
         if self.speed_multiplicator:
-            {'Multiplicator': self.speed_multiplicator}
+            return {'Multiplicator': self.speed_multiplicator}
         elif self.speed_function is not None and len(self.speed_function) > 0:
-            {'Piecewise': self.speed_function}
+            return {'Piecewise': self.speed_function}
         else:
-            'Base'
+            return 'Base'
 
     class Meta:
         db_table = 'Vehicle'
@@ -1170,11 +1173,7 @@ class Agent(models.Model):
             }
 
     def get_car_utility_model(self):
-        return {
-            'Proportional': {
-                'alpha': self.car_vot / 3600.0,
-            }
-        }
+        return {'Proportional': self.car_vot / 3600.0}
 
     def get_mode_choice_model(self):
         if self.mode_choice_model == self.DETERMINISTIC_MODE:
@@ -1195,7 +1194,7 @@ class Agent(models.Model):
 
     def get_schedule_delay_utility(self):
         return {
-            'AlphaBetaGammaModel': {
+            'AlphaBetaGamma': {
                 't_star_low': max(
                     0, (self.t_star - self.delta / 2).total_seconds()),
                 't_star_high': (self.t_star + self.delta / 2).total_seconds(),

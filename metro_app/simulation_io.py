@@ -108,8 +108,8 @@ def generate_agents(population):
             size,
         )
         if preferences.dep_time_car_choice_model == preferences.LOGIT_DEP_TIME:
-            dep_time_u = rng.uniform(0, 1, size=size)
-            dep_time_mu = generate_values(
+            dep_time_car_u = rng.uniform(0, 1, size=size)
+            dep_time_car_mu = generate_values(
                 rng,
                 preferences.dep_time_car_mu_distr,
                 preferences.dep_time_car_mu_mean,
@@ -215,24 +215,21 @@ def to_input_json(run):
     vehicle_map = dict()
     for i, vehicle in enumerate(run.project.vehicle_set.all()):
         vehicle_map[vehicle.id] = i
-        speed_function = vehicle.get_speed_function()
+        speed_function = vehicle.get_speed_input()
         vehicles.append({
             'name': vehicle.name,
             'length': vehicle.length,
             'speed_function': speed_function,
         })
-    network['road_network'] = {
-        'graph': graph,
-        'vehicles': vehicles,
-    }
 
     agents = list()
     valid_vehicles = set()
-    for agent in run.population.agent_set.all():
+    for agent in run.population.agent_set.all().select_related(
+            'vehicle', 'origin_zone', 'destination_zone'):
         modes = list()
         # Add Car mode.
-        car_origin = node_map[agent.get_origin_node(run.network).id]
-        car_destination = node_map[agent.get_destination_node(run.network).id]
+        car_origin = node_map[agent.get_origin_node(run.network).node_id]
+        car_destination = node_map[agent.get_destination_node(run.network).node_id]
         vehicle_id = vehicle_map[agent.vehicle.id]
         try:
             car = {
@@ -262,6 +259,10 @@ def to_input_json(run):
         'length': 1.0,
         'speed_function': 'Base',
     })
+    network['road_network'] = {
+        'graph': graph,
+        'vehicles': vehicles,
+    }
 
     parameters = dict()
     parameters['period'] = run.parameter_set.get_period()

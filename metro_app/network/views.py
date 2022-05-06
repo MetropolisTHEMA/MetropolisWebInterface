@@ -64,7 +64,7 @@ def network_details(request, pk):
 
 def upload_zone_node_relation(request, pk):
     network = Network.objects.get(id=pk) # RaodNetWork as FK
-    zn = ZoneNodeRelation.objects.all()
+    zn = ZoneNodeRelation.objects.filter(network=network)
     if zn.exists():
         messages.warning(request, 'ZoneNodeRelation already contains data')
         return redirect('network_details', pk)
