@@ -29,7 +29,7 @@
     const network_id = parseInt(current_url.split('/')[5]) // Get network id
   
     let get_field_request = await fetch(
-      `http://127.0.0.1:8000/api/network/${network_id}/edges/${field}`);
+      `${window.location.protocol}//${window.location.host}/api/network/${network_id}/edges/${field}`);
     let get_field_dictionary = await get_field_request.json();
     return get_field_dictionary
   }
@@ -39,7 +39,7 @@
     //const network_id = parseInt(current_url.split('/')[5]) // Get network id
   
     let get_field_request = await fetch(
-      `http://127.0.0.1:8000/api/run/1/edges_results/${field}`);
+      `${window.location.protocol}//${window.location.host}/api/run/1/edges_results/${field}`);
   
     let get_field_dictionary = await get_field_request.json();
     return get_field_dictionary

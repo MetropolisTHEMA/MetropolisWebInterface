@@ -4,9 +4,19 @@ from django.contrib import messages
 from metro_app.models import (Run, Project, Population, Network,
     ParameterSet, PopulationSegment, BackgroundTask, Agent)
 from metro_app.forms import RunForm
-from metro_app.simulation_io import to_input_json
+from metro_app.simulation_io import to_input_json, from_output_json
 from django_q.tasks import async_task
 from metro_app.hooks import str_hook
+import os
+from django.conf import settings
+import subprocess
+
+
+
+def get_output_directory(run):
+    return os.path.join(
+        settings.BASE_DIR, 'output_dir', str(run.id)
+    )
 
 
 
@@ -59,7 +69,6 @@ def create_run(request, pk):
     }
     return render(request, 'form.html', context)
 
-
 def run_details(request, pk):
     run = Run.objects.get(id=pk)
     tasks = run.backgroundtask_set.order_by('-start_date')[:5]
@@ -109,5 +118,19 @@ def generate_run_input(request, pk):
     db_task.save()
     messages.success(request, "Task successfully started")
     return redirect('run_details', pk)
+
+
+def start_run(request, pk):
+    run = Run.objects.get(id=pk)
+    # to_input_json
+    directory = get_output_directory(run)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+        
+    # ajouter une condition : from_output_json ne tournera que s'il y a un fichier ouput
+    subprocess.run(["./simulator/simulation", "-i", "./input/1/simulation.js", "-o", "./output_dir/"])
+    #from_output_json(run, "./output_dir/results.json")
+    messages.success(request, "RUN STARTED")
+    return redirect('run_details', run.pk)
 
 

@@ -96,7 +96,7 @@
 				</div>
 				<div class="col-md-4">
 					<a class="btn-sm btn-block"
-						href="{% url 'generate_agent'  population.pk %}">Generate agent</a>
+						href="{% url 'generate_agent'  population.pk %}">Generate agent</a><br>
 					<a class="btn-sm btn-block"
 						href="{% url 'delete_agents'  population.pk %}">Remove agent</a>	
 				</div>
@@ -113,11 +113,16 @@
 		{% elif run %}
 			<h5>Run name : {{run.name}}</h5>
 			<hr>
-				<a class="btn btn-outline-info  btn-sm btn-block"
-					href="#">Update run</a>
-				<a class="btn btn-outline-info  btn-sm btn-block"
-					href="{% url 'generate_run_input' run.pk %}">Generate Input</a>
-
+			<div class="row">
+				<div class="col-md">
+					<a class="btn btn-outline-info  btn-sm btn-block"
+						href="#">Update run</a>
+					<a class="btn btn-outline-info  btn-sm btn-block"
+						href="{% url 'generate_run_input' run.pk %}">Generate Input</a>
+					<a class="btn btn-outline-info  btn-sm btn-block"
+						href="{% url 'start_run' run.pk %}">Start</a>
+				</div>
+			</div>
        {% endif %}
 		</div>
 	</div>

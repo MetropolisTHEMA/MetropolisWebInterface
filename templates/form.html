@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+
 {% block content %}
 
 
@@ -19,7 +20,7 @@
 	{% elif 'vehicle' in request.get_full_path %}
 		<h4> Adding vehicle </h4>
 
-	{% elif 'preferences' in request.get_full_path %}
+	{% elif 'preferences' in url_path %}
 		<h4> Adding preferences </h4>
 
 	{% elif 'psegment' in request.get_full_path %}
@@ -41,25 +42,31 @@
 	{% endif %}
 	<hr>
 
-	<form class="" action="" method="post"  enctype="multipart/form-data">{% csrf_token %}
-		<div class="mb-3">
-			{{form|crispy}}
-			<button type="submit" class="btn btn-success" name="button">Create</button>
-			<button type="submit" class="btn btn-secondary" name="button">
-				{% if project %}
-					<a href="{% url 'project_details' project.pk %}">Back</a>
-				{% elif roadnetwork %}
-					<a href="{% url 'road_network_details' roadnetwork.pk %}">Back</a>
+	{% if 'preferences' in url_path %}
+	
+			{% include 'preferences/set_preferences.html' %}
 
-					{% elif population %}
-					<a href="{% url 'population_details' population.pk %}">Back</a>
-				{% else %}
-				<a href="{% url 'home' %}">Back</a>
-				{% endif %}
-			</button>
-			
-		</div>
-	</form>
+	{% else %}
+		<form class="" action="" method="post"  enctype="multipart/form-data">{% csrf_token %}
+			<div class="mb-3">
+				{{form|crispy}}
+				<button type="submit" class="btn btn-success" name="button">Create</button>
+				<button type="submit" class="btn btn-secondary" name="button">
+					{% if project %}
+						<a href="{% url 'project_details' project.pk %}">Back</a>
+					{% elif roadnetwork %}
+						<a href="{% url 'road_network_details' roadnetwork.pk %}">Back</a>
+
+						{% elif population %}
+						<a href="{% url 'population_details' population.pk %}">Back</a>
+					{% else %}
+					<a href="{% url 'home' %}">Back</a>
+					{% endif %}
+				</button>
+				
+			</div>
+		</form>
+	{% endif %}
 
 	{% for message in messages %}
 		<li>{{message}}</li>

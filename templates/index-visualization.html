@@ -84,7 +84,7 @@ input[type="range"]::-webkit-slider-thumb {
   <div class="col-md-1 h-100" id="destinationDiv">
     <div id="divToMove">
       <br>
-      <a href="{% url 'network_details' roadnetwork.pk %}">
+      <a href="{% url 'road_network_details' roadnetwork.pk %}">
         <h3><i class="fa fa-road"></i> Back</h3>
       </a>
 
@@ -180,7 +180,8 @@ input[type="range"]::-webkit-slider-thumb {
   var data = {{ geojson| safe}};
 </script>
 
+<script src="{% static 'js/maplibre-dropdown.js' %}"></script>
 <script src="{% static '/js/maplibre-map.js' %}"></script>
 <script src="{% static '/js/linklegend.js' %}"></script>
-<script src="{% static 'js/maplibre-dropdown.js' %}"></script>
+
 {% endblock %}

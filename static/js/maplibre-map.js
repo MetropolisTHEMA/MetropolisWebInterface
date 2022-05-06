@@ -63,7 +63,7 @@ map.on('load', function () {
     closeButton: false,
     closeOnClick: false,
     className: 'popup',
-  });
+});
 
   /*...... Start Blog  hover effect & displaying information ......*/
 
@@ -95,7 +95,7 @@ map.on('load', function () {
     // Displaying links information
     let edge_id = e.features[0].properties.edge_id;
     var edge_instance_api = await fetch(
-      `http://127.0.0.1:8000/api/network/${network_id}/edge_id/${edge_id}`)
+      `${window.location.protocol}//${window.location.host}/api/network/${network_id}/edge_id/${edge_id}`)
     edge_instance = await edge_instance_api.text()
     //popup.setLngLat(e.lngLat).setHTML(edge_instance).addTo(map)
     popup.setHTML(edge_instance)
