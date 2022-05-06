@@ -108,8 +108,8 @@ def generate_agents(population):
             size,
         )
         if preferences.dep_time_car_choice_model == preferences.LOGIT_DEP_TIME:
-            dep_time_u = rng.uniform(0, 1, size=size)
-            dep_time_mu = generate_values(
+            dep_time_car_u = rng.uniform(0, 1, size=size)
+            dep_time_car_mu = generate_values(
                 rng,
                 preferences.dep_time_car_mu_distr,
                 preferences.dep_time_car_mu_mean,
@@ -195,12 +195,12 @@ def to_input_json(run):
             target = node_map[edge.target.id]
             edge_data = {
                 'id': edge.id,
-                'base_speed': edge.get_speed(),
-                'length': edge.get_length_in_km(),
+                'base_speed': edge.get_speed_in_m_per_s(),
+                'length': edge.get_length_in_meters(),
                 'lanes': edge.get_lanes(),
                 'speed_density': edge.get_speed_density(),
             }
-            if (outflow := edge.get_outflow()) is not None:
+            if (outflow := edge.get_outflow_in_m_per_s()) is not None:
                 edge_data['bottleneck_outflow'] = outflow
             graph['edges'].append([source, target, edge_data])
 
@@ -209,34 +209,32 @@ def to_input_json(run):
     vehicle_map = dict()
     for i, vehicle in enumerate(run.project.vehicle_set.all()):
         vehicle_map[vehicle.id] = i
-        speed_function = vehicle.get_speed_function()
+        speed_function = vehicle.get_speed_input()
         vehicles.append({
             'name': vehicle.name,
             'length': vehicle.length,
             'speed_function': speed_function,
         })
-    network['road_network'] = {
-        'graph': graph,
-        'vehicles': vehicles,
-    }
 
     agents = list()
     valid_vehicles = set()
-    for agent in run.population.agent_set.all():
+    for agent in run.population.agent_set.all().select_related(
+            'vehicle', 'origin_zone', 'destination_zone'):
         modes = list()
         # Add Car mode.
-        car_origin = node_map[agent.get_origin_node(run.network).id]
-        car_destination = node_map[agent.get_destination_node(run.network).id]
+        car_origin = node_map[agent.get_origin_node(run.network).node_id]
+        car_destination = node_map[agent.get_destination_node(run.network).node_id]
         vehicle_id = vehicle_map[agent.vehicle.id]
         try:
             car = {
                 'origin': car_origin,
                 'destination': car_destination,
                 'vehicle': vehicle_id,
+                'departure_time_period': run.parameter_set.get_period(),
                 'departure_time_model': agent.get_car_dep_time_model(),
                 'utility_model': agent.get_car_utility_model(),
             }
-            modes.append(car)
+            modes.append({'Car': [0, car]})
             valid_vehicles.add(vehicle_id)
         except KeyError:
             pass
@@ -255,24 +253,30 @@ def to_input_json(run):
         'length': 1.0,
         'speed_function': 'Base',
     })
+    network['road_network'] = {
+        'graph': graph,
+        'vehicles': vehicles,
+    }
 
     parameters = dict()
-    parameters['period'] = [run.parameter_set.period_start.total_seconds(),
-                                 run.parameter_set.period_end.total_seconds()]
+    parameters['period'] = run.parameter_set.get_period()
     parameters['learning_model'] = run.parameter_set.get_learning_model()
     parameters['convergence_criteria'] = \
         run.parameter_set.get_convergence_criteria()
     if run.parameter_set.random_seed:
         parameters['random_seed'] = run.parameter_set.random_seed
+    else:
+        parameters['random_seed'] = get_random_seed()
     parameters['update_ratio'] = run.parameter_set.update_ratio
-    breakpoints = np.arange(
-        run.parameter_set.period_start.total_seconds(),
-        run.parameter_set.period_end.total_seconds() + 1.0,
-        run.parameter_set.period_interval.total_seconds(),
-        dtype=np.float64,
-    )
-    parameters['weights_simplification'] = {'Fixed': list(breakpoints)}
-    parameters['skims_simplification'] = {'MaxError': 1.0}
+    rn_params = {
+        'edge_approx_bound': 10.0,
+        'space_approx_bound': 10.0,
+        'weight_simplification': {
+            'Interval': run.parameter_set.period_interval.total_seconds(),
+        },
+    }
+    network_params = {'road_network': rn_params}
+    parameters['network'] = network_params
 
     simulation = {
         'network': network,
@@ -302,10 +306,9 @@ def from_output_json(run, filename):
     # Read agent-specific results.
     agent_results = list()
     agents = run.population.agent_set.all()
-    assert agents.len() == output['last_iteration']['agent_results'].len(), \
+    assert agents.len() == output['agent_results'].len(), \
         'Invalid number of agent-specific results'
-    for (sim_res, agent) in zip(output['last_iteration']['agent_results'],
-                                agents):
+    for (sim_res, agent) in zip(output['agent_results'], agents):
         dt = timedelta(seconds=sim_res['departure_time'])
         at = timedelta(seconds=sim_res['arrival_time'])
         res = AgentResults(
@@ -328,15 +331,14 @@ def from_output_json(run, filename):
     # Read agent paths.
     agent_paths = list()
     edges = run.network.road_network.edge_set.all()
-    for (sim_res, agent) in zip(output['last_iteration']['agent_results'],
-                                agents):
+    for (sim_res, agent) in zip(output['agent_results'], agents):
         if sim_res['mode_results'].keys()[0] != 'Car':
             continue
         route = sim_res['mode_results']['Car']['route']
         breakpoints = sim_res['mode_results']['Car']['road_breakpoints']
         for i in len(route):
             edge = edges[route[i]]
-            if i < len(route):
+            if i + 1 < len(route):
                 tt = breakpoints[i + 1] - breakpoints[i]
             else:
                 tt = sim_res['arrival_time'] - breakpoints[i]
@@ -357,12 +359,23 @@ def from_output_json(run, filename):
         run.parameters.period_interval.total_seconds(),
     )
     edge_results = list()
-    for i, ttf in enumerate(
-            output['last_iteration']['weights']['road_network'][-1]):
+    for i, ttf in enumerate(output['weights']['road_network'][-1]):
         edge = edges[i]
         length = edge.length
+        if 'Piecewise' in ttf:
+            for j, bp in enumerate(breakpoints):
+                res = EdgeResults(
+                    edge=edge,
+                    run=run,
+                    time=timedelta(seconds=bp),
+                    congestion=0.0, # TODO
+                    travel_time=timedelta(seconds=ttf['travel_times'][j]),
+                    speed=length / ttf['travel_times'][j],
+                )
+                edge_results.append(res)
         for j, bp in enumerate(breakpoints):
-            # assert ttf['departure_times'][j] == bp, 'Invalid travel-time function for edge {}'.format(i)
+            assert ttf['departure_times'][j] == bp, \
+                'Invalid travel-time function for edge {}'.format(i)
             res = EdgeResults(
                 edge=edge,
                 run=run,

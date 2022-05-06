@@ -130,9 +130,9 @@ def upload_preferences(request, pk):
 
     project = Project.objects.get(id=pk)
     preferences = Preferences.objects.filter(project=project)
-    if not preferences:
+    if preferences.exists():
         messages.warning(request, "Fail! Preferences already contains data.")
-        return redirect('upload_preferences', pk)
+        return redirect('project_details', pk)
 
     if request.method == 'POST':
         vehicle_instance_dict = {vehicle.vehicle_id: vehicle for vehicle in vehicles}

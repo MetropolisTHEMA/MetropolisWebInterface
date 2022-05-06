@@ -128,7 +128,7 @@ def start_run(request, pk):
         os.makedirs(directory)
         
     # ajouter une condition : from_output_json ne tournera que s'il y a un fichier ouput
-    subprocess.run(["./simulator/simulation", "-i", "./input/1/simulation.js", "-o", "./output_dir/"])
+    subprocess.run(["./simulator/simulation", "-i", "./input_dir/3/simulation.json", "-o", "./output_dir/3/"])
     #from_output_json(run, "./output_dir/results.json")
     messages.success(request, "RUN STARTED")
     return redirect('run_details', run.pk)

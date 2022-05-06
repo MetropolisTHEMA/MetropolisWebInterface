@@ -161,7 +161,7 @@ class ParameterSet(models.Model):
      recorded.
     :learn_process str: Type of learning process for the day-to-day model.
      Possible values are exponential, linear, quadratic and genetic.
-    :learn_param float: Weight of the previous day in the learning process (if
+    :learn_param float: Weight of the last day in the learning process (if
      exponential).
     :max_iter int: Maximum number of iterations of the run.
     :update_ratio float: Share of agents that can update their choice at each
@@ -194,7 +194,7 @@ class ParameterSet(models.Model):
         default=1, choices=learning_process,
         help_text='Type of learning process')
     learn_param = models.FloatField(
-        default=.1, help_text='Weight of the previous day',
+        default=.1, help_text='Weight of the last day',
         validators=[MaxValueValidator(1.0), MinValueValidator(0.0)],
     )
     max_iter = models.PositiveSmallIntegerField(
@@ -235,6 +235,10 @@ class ParameterSet(models.Model):
         criteria = []
         criteria.append({'MaxIteration': self.max_iter})
         return criteria
+
+    def get_period(self):
+        return [self.period_start.total_seconds(),
+                self.period_end.total_seconds()]
 
     class Meta:
         db_table = 'ParameterSet'
@@ -459,6 +463,9 @@ class Edge(models.Model):
     def get_speed(self):
         return self.speed or self.road_type.default_speed
 
+    def get_speed_in_m_per_s(self):
+        return self.get_speed() / 3.6
+
     def get_length_decimal_places(self):
         return "{:.3}".format(self.length)
 
@@ -474,6 +481,12 @@ class Edge(models.Model):
         # on the interface but in vehicle-length per SECOND per lane in the
         # simulator.
         if outflow is not None:
+            return outflow / 3600.0
+        else:
+            return None
+
+    def get_outflow_in_m_per_s(self):
+        if (outflow := self.get_outflow()) is not None:
             return outflow / 3600.0
         else:
             return None
@@ -684,13 +697,13 @@ class Vehicle(models.Model):
     def __str__(self):
         return self.name or 'Vehicle {}'.format(self.vehicle_id)
 
-    def get_speed_function(self):
+    def get_speed_input(self):
         if self.speed_multiplicator:
-            {'Multiplicator': self.speed_multiplicator}
-        elif self.speed_function is not  None and len(self.speed_function) > 0:
-            {'Piecewise': self.speed_function}
+            return {'Multiplicator': self.speed_multiplicator}
+        elif self.speed_function is not None and len(self.speed_function) > 0:
+            return {'Piecewise': self.speed_function}
         else:
-            'Base'
+            return 'Base'
 
     class Meta:
         db_table = 'Vehicle'
@@ -1179,11 +1192,7 @@ class Agent(models.Model):
             }
 
     def get_car_utility_model(self):
-        return {
-            'Proportional': {
-                'alpha': self.car_vot,
-            }
-        }
+        return {'Proportional': self.car_vot / 3600.0}
 
     def get_mode_choice_model(self):
         if self.mode_choice_model == self.DETERMINISTIC_MODE:
@@ -1192,22 +1201,24 @@ class Agent(models.Model):
                     'u': self.mode_choice_u,
                 }
             }
-        else:
+        elif self.mode_choice_model == self.LOGIT_MODE:
             return {
                 'Logit': {
                     'u': self.mode_choice_u,
                     'mu': self.mode_choice_mu,
                 }
             }
+        else:
+            return 'First'
 
     def get_schedule_delay_utility(self):
         return {
-            'AlphaBetaGammaModel': {
+            'AlphaBetaGamma': {
                 't_star_low': max(
                     0, (self.t_star - self.delta / 2).total_seconds()),
                 't_star_high': (self.t_star + self.delta / 2).total_seconds(),
-                'beta': self.beta,
-                'gamma': self.gamma,
+                'beta': self.beta / 3600.0,
+                'gamma': self.gamma / 3600.0,
                 'desired_arrival': self.desired_arrival,
             }
         }
