@@ -1,7 +1,7 @@
 from django import forms
 from .models import (Project, RoadType, RoadNetwork, ZoneSet, ODMatrix,
                      Vehicle, Preferences, Population, Agent, ParameterSet,
-                     Network, PopulationSegment, ZoneNodeRelation
+                     Network, PopulationSegment, ZoneNodeRelation, Run
                      )
 
 
@@ -75,10 +75,14 @@ class ZoneFileForm(forms.Form):
 class ODMatrixForm(forms.ModelForm):
     class Meta:
         model = ODMatrix
-        fields = [
-            'zone_set', 'locked',
-            'name', 'comment', 'tags',
-        ]
+        # fields = '__all__'
+        exclude = ('size', 'locked',)
+
+        def __init__(self, current_project=None, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if current_project:
+                queryset = ZoneSet.objects.filter(project=current_project)
+                self.fields['zone_set'].queryset = queryset
 
 
 class ODPairFileForm(forms.Form):
@@ -109,20 +113,21 @@ class PreferencesFileForm(forms.Form):
 class PopulationForm(forms.ModelForm):
     class Meta:
         model = Population
-        fields = '__all__'
-        exclude = ('locked',)
+        # fields = '__all__'
+        exclude = ('project', 'locked', 'generated')
 
 
 class NetworkForm(forms.ModelForm):
     class Meta:
         model = Network
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ('project',)
 
 
 class PopulationSegmentForm(forms.ModelForm):
     class Meta:
         model = PopulationSegment
-        exclude = ('locked', 'generated',)
+        exclude = ('population', 'locked', 'generated',)
 
 
 class ZoneNodeRelationFileForm(forms.Form):
@@ -142,7 +147,15 @@ class AgentFileForm(forms.Form):
 class ParameterSetForm(forms.ModelForm):
     class Meta:
         model = ParameterSet
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ('project', 'locked',)
 
 class ParameterSetFileForm(forms.Form):
     my_file = forms.FileField()
+
+
+class RunForm(forms.ModelForm):
+    class Meta:
+        model = Run
+        exclude = ('project', 'status', 'start_date',
+                   'end_date', 'time_taken','iterations')

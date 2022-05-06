@@ -11,10 +11,14 @@
   <!--- Bootstrap table and fontawesome : the second is for some icons that doesn't appear with the first -->
   <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.css">
   <link rel="stylesheet" href="https://kit-free.fontawesome.com/releases/latest/css/free.min.css">
+
+  <!--- the tree structure of a project-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
   <link rel="stylesheet" href="{% static '/css/messages.css' %}">
   <link rel="stylesheet" href="{% static '/css/progress-bar.css' %}">
   <link rel="stylesheet" href="{% static '/css/filter-table.css' %}">
   <link rel="stylesheet" href="{% static '/css/preferences.css' %}">
+  <link rel="stylesheet" href="{% static '/css/tree.css' %}">
 
   <title>Metropolis |{% block title %}Home{% endblock title %}</title>
   <style media="screen">
@@ -58,6 +62,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
   <script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>
   <script src="{% static 'js/preferences.js' %}"></script>
+  <script src="{% static 'js/tree.js' %}"></script>
 </body>
 
 </html>

@@ -4,7 +4,20 @@ from metro_app.forms import PreferencesForm
 from metro_app.models import Project, Preferences, Vehicle
 from metro_app.forms import PreferencesFileForm
 import json
+from datetime import timedelta
 
+
+def list_of_preferences(request, pk):
+    current_project = Project.objects.get(id=pk)
+    preferences = Preferences.objects.filter(project=current_project)
+    total_preferences = preferences.count()
+    context = {
+        'current_project': current_project,
+        'preferences': preferences,
+        'total_preferences': total_preferences,
+
+    }
+    return render(request, 'list.html', context)
 
 def add_preferences(request, pk):
     current_project = Project.objects.get(id=pk)
@@ -18,21 +31,49 @@ def add_preferences(request, pk):
     form = PreferencesForm(initial={'project': current_project})
 
     context = {
+        'project': current_project,
         'form': form,
     }
-    return render(request, 'views/form.html', context)
+    return render(request, 'form.html', context)
+
+
+def read_field_func(field, std=0):
+    field_distribution = list(field.keys())[0]
+    if field_distribution == 'Constant':
+        field_distr = 0
+        field_mean = field['Constant']
+        field_std = std
+    elif  field_distribution == 'Uniform':
+        field_distr = 1
+        field_mean = field['Uniform']['mean']
+        field_std = field['Uniform']['std']
+    elif field_distribution == 'Normal':
+        field_distr = 2
+        field_mean = field['Normal']['mean']
+        field_std = field['Normal']['std']
+    elif field_distribution == 'Log-normal':
+        field_distr = 3
+        field_mean = field['Uniform']['mean']
+        field_std = field['Uniform']['std']
+    return field_distr, field_mean, field_std, field_distribution
 
 
 def upload_preferences(request, pk):
+    # storage = messages.get_messages(request)
+    # storage.used = True
+    vehicles = Vehicle.objects.all()
+    if not vehicles.exists():
+        msg = "Please upload or set Vehicle first"
+        messages.warning(request, msg)
+        return redirect('project_details', pk)
+
     project = Project.objects.get(id=pk)
     preferences = Preferences.objects.all()
     if preferences.count() > 0:
-        messages.warning(request, "Fail! Agent already contains agents data. \
-                            Delete them before importing again")
+        messages.warning(request, "Fail! Preferences already contains data.")
         return redirect('upload_preferences', pk)
 
     if request.method == 'POST':
-        vehicles = Vehicle.objects.all()
         vehicle_instance_dict = {vehicle.vehicle_id: vehicle for vehicle in vehicles}
         form = PreferencesFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -47,7 +88,6 @@ def upload_preferences(request, pk):
                         messages.error(request, "vehicle ids don't match with vehicle table data")
                         return redirect('project_details', pk)
                     else:
-
                         mode_choice = feature['mode_choice']
                         if mode_choice == 'Deterministic':
                             mode_choice_model = 0
@@ -76,11 +116,11 @@ def upload_preferences(request, pk):
                         elif departure_time_model_distribution == 'Constant':
                             distribution = departure_time_model["Constant"]
                             dep_time_car_choice_model = 1
-                            if distribution == 'Constant':
+                            if list(distribution.keys())[0] == 'Constant':
                                 dep_time_car_constant_distr = 0
                                 dep_time_car_constant_mean = 0
                                 dep_time_car_constant_std = 0
-                            elif distribution == 'Uniform':
+                            elif list(distribution.keys())[0] == 'Uniform':
                                 dep_time_car_constant_distr = 1
                                 dep_time_car_constant_mean = distribution['Uniform']['mean']
                                 dep_time_car_constant_std = distribution['Uniform']['std']
@@ -93,92 +133,22 @@ def upload_preferences(request, pk):
                                 dep_time_car_constant_mean = distribution['Log-normal']['mean']
                                 dep_time_car_constant_std = distribution['Log-normal']['std']
                             
-                            delta = feature['delta']
-                            delta_distribution = list(delta.keys())[0]
-                            if delta_distribution == 'Constant':
-                                delta_distr = 1
-                                delta_mean = delta['Constant']
-                                delta_std = "125"
                             
-                            dep_time_car_mu_distr = feature.get('dep_time_car_mu_dist', 1)
-                            dep_time_car_mu_mean = feature.get('dep_time_car_mu_mean', None)
-                            dep_time_car_mu_std = feature.get('dep_time_car_mu_std', None)
+                        dep_time_car_mu_distr = feature.get('dep_time_car_mu_dist', 1)
+                        dep_time_car_mu_mean = feature.get('dep_time_car_mu_mean', None)
+                        dep_time_car_mu_std = feature.get('dep_time_car_mu_std', None)
 
                         t_star = feature['t_star']
-                        t_star_distribution = list(t_star.keys())[0]
-                        if t_star_distribution == 'Constant':
-                            t_star_distr = 0
-                            t_star_mean = t_star['Constant']
-                            t_star_std = 0
-                        elif t_star_distribution == 'Uniform':
-                            t_star_distr = 1
-                            t_star_mean = t_star['Uniform']['mean']
-                            t_star_std =t_star['Uniform']['std'],
-                        elif t_star_distribution == 'Normal':
-                            t_star_distr = 2,
-                            t_star_mean = t_star['Normal']['mean']
-                            t_star_std =t_star['Normal']['std'],
-                        elif t_star_distribution == 'Log-normal':
-                            t_star_distr = 3,
-                            t_star_mean = t_star['Uniform']['mean']
-                            t_star_std =t_star['Uniform']['std']
+                        t_star = read_field_func(t_star, 0)
 
                         beta = feature['beta']
-                        beta_distribution = list(beta.keys())[0]
-                        if beta_distribution == 'Constant':
-                            beta_distr = 0
-                            beta_mean = beta['Constant']
-                            beta_std = 0
-                        elif beta_distribution == 'Uniform':
-                            beta_distr = 1
-                            beta_mean = beta['Uniform']['mean']
-                            beta_std =beta['Uniform']['std'],
-                        elif beta_distribution == 'Normal':
-                            beta_distr = 2,
-                            beta_mean = beta['Normal']['mean']
-                            beta_std = beta['Normal']['std'],
-                        elif beta_distribution == 'Log-normal':
-                            beta_distr = 3,
-                            beta_mean = beta['Uniform']['mean']
-                            beta_std = beta['Uniform']['std'],
+                        beta = read_field_func(beta, 0)
 
                         gamma = feature['gamma']
-                        gamma_distribution = list(gamma.keys())[0]
-                        if gamma_distribution == 'Constant':
-                            gamma_distr = 0
-                            gamma_mean = gamma['Constant']
-                            gamma_std = 0
-                        elif gamma_distribution == 'Uniform':
-                            gamma_distr = 1
-                            gamma_mean = gamma['Uniform']['mean']
-                            gamma_std =gamma['Uniform']['std'],
-                        elif gamma_distribution == 'Normal':
-                            gamma_distr = 2,
-                            gamma_mean = gamma['Normal']['mean']
-                            gamma_std = gamma['Normal']['std'],
-                        elif gamma_distribution == 'Log-normal':
-                            gamma_distr = 3,
-                            gamma_mean = gamma['Uniform']['mean']
-                            gamma_std = gamma['Uniform']['std'],
-
+                        gamma = read_field_func(gamma)
+                       
                         delta = feature['delta']
-                        delta_distribution = list(delta.keys())[0]
-                        if delta_distribution == 'Constant':
-                            delta_distr = 0
-                            delta_mean = delta['Constant']
-                            delta_std = "0"
-                        elif delta_distribution == 'Uniform':
-                            delta_distr = 1
-                            delta_mean = delta['Uniform']['mean']
-                            delta_std =delta['Uniform']['std'],
-                        elif delta_distribution == 'Normal':
-                            delta_distr = 2,
-                            delta_mean = delta['Normal']['mean']
-                            delta_std = delta['Normal']['std'],
-                        elif delta_distribution == 'Log-normal':
-                            delta_distr = 3,
-                            delta_mean = delta['Uniform']['mean']
-                            delta_std = delta['Uniform']['std']
+                        delta = read_field_func(delta,0)
 
                         preference_instance = Preferences(
                             project=project,
@@ -186,27 +156,27 @@ def upload_preferences(request, pk):
                             mode_choice_mu_distr=mode_choice_mu_distr,
                             mode_choice_mu_mean=mode_choice_mu_mean,
                             mode_choice_mu_std=mode_choice_mu_std,
-                            t_star_distr=t_star_distr,
-                            t_star_mean=t_star_mean, # feature['t_star']['Uniform']['mean'],
-                            t_star_std=t_star_std, # feature['t_star']['Uniform']['std'],
-                            delta_distr=delta_distr,
-                            delta_mean=delta['Constant'],
-                            delta_std=delta_std,
-                            beta_distr=2,
-                            beta_mean=feature['beta']['Normal']['mean'],
-                            beta_std=feature['beta']['Normal']['std'],
-                            gamma_distr=2,
-                            gamma_mean=feature['gamma']['Normal']['mean'],
-                            gamma_std=feature['gamma']['Normal']['std'],
+                            t_star_distr=t_star[0],
+                            t_star_mean=timedelta(seconds=float(t_star[1])),
+                            t_star_std=timedelta(seconds=float(t_star[2])),
+                            delta_distr=delta[0],
+                            delta_mean=timedelta(seconds=float(delta[1])),
+                            delta_std=timedelta(seconds=float(delta[2])),
+                            beta_distr=beta[0],
+                            beta_mean=beta[1],
+                            beta_std=beta[2],
+                            gamma_distr=gamma[0],
+                            gamma_mean=gamma[1],
+                            gamma_std=gamma[2],
                             desired_arrival=feature['desired_arrival'],
                             vehicle=vehicle,
                             dep_time_car_choice_model=dep_time_car_choice_model,
                             dep_time_car_mu_distr=dep_time_car_mu_distr,
                             dep_time_car_mu_mean=dep_time_car_mu_mean,
                             dep_time_car_mu_std=dep_time_car_mu_std,
-                            #dep_time_car_constant_distr=dep_time_car_constant_distr,
-                            #dep_time_car_constant_mean=dep_time_car_constant_mean,
-                            #dep_time_car_constant_std=dep_time_car_constant_std,
+                            dep_time_car_constant_distr=dep_time_car_constant_distr,
+                            dep_time_car_constant_mean=timedelta(seconds=dep_time_car_constant_mean),
+                            dep_time_car_constant_std=timedelta(seconds=dep_time_car_constant_std),
                             car_vot_distr=3,
                             car_vot_mean=feature['car_vot']['Log-normal']['mean'],
                             car_vot_std=feature['car_vot']['Log-normal']['std'],
@@ -246,7 +216,7 @@ def update_preferences(request, pk):
         form = PreferencesForm(request.POST, instance=preference)
         if form.is_valid():
             form.save()
-            return redirect('project_details', preference.project.pk)
+            return redirect('list_of_preferences', preference.project.pk)
 
     form = PreferencesForm(instance=preference)
     context = {
@@ -260,7 +230,7 @@ def delete_preferences(request, pk):
     preference_to_delete = Preferences.objects.get(id=pk)
     if request.method == 'POST':
         preference_to_delete.delete()
-        return redirect('project_details', preference_to_delete.project.pk)
+        return redirect('list_of_preferences', preference_to_delete.project.pk)
 
     context = {
         'preference_to_delete': preference_to_delete

@@ -2,28 +2,48 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from metro_app.models import Agent, Population, Vehicle, Zone
 from metro_app.forms import AgentForm, AgentFileForm
+from metro_app.filters import AgentFilter
+from metro_app.tables import AgentTable
+from django_tables2 import RequestConfig
 import json
+from datetime import timedelta
+from metro_app.simulation_io import generate_agents
+from django_q.tasks import async_task
+from metro_app.hooks import str_hook
+from metro_app.models import Population, BackgroundTask
 
 
 def add_agent(request, pk):
     population = Population.objects.get(id=pk)
-    agent = Agent(population=population)
+    population_segment = population.populationsegment_set.all()
 
-    if request.method == 'POST':
-        form = AgentForm(request.POST, instance = agent)
-        if form.is_valid():
-            form.save()
-            return redirect('population_details', pk)
-        
-    form = AgentForm(initial={'population': population})
-    context = {
-        'form': form
-    }
-    return render(request, 'views/form.html', context)
-
+    if population_segment.count() > 0:
+        messages.warning(request, 'There exists a population segment \
+            already created. So you can not create or add an agent.')
+        return redirect('population_details', pk)
+    else:
+        agent = Agent(population=population)
+        if request.method == 'POST':
+            form = AgentForm(request.POST, instance = agent)
+            if form.is_valid():
+                form.save()
+                return redirect('population_details', pk)
+            
+        form = AgentForm(initial={'population': population})
+        context = {
+            'form': form
+        }
+        return render(request, 'views/form.html', context)
 
 def upload_agent(request, pk):
     population = Population.objects.get(id=pk)
+    population_segment = population.populationsegment_set.all()
+
+    if population_segment.count() > 0:
+        messages.warning(request, 'There exists a population segment \
+            already created. So you can not create or add an agent.')
+        return redirect('population_details', pk)
+
     agents = Agent.objects.all()
     if agents.count() > 0:
         messages.warning(request, "Fail! Agent already contains agents data. \
@@ -86,8 +106,8 @@ def upload_agent(request, pk):
                             mode_choice_model = mode_choice_model,
                             mode_choice_u=mode_choice_u,
                             mode_choice_mu=mode_choice_mu,
-                            t_star=feature.get('t_star', None),
-                            delta=feature['delta'],
+                            t_star=timedelta(seconds=feature.get('t_star', 0)),
+                            delta=timedelta(seconds=feature.get('delta', 0)),
                             beta=feature['beta'],
                             gamma=feature['gamma'],
                             desired_arrival=feature['desired_arrival'],
@@ -117,3 +137,58 @@ def upload_agent(request, pk):
     }
     return render(request, 'agent/agent.html', context)
 
+def agent_table(request, pk):
+    """"
+    This function display database Agent table in the front end UI.
+    So, users can sort, filter and paginate through pages
+    """
+
+    population = Population.objects.get(id=pk)
+    agent = Agent.objects.select_related().filter(population=population)
+    my_filter = AgentFilter(request.GET, queryset=agent)
+    table = AgentTable(my_filter.qs)
+    RequestConfig(request).configure(table)
+    table.paginate(page=request.GET.get("page", 1), per_page=15)
+
+    current_path = request.get_full_path()
+    network_attribute = current_path.split("/")[4]
+    context = {
+        "table": table,
+        "filter": my_filter,
+        "population": population,
+        "network_attribute": network_attribute
+    }
+    return render(request, 'table/table.html', context)
+
+def delete_agents(request, pk):
+    population = Population.objects.get(id=pk)
+    agents = Agent.objects.filter(population=population)
+    if agents:
+        if request.method == 'POST':
+            agents.delete()
+            messages.success(request, "Population successfuly deleted")
+            return redirect('population_details', pk)
+    else:
+        messages.warning(request, "There is no data to delete")
+        return redirect('population_details', pk)
+    
+    context = {
+        'population': population,
+        'agents_to_delete': agents
+    }
+    return render(request, 'delete.html', context)
+
+def generate_agents_input(request, pk):
+    population = Population.objects.get(id=pk)    
+    # population_segment = population.populationsegment_set.all()
+    task_id = async_task(generate_agents, population,  hook=str_hook)
+    description = 'Generating agents'
+    db_task = BackgroundTask(
+        project=population.project,
+        id=task_id,
+        description=description,
+        population=population)
+    db_task.save()
+    messages.success(request, "Task successfully started")
+    return redirect('population_details', pk)
+    

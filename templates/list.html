@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Project {% endblock title %}
+
+{% block content %}
+
+
+{% block messages %}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}
+
+<br>
+<div class="row">
+
+	<div class="col-md">
+		<div class="card card-body">
+			<h5 style="text-align: center;padding: 0px">Owner Information</h5>
+			<hr>
+			<p style="text-align: center;">Name: {{user.username}}<br>
+				Email: {{user.email}} </p>
+		</div>
+	</div>
+
+	{% if roadnetworks %}
+		<div class="col-md">
+			<div class="card card-body">
+				<h5 style="text-align: center;">Total Networks</h5>
+				<hr>
+				<h1 style="text-align: center;">{{total_roadnetworks}}</h1>
+			</div>
+		</div>
+	{% endif %}
+
+	{% if zonesets %}
+		<div class="col-md">
+			<div class="card card-body">
+				<h5 style="text-align: center;"">Total Zone Sets</h5>
+				<hr>
+				<h1 style=" text-align: center;padding: 0px">{{total_zonesets}}</h1>
+			</div>
+		</div>
+	{% endif %}
+
+	{% if od_matrix %}
+		<div class="col-md">
+			<div class="card card-body">
+				<h5 style="text-align: center;">Total OD Matrix</h5>
+				<hr>
+				<h1 style="text-align: center;padding: 0px">{{total_od_matrix}}</h1>
+			</div>
+		</div>
+	{% endif %}
+</div>
+
+<br>
+<hr>
+{% if roadnetworks %}
+	<div class="row">
+		<h5>// Road network </h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Road network</th>
+							<th>Abstract network</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Date created</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for roadnetwork in roadnetworks %}
+						<tr>
+							<td><a class="btn btn-sm btn-success" href="{% url 'road_network_details' roadnetwork.pk %}">details</a></td>
+							<td>{{roadnetwork.name}}</td>
+							<td>{{roadnetwork.simple}}</td>
+							<td>{{roadnetwork.comment}}</td>
+							<td>{{roadnetwork.tags}}</td>
+							<td>{{roadnetwork.date_created}}</td>
+							<td><a class="btn btn-sm btn-success" href="{% url 'update_road_network' roadnetwork.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success" href="{% url 'delete_road_network' roadnetwork.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if zonesets  %}
+	<div class="row">
+		<h5>// Zone set</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Zone set name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Date created</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for zoneset in zonesets %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'zoneset_details' zoneset.pk %}">details</a></td>
+							<td>{{zoneset.name}}</td>
+							<td>{{zoneset.comment}}</td>
+							<td>{{zoneset.tags}}</td>
+							<td>{{zoneset.date_created}}</td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'update_zoneset' zoneset.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'delete_zoneset' zoneset.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if od_matrix %}
+	<div class="row">
+		<h5>// Origin Destination matrix</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Zone set</th>
+							<th>Name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Date created</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for od_matrix in od_matrix %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+							href="{% url 'od_matrix_details' od_matrix.pk %}">details</a></td>
+							<td>{{od_matrix.zone_set}}</td>
+							<td>{{od_matrix.name}}</td>
+							<td>{{od_matrix.comment}}</td>
+							<td>{{od_matrix.tags}}</td>
+							<td>{{od_matrix.date_created}}</td>
+								<td><a class="btn btn-sm btn-success"
+									href="{% url 'update_od_matrix' od_matrix.pk %}">Update</a></td>
+								<td><a class="btn btn-sm btn-success"
+									href="{% url 'delete_od_matrix' od_matrix.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if preferences %}
+	<div class="row">
+		<h5>// Preferences</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Created date</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for preference in preferences %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+								href="#">details</a></td>
+							<td>{{preference.name}}</td>
+							<td>{{preference.comment}}</td>
+							<td>{{preference.tags}}</td>
+							<td>{{preference.date_created}}</td>
+							<td><a class="btn btn-sm btn-success"	href="{% url 'update_preferences' preference.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success"	href="{% url 'delete_preferences' preference.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if populations %}
+	<div class="row">
+		<h5>// Population</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Created date</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for population in populations %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'population_details' population.pk %}">details</a></td>
+							<td>{{population.name}}</td>
+							<td>{{population.comment}}</td>
+							<td>{{population.tags}}</td>
+							<td>{{population.date_created}}</td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'update_population' population.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'delete_population' population.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if networks %}
+	<div class="row">
+		<h5>// Network</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Road Network</th>
+							<th>Zone set</th>
+							<th>Name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Created date</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for network in networks %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'network_details' network.pk %}">details</a></td>
+							<td>{{network.road_network}}</td>
+							<td>{{network.zone_set}}</td>
+							<td>{{network.name}}</td>
+							<td>{{network.comment}}</td>
+							<td>{{network.tags}}</td>
+							<td>{{network.date_created}}</td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'update_network' network.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success"	href="#">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+{% if runs %}
+	<div class="row">
+		<h5>// Run</h5>
+		<div class="col-md">
+			<div class="card card-body">
+				<table class="table table-sm table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Parameter Set</th>
+							<th>Population</th>
+							<th>Network</th>
+							<th>Name</th>
+							<th>Comment</th>
+							<th>Tags</th>
+							<th>Created date</th>
+							<th>Update</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{% for run in runs %}
+						<tr>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'run_details' run.pk %}">details</a></td>
+							<td>{{run.parameter_set}}</td>
+							<td>{{run.population}}</td>
+							<td>{{run.network}}</td>
+							<td>{{run.name}}</td>
+							<td>{{run.comment}}</td>
+							<td>{{run.tags}}</td>
+							<td>{{run.date_created}}</td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'update_run' run.pk %}">Update</a></td>
+							<td><a class="btn btn-sm btn-success"
+								href="{% url 'delete_run' run.pk %}">Remove</a></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+<a href="{% url 'project_details' current_project.pk %}">Back</a>
+
+<script src="{% static '/js/refresh_tag.js' %}"></script>
+<script>
+    {% for task in tasks %}
+    {% if task.status == task.INPROGRESS %}
+    refreshTag("{% url 'fetch_task' task.id %}", "#row-task-{{ task.id }}", 1000);
+    {% endif %}
+    {% endfor %}
+</script>
+
+{% endblock %}

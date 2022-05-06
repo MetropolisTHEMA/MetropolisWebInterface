@@ -1183,7 +1183,7 @@ class Agent(models.Model):
                     'u': self.mode_choice_u,
                 }
             }
-        else if self.mode_choice_model == self.LOGIT_MODE:
+        elif self.mode_choice_model == self.LOGIT_MODE:
             return {
                 'Logit': {
                     'u': self.mode_choice_u,

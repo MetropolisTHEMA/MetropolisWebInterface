@@ -362,9 +362,6 @@ def from_output_json(run, filename):
         for j, bp in enumerate(breakpoints):
             assert ttf['departure_times'][j] == bp, \
                 'Invalid travel-time function for edge {}'.format(i)
-            if (outflow := edge.get_outflow()) is not None:
-                outflow *= edge.get_lanes()
-                congestion = 
             res = EdgeResults(
                 edge=edge,
                 run=run,
