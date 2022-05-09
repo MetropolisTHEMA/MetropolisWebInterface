@@ -218,7 +218,7 @@ def upload_node_func(roadnetwork, filepath):
         message += 'No node were imported.\n'
         return message
 
-    # Create the edges in bulk.
+    # Create the nodes in bulk.
     try:
         Node.objects.bulk_create(nodes_to_import)
     except Exception as e:
@@ -278,7 +278,9 @@ def upload_node(request, pk):
 def upload_edge_func(roadnetwork, filepath):
     # Read file with GeoPandas.
     dtype = {'id': int, 'source': int, 'target': int, 'road_type': int,
-             'length': float}
+             'length': float, 'speed': float, 'outflow': float,
+             'param1': float, 'param2': float, 'param3': float}
+    mandatory_keys = ['id', 'source', 'target', 'road_type', 'length']
     try:
         gdf = gpd.read_file(filepath, dtype=dtype)
         for col, typ in dtype.items():
@@ -293,11 +295,11 @@ def upload_edge_func(roadnetwork, filepath):
             return 'Cannot read file.\n\nError message:\n{}'.format(e)
 
     # Check that all mandatory keys are here.
-    if not all(key in gdf.columns for key in dtype.keys()):
+    if not all(key in gdf.columns for key in mandatory_keys):
         return (
             'Cannot import file.\n\nError message:\nThe following fields'
             ' are mandatory: {}'
-        ).format(', '.join(keys))
+        ).format(', '.join(mandatory_keys))
 
     message = ''
     # Merge with source and target nodes.

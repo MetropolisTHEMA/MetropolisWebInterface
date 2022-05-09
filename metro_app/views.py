@@ -268,8 +268,8 @@ def project_details(request, pk):
 
     is_od_matrix_disabled = not zonesets
     is_preferences_disabled = not vehicles
-    is_network_disabled = not populations or not roadnetworks
-    is_population_disabled = not preferences or not od_matrix
+    is_network_disabled = not zonesets or not roadnetworks
+    is_population_disabled = not vehicles or not zonesets
     is_run_disabled = not populations or not networks or not parametersets
 
     context = {

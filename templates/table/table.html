@@ -90,7 +90,7 @@
   {% elif preferences %}
     <a href="{% url 'list_of_preferences' preferences.project_id %}">Back</a>
   {% elif population %}
-    <a href="{% url 'population_details' population.project_id %}">Back</a>
+    <a href="{% url 'population_details' population.pk %}">Back</a>
   {% elif network %}
     <a href="{% url 'network_details' network.pk %}">Back</a>
   

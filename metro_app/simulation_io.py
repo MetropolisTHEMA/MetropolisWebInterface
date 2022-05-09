@@ -145,12 +145,14 @@ def generate_agents(population):
                     mode_choice_model=preferences.mode_choice_model,
                     t_star=timedelta(seconds=t_star[i]),
                     delta=timedelta(seconds=delta[i]),
-                    beta=beta[i],
-                    gamma=gamma[i],
+                    beta=beta[i] / 3600.0,
+                    gamma=gamma[i] / 3600.0,
                     desired_arrival=preferences.desired_arrival,
                     vehicle=preferences.vehicle,
                     dep_time_car_choice_model=preferences.dep_time_car_choice_model,
-                    car_vot=car_vot[i],
+                    # The minus is here because the simulator expects the travel
+                    # utility coefficient (not travel cost coefficient).
+                    car_vot=-car_vot[i] / 3600.0,
                 )
                 if preferences.mode_choice_model == preferences.DETERMINISTIC_MODE:
                     agent.mode_choice_u = mode_choice_u[i]
@@ -252,13 +254,6 @@ def to_input_json(run):
 
     # Keep only the vehicles with at least one agent.
     vehicles = [vehicles[i] for i in valid_vehicles]
-    # Add a vehicle with a base speed function as last vehicle (used to get
-    # comparible output).
-    vehicles.append({
-        'name': 'Dummy vehicle',
-        'length': 1.0,
-        'speed_function': 'Base',
-    })
     network['road_network'] = {
         'graph': graph,
         'vehicles': vehicles,
@@ -365,7 +360,8 @@ def from_output_json(run, filename):
         run.parameters.period_interval.total_seconds(),
     )
     edge_results = list()
-    for i, ttf in enumerate(output['weights']['road_network'][-1]):
+    # TODO: For now, we only take the edge weights of the first vehicle.
+    for i, ttf in enumerate(output['weights']['road_network'][0]):
         edge = edges[i]
         length = edge.length
         if 'Piecewise' in ttf:
