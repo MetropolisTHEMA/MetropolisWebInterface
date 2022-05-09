@@ -39,13 +39,13 @@ def upload_agent(request, pk):
     population = Population.objects.get(id=pk)
     population_segment = population.populationsegment_set.all()
 
-    if population_segment.count() > 0:
+    if population_segment.exists():
         messages.warning(request, 'There exists a population segment \
             already created. So you can not create or add an agent.')
         return redirect('population_details', pk)
 
-    agents = Agent.objects.all()
-    if agents.count() > 0:
+    agents = population.agent_set.all()
+    if agents.exists():
         messages.warning(request, "Fail! Agent already contains agents data. \
                             Delete them before importing again")
         return redirect('population_details', pk)
@@ -72,53 +72,54 @@ def upload_agent(request, pk):
                                          either origin, destination or/and\
                                          vehicle are missing')
                         return redirect('upload_agent', pk)
-                    else:
-                        mode_choice = feature['mode_choice']
-                        if mode_choice == 'First':
-                            mode_choice_model == 2
-                        elif type(mode_choice) == dict:
-                            mode_choice_model_key = list(mode_choice.keys())[0]
-                            if mode_choice_model_key == 'Deterministic':
-                                mode_choice_model = 0
-                                mode_choice_u = list(mode_choice.values())[0]
-                                mode_choice_mu = None
-                            elif mode_choice_model_key == 'Logit':
-                                mode_choice_model = 1
-                                mode_choice_u = mode_choice['Logit']['u']
-                                mode_choice_mu = mode_choice['Logit']['mu']
-                        
-                        departure_time_model = feature['departure_time_model']
-                        dep_time_car_choice_model_key = list(departure_time_model.keys())[0]
-                        if dep_time_car_choice_model_key == 'Constant':
-                            dep_time_car_choice_model = 1
-                            dep_time_car_u = list(departure_time_model.values())[0]
-                            dep_time_car_mu = None
-                        elif dep_time_car_choice_model_key == 'Logit':
-                            dep_time_car_choice_model = 0
-                            dep_time_car_u = departure_time_model['Logit']['u']
-                            dep_time_car_mu = departure_time_model['Logit']['mu']
+                    mode_choice = feature['mode_choice']
+                    if mode_choice == 'First':
+                        mode_choice_model = 2
+                        mode_choice_u = None
+                        mode_choice_mu = None
+                    elif type(mode_choice) == dict:
+                        mode_choice_model_key = list(mode_choice.keys())[0]
+                        if mode_choice_model_key == 'Deterministic':
+                            mode_choice_model = 0
+                            mode_choice_u = list(mode_choice.values())[0]
+                            mode_choice_mu = None
+                        elif mode_choice_model_key == 'Logit':
+                            mode_choice_model = 1
+                            mode_choice_u = mode_choice['Logit']['u']
+                            mode_choice_mu = mode_choice['Logit']['mu']
+                    
+                    departure_time_model = feature['departure_time_model']
+                    dep_time_car_choice_model_key = list(departure_time_model.keys())[0]
+                    if dep_time_car_choice_model_key == 'Constant':
+                        dep_time_car_choice_model = 1
+                        dep_time_car_u = list(departure_time_model.values())[0]
+                        dep_time_car_mu = None
+                    elif dep_time_car_choice_model_key == 'Logit':
+                        dep_time_car_choice_model = 0
+                        dep_time_car_u = departure_time_model['Logit']['u']
+                        dep_time_car_mu = departure_time_model['Logit']['mu']
 
-                        agent_instance = Agent(
-                            agent_id=feature['id'],
-                            population=population,
-                            origin_zone=zone_instance_dict[feature['origin']],
-                            destination_zone=zone_instance_dict[feature['destination']],
-                            mode_choice_model = mode_choice_model,
-                            mode_choice_u=mode_choice_u,
-                            mode_choice_mu=mode_choice_mu,
-                            t_star=timedelta(seconds=feature.get('t_star', 0)),
-                            delta=timedelta(seconds=feature.get('delta', 0)),
-                            beta=feature['beta'],
-                            gamma=feature['gamma'],
-                            desired_arrival=feature['desired_arrival'],
-                            vehicle=vehicle_instance_dict[feature['vehicle']],
-                            dep_time_car_choice_model=dep_time_car_choice_model,
-                            dep_time_car_u=dep_time_car_u,
-                            dep_time_car_mu=dep_time_car_mu,
-                            dep_time_car_constant=feature.get('dep_time_car_constant', None),
-                            car_vot=feature.get('car_vot', None)
-                        )
-                        list_agent.append(agent_instance)
+                    agent_instance = Agent(
+                        agent_id=feature['id'],
+                        population=population,
+                        origin_zone=zone_instance_dict[feature['origin']],
+                        destination_zone=zone_instance_dict[feature['destination']],
+                        mode_choice_model = mode_choice_model,
+                        mode_choice_u=mode_choice_u,
+                        mode_choice_mu=mode_choice_mu,
+                        t_star=timedelta(seconds=feature.get('t_star', 0)),
+                        delta=timedelta(seconds=feature.get('delta', 0)),
+                        beta=feature['beta'],
+                        gamma=feature['gamma'],
+                        desired_arrival=feature['desired_arrival'],
+                        vehicle=vehicle_instance_dict[feature['vehicle']],
+                        dep_time_car_choice_model=dep_time_car_choice_model,
+                        dep_time_car_u=dep_time_car_u,
+                        dep_time_car_mu=dep_time_car_mu,
+                        dep_time_car_constant=feature.get('dep_time_car_constant', None),
+                        car_vot=feature.get('car_vot', None)
+                    )
+                    list_agent.append(agent_instance)
             else:
                 messages.error(request, 'File extension is not recognized,\
                                please select a good one')
