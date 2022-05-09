@@ -1,6 +1,7 @@
-from django.shortcuts import render, redirect
-from django.contrib.gis.geos import Polygon
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.gis.geos import GEOSGeometry, Polygon, fromstr
 from django.contrib import messages
+from django.conf import settings
 from metro_app.models import (Zone, ZoneSet, Project, BackgroundTask,)
 from metro_app.forms import ZoneFileForm, ZoneSetForm
 from metro_app.filters import ZoneFilter
@@ -8,6 +9,11 @@ from metro_app.tables import ZoneTable
 from django_tables2 import RequestConfig
 from metro_app.hooks import str_hook
 from django_q.tasks import async_task
+import uuid
+import os
+import numpy as np
+import pandas as pd
+import geopandas as gpd
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 import json
@@ -94,96 +100,196 @@ def delete_zoneset(request, pk):
     }
     return render(request, 'delete.html', context)
 
-def async_task_for_zone_set_file(file, zone_set_id):
-    list_zone_instance = []
-    zoneset = ZoneSet.objects.get(id=zone_set_id)
-    if file.name.endswith('.csv'):
-        file = file.read().decode('utf-8').splitlines()
-        objects = csv.DictReader(file)
-        for row in datafile:
-            try:
-                lon, lat = row['x'], row['y']
-            except KeyError:
-                    return "Wrong file uploaded!"
-            else:
-                zone_instance = Zone(
-                    zone_id=row['id'],
-                    centroid=fromstr(f'POINT({lon} {lat})', srid=4326),
-                    geometry=None,
-                    radius=row.get('radius', 0.00),
-                    name=row.get('name', 'No name'),
-                    zone_set=zoneset
-                )
-                list_zone_instance.append(zone_instance)
-        if list_zone_instance :
-            try:
-                Zone.objects.bulk_create(list_zone_instance)
-            except Exception:
-                return "There is a problem with your file"
-            else:
-                return "Zone file has been successfully imported !"
-        else:
-            return "No data uploaded"
+def async_task_for_zone_set_file(zoneset, filepath):
+    dtype = {'id': int, 'x': float, 'y': float}
+    # Read file with GeoPandas.
+    try:
+        gdf = gpd.read_file(filepath, dtype=dtype)
+        gdf['id'] = gdf['id'].astype(int)
+    except Exception as e:
+        try:
+            df = pd.read_csv(filepath, dtype=dtype)
+            df['geometry'] = None
+            gdf = gpd.GeoDataFrame(df)
+            del df
+        except Exception as e1:
+            return 'Cannot read file.\n\nError message:\n{}'.format(e1)
 
-    elif file.name.endswith('.geojson'):
-        objects = json.load(file)
-        for object in objects['features']:
-            properties = object['properties']
-            geometry = object['geometry']
-            radius = properties.get('radius', 0.00)
-            zone_id = properties['id']
-            name = properties.get('name', 'No name')
-            coordinates = geometry['coordinates']
-            # geometry = GEOSGeometry(Polygon(coordinates, srid=4326))
-            # geometry = Polygon(  [tuple(l) for l in coordinates[0]], srid=4326)
-            if geometry['type'] == 'Polygon':
-                geometry = Polygon(coordinates[0], srid=4326)
-                centroid = geometry.centroid
-            elif geometry['type'] == 'Point':
-                centroid = fromstr(
-                    f'POINT({coordinates[0]} {coordinates[1]})',srid=4326)
-                geometry = None
-            else:
-                return "Wrong file uploaded!"
+    # Check that column id is here.
+    if not 'id' in gdf.columns:
+        return (
+            'Cannot import file.\n\nError message:\nThe following field '
+            'is mandatory: id'
+        )
 
-            zone_instance = Zone(
-                zone_id=zone_id,
-                    centroid=centroid,
-                    geometry=geometry,
-                    radius=radius,
-                    name=name,
-                    zone_set=zoneset)
-            list_zone_instance.append(zone_instance)
+    if len(gdf) and gdf.geom_type.isnull().all():
+        # The edges have no geometry (the file is probably as CSV).
+        # We create the geometries from the x and y coordinates.
+        if not 'x' in gdf.columns or not 'y' in gdf.columns:
+            return (
+                'Cannot import file.\n\nError message:\nThe following fields'
+                ' are mandatory: x, y'
+            )
+        try:
+            gdf['geometry'] = gdf.apply(
+                lambda row: geom.Point(
+                    [float(row['x']), float(row['y'])])
+                , axis=1)
+        except ValueError:
+            return (
+                'Cannot import file.\n\nError message:\nInvalid values in '
+                'column x or y'
+            )
 
-        if list_zone_instance :
-            try:
-                Zone.objects.bulk_create(list_zone_instance)
-            except Exception:
-                return "There is a problem with your file"
-            else:
-                return "Zone file has been successfully imported !"
-        else:
-            return "No data uploaded"
+    message = ''
+    invalids = ~gdf.geom_type.isin(('Point', 'Polygon'))
+    if invalids.any():
+        #  The any() function is used to check whether any element is True, potentially over an axis
+        # Returns False unless there at least one element within a series or along a Dataframe axis 
+        # that is True or equivalent (e.g. non-zero or non-empty).
+        message += (
+            'Discarding {} invalid geometries (only Points and Polygons are '
+            'allowed).\n'
+        ).format(invalids.sum())
+        gdf = gdf.loc[~invalids]
+
+    if not len(gdf):
+        message += 'No valid node to import.\n'
+        return message
+
+    if gdf['id'].nunique() != len(gdf):
+        counts = gdf['id'].value_counts()
+        duplicates = counts.loc[counts > 1].index.astype(str)
+        message += (
+            'Duplicate ids (only the last one is imported): {}\n'
+        ).format(', '.join(duplicates))
+        gdf = gdf.groupby('id').last()
     else:
-        return "Unknown file format. File extension must be csv or geojson"
+        gdf.set_index('id', inplace=True)
+
+    gdf['is_polygon'] = gdf.geom_type == 'Polygon'
+
+    gdf['gis-geometry'] = gdf['geometry'].apply(lambda g: GEOSGeometry(str(g)))
+    gdf['centroid'] = gdf.geometry.centroid
+    gdf['gis-centroid'] = gdf['centroid'].apply(lambda g: GEOSGeometry(str(g)))
+    
+    zones_to_import = list()
+    invalid_zones = list()
+
+    def handle_nan(value):
+        if value and np.isnan(value):
+            return None
+        else:
+            return value
+
+    for zone_id, row in gdf.iterrows():
+        try:
+            zone = Zone(
+                zone_id=zone_id,
+                zone_set=zoneset,
+                centroid=row['gis-centroid'],
+                geometry=row['gis-geometry'] if row['is_polygon'] else None,
+                radius=row.get('radius', 0.00),
+                name=row.get('name', ''),
+            )
+        except Exception as e:
+            invalid_zones.append(str(zone_id))
+        else:
+            zones_to_import.append(zone)
+    if invalid_zones:
+        message += (
+            'The following zones could not be imported correctly: {}\n'
+        ).format(', '.join(invalid_zones))
+
+    if not zones_to_import:
+        message += 'No zone were imported.\n'
+        return message
+
+    # Create the zones in bulk.
+    try:
+        Zone.objects.bulk_create(zones_to_import)
+    except Exception as e:
+        message += (
+            'Failed to import zones.\n\nError message:\n{}'
+        ).format(e)
+        return message
+
+    message += 'Successfully imported {} zones.'.format(
+        len(zones_to_import))
+    return message
+
+def upload_node(request, pk):
+    template = "networks/node.html"
+    roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
+    if Node.objects.filter(network_id=pk).exists():
+        messages.warning(request, "The road network already contains nodes.")
+        return redirect('road_network_details', roadnetwork.pk)
+    if BackgroundTask.objects.filter(
+            road_network=roadnetwork, status=BackgroundTask.INPROGRESS
+    ).exists():
+        messages.warning(
+            request, "A task is in progress for this road network.")
+        return redirect('road_network_details', roadnetwork.pk)
+
+    if request.method == 'POST':
+        # We need to include the files when creating the form
+        form = NodeForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Getting data from the fielfield input
+            datafile = request.FILES['my_file']
+
+            # Save file on disk (we cannot send large files as arguments of
+            # async tasks).
+            filename = '{}-{}'.format(uuid.uuid4(), datafile.name)
+            filepath = os.path.join(settings.MEDIA_ROOT, filename)
+            with open(filepath, 'wb') as f:
+                f.write(datafile.read())
+            task_id = async_task(upload_node_func, roadnetwork, filepath,
+                                 hook=str_hook)
+            description = 'Importing nodes'
+            db_task = BackgroundTask(project=roadnetwork.project, id=task_id,
+                                     description=description,
+                                     road_network=roadnetwork)
+            db_task.save()
+            messages.success(request, "Task successfully started.")
+        else:
+            messages.error(
+                request, "Invalid request. Did you upload the file correctly?")
+        return redirect('road_network_details', roadnetwork.pk)
+    else:
+        form = NodeForm()
+        return render(request, template, {'form': form})
 
 
 def upload_zone(request, pk):
     template = "zone_set/zone.html"
-    zoneset = ZoneSet.objects.get(id=pk)
-    zone = zoneset.zone_set.all()
-    if zone.exists():
-        messages.warning(request, "Zone already contains data")
+    zoneset = get_object_or_404(ZoneSet, pk=pk)
+    if zoneset.zone_set.all().exists():
+        messages.warning(request, "The zone set already contains data")
         return redirect('zoneset_details', pk)
+    if BackgroundTask.objects.filter(
+            zoneset_set=zoneset, status=BackgroundTask.INPROGRESS
+    ).exists():
+        messages.warning(
+            request, "A task is in progress for this zone set.")
+        return redirect('zoneset_details', pk)
+
     if request.method == 'POST':
         # File must be included when creating the form
         form = ZoneFileForm(request.POST, request.FILES)
         if form.is_valid():
-            # hey, if form is valid, get me back the data from the input form
-            my_file = request.FILES['my_file']  # get by name
-            async_task_for_zone_set_file(my_file, pk)
-            task_id = async_task(async_task_for_zone_set_file,my_file, pk)
-            description = "Importing Zone"
+            # Getting data from the fielfield input
+            datafile = request.FILES['my_file']
+
+            # Save file on disk (we cannot send large files as arguments of
+            # async tasks).
+            filename = '{}-{}'.format(uuid.uuid4(), datafile.name)
+            filepath = os.path.join(settings.MEDIA_ROOT, filename)
+            with open(filepath, 'wb') as f:
+                f.write(datafile.read())
+            task_id = async_task(async_task_for_zone_set_file, zoneset,
+                                 filepath, hook=str_hook)
+            description = "Importing zones"
             db_task = BackgroundTask(
                 project=zoneset.project,
                 id=task_id,
@@ -192,10 +298,14 @@ def upload_zone(request, pk):
             )
             db_task.save()
             messages.success(request, "Task successfully started")
-            return redirect('zoneset_details', pk)
+        else:
+            messages.error(
+                request, "Invalid request. Did you upload the file correctly?")
+        return redirect('zoneset_details', pk)
     else:
         form = ZoneFileForm()
         return render(request, template, {'form': form})
+
 
 def zones_table(request, pk):
     """
