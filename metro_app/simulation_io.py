@@ -200,16 +200,10 @@ def to_input_json(run):
                 'base_speed': edge.get_speed_in_m_per_s(),
                 'length': edge.get_length_in_meters(),
                 'lanes': edge.get_lanes(),
-                'speed_density': edge.road_type.get_congestion_display(),
+                'speed_density': edge.get_speed_density(),
             }
             if (outflow := edge.get_outflow_in_m_per_s()) is not None:
                 edge_data['bottleneck_outflow'] = outflow
-            if (param1 := edge.get_param1()) is not None:
-                edge_data['param1'] = param1
-            if (param2 := edge.get_param2()) is not None:
-                edge_data['param2'] = param2
-            if (param3 := edge.get_param3()) is not None:
-                edge_data['param3'] = param3
             graph['edges'].append([source, target, edge_data])
 
     # Read vehicles.
