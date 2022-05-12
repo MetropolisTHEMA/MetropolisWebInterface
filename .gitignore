@@ -29,4 +29,4 @@ api/serializers_old.py
 media/
 input_dir/
 output_dir/
-simulator/simulation
+simulator/

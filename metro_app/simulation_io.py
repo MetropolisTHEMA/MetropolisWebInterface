@@ -301,7 +301,7 @@ def from_output_json(run, filename):
     # Read agent-specific results.
     agent_results = list()
     agents = run.population.agent_set.all()
-    assert agents.len() == output['agent_results'].len(), \
+    assert len(agents) == len(output['agent_results']), \
         'Invalid number of agent-specific results'
     for (sim_res, agent) in zip(output['agent_results'], agents):
         dt = timedelta(seconds=sim_res['departure_time'])

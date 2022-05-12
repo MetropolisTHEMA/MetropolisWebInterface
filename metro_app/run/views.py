@@ -126,10 +126,20 @@ def start_run(request, pk):
     directory = get_output_directory(run)
     if not os.path.isdir(directory):
         os.makedirs(directory)
-        
-    # ajouter une condition : from_output_json ne tournera que s'il y a un fichier ouput
-    subprocess.run(["./simulator/simulation", "-i", "./input_dir/3/simulation.json", "-o", "./output_dir/3/"])
-    #from_output_json(run, "./output_dir/results.json")
+
+    input_folder = "./input_dir/{}/simulation.json".format(pk)
+    output_folder = "./output_dir/{}/".format(pk)
+    subprocess.run(["./simulator/simulation", "-i", input_folder, "-o", output_folder],
+                    env={'RUST_LOG': 'info'})
+   
+    # List all files in a directory using os.listdir
+    if os.listdir(output_folder) and os.path.isfile(os.path.join(output_folder, results.json)):
+        from_output_json(run, os.path.join(output_folder, results.json))
+        #from_output_json(run, "./output_dir/results.json")
+    else:
+        messages.error(request, "Simulateur doesn't give back the results.json folder")
+        return redirect('run_details', run.pk)
+
     messages.success(request, "RUN STARTED")
     return redirect('run_details', run.pk)
 
