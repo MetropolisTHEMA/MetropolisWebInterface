@@ -247,7 +247,7 @@ def to_input_json(run):
         })
 
     # Keep only the vehicles with at least one agent.
-    vehicles = [vehicles[i] for i in valid_vehicles]
+    #  vehicles = [vehicles[i] for i in valid_vehicles]
     network['road_network'] = {
         'graph': graph,
         'vehicles': vehicles,
