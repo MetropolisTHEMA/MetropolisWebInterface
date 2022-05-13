@@ -382,3 +382,68 @@ def from_output_json(run, filename):
             )
             edge_results.append(res)
     EdgeResults.bulk_create(edge_results)
+
+
+"""
+Load the aggregate results of an iteration.
+"""
+def read_iteration_results(run, iteration_counter, filename):
+    with open(filename) as f:
+        output = json.load(f)
+    car_output = output['mode_results']['Car']
+
+    results = AggregateResult(
+        run=run,
+        iteration=iteration_counter,
+        surplus_mean=output['surplus']['mean'],
+        surplus_std=output['surplus']['std'],
+        surplus_min=output['surplus']['min'],
+        surplus_max=output['surplus']['max'],
+        car_count=car_output['count'],
+        car_congestion=car_output['congestion'],
+        car_departure_time_mean=car_output['departure_times']['mean'],
+        car_departure_time_std=car_output['departure_times']['std'],
+        car_departure_time_min=car_output['departure_times']['min'],
+        car_departure_time_max=car_output['departure_times']['max'],
+        car_arrival_time_mean=car_output['arrival_times']['mean'],
+        car_arrival_time_std=car_output['arrival_times']['std'],
+        car_arrival_time_min=car_output['arrival_times']['min'],
+        car_arrival_time_max=car_output['arrival_times']['max'],
+        car_road_time_mean=car_output['road_times']['mean'],
+        car_road_time_std=car_output['road_times']['std'],
+        car_road_time_min=car_output['road_times']['min'],
+        car_road_time_max=car_output['road_times']['max'],
+        car_bottleneck_time_mean=car_output['bottleneck_times']['mean'],
+        car_bottleneck_time_std=car_output['bottleneck_times']['std'],
+        car_bottleneck_time_min=car_output['bottleneck_times']['min'],
+        car_bottleneck_time_max=car_output['bottleneck_times']['max'],
+        car_pending_time_mean=car_output['pending_times']['mean'],
+        car_pending_time_std=car_output['pending_times']['std'],
+        car_pending_time_min=car_output['pending_times']['min'],
+        car_pending_time_max=car_output['pending_times']['max'],
+        car_travel_time_mean=car_output['pending_times']['mean'],
+        car_travel_time_std=car_output['travel_times']['std'],
+        car_travel_time_min=car_output['travel_times']['min'],
+        car_travel_time_max=car_output['travel_times']['max'],
+        car_free_flow_travel_time_mean=car_output['free_flow_travel_times']['mean'],
+        car_free_flow_travel_time_std=car_output['free_flow_travel_times']['std'],
+        car_free_flow_travel_time_min=car_output['free_flow_travel_times']['min'],
+        car_free_flow_travel_time_max=car_output['free_flow_travel_times']['max'],
+        car_length_mean=car_output['lengths']['mean'],
+        car_length_std=car_output['lengths']['std'],
+        car_length_min=car_output['lengths']['min'],
+        car_length_max=car_output['lengths']['max'],
+        car_edge_count_mean=car_output['edge_counts']['mean'],
+        car_edge_count_std=car_output['edge_counts']['std'],
+        car_edge_count_min=car_output['edge_counts']['min'],
+        car_edge_count_max=car_output['edge_counts']['max'],
+        car_utility_mean=car_output['utilities']['mean'],
+        car_utility_std=car_output['utilities']['std'],
+        car_utility_min=car_output['utilities']['min'],
+        car_utility_max=car_output['utilities']['max'],
+        car_exp_travel_time_diff_mean=car_output['exp_travel_time_diff']['mean'],
+        car_exp_travel_time_diff_std=car_output['exp_travel_time_diff']['std'],
+        car_exp_travel_time_diff_min=car_output['exp_travel_time_diff']['min'],
+        car_exp_travel_time_diff_max=car_output['exp_travel_time_diff']['max'],
+    )
+    results.save()

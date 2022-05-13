@@ -508,7 +508,7 @@ class Edge(models.Model):
             # Bottleneck capacity is expressed in vehicle-length per HOUR per
             # lane on the interface but in vehicle-length per SECOND per lane
             # in the simulator.
-            return {"Congestion": self.get_param1() / 3600.0}
+            return {"Bottleneck": self.get_param1() / 3600.0}
         else:
             raise 'Unsupported congestion model: {}'.format(congestion)
 
@@ -1297,6 +1297,67 @@ class AgentRoadPath(models.Model):
 
     class Meta:
         db_table = 'AgentRoadPath'
+
+
+class AggregateResult(models.Model):
+    """Class to store the aggregate results for a single iteration of the
+    simulator.
+    """
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    iteration = models.IntegerField()
+    surplus_mean = models.FloatField()
+    surplus_std = models.FloatField()
+    surplus_min = models.FloatField()
+    surplus_max = models.FloatField()
+    car_count = models.IntegerField()
+    car_congestion = models.FloatField()
+    car_departure_time_mean = models.FloatField()
+    car_departure_time_std = models.FloatField()
+    car_departure_time_min = models.FloatField()
+    car_departure_time_max = models.FloatField()
+    car_arrival_time_mean = models.FloatField()
+    car_arrival_time_std = models.FloatField()
+    car_arrival_time_min = models.FloatField()
+    car_arrival_time_max = models.FloatField()
+    car_road_time_mean = models.FloatField()
+    car_road_time_std = models.FloatField()
+    car_road_time_min = models.FloatField()
+    car_road_time_max = models.FloatField()
+    car_bottleneck_time_mean = models.FloatField()
+    car_bottleneck_time_std = models.FloatField()
+    car_bottleneck_time_min = models.FloatField()
+    car_bottleneck_time_max = models.FloatField()
+    car_pending_time_mean = models.FloatField()
+    car_pending_time_std = models.FloatField()
+    car_pending_time_min = models.FloatField()
+    car_pending_time_max = models.FloatField()
+    car_travel_time_mean = models.FloatField()
+    car_travel_time_std = models.FloatField()
+    car_travel_time_min = models.FloatField()
+    car_travel_time_max = models.FloatField()
+    car_free_flow_travel_time_mean = models.FloatField()
+    car_free_flow_travel_time_std = models.FloatField()
+    car_free_flow_travel_time_min = models.FloatField()
+    car_free_flow_travel_time_max = models.FloatField()
+    car_length_mean = models.FloatField()
+    car_length_std = models.FloatField()
+    car_length_min = models.FloatField()
+    car_length_max = models.FloatField()
+    car_edge_count_mean = models.FloatField()
+    car_edge_count_std = models.FloatField()
+    car_edge_count_min = models.FloatField()
+    car_edge_count_max = models.FloatField()
+    car_utility_mean = models.FloatField()
+    car_utility_std = models.FloatField()
+    car_utility_min = models.FloatField()
+    car_utility_max = models.FloatField()
+    car_exp_travel_time_diff_mean = models.FloatField()
+    car_exp_travel_time_diff_std = models.FloatField()
+    car_exp_travel_time_diff_min = models.FloatField()
+    car_exp_travel_time_diff_max = models.FloatField()
+
+    class Meta:
+        db_table = 'AggregateResult'
 
 
 class BackgroundTask(models.Model):
