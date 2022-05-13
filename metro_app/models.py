@@ -1025,8 +1025,8 @@ class NodeResults(models.Model):
     :run Run: Run instance from which the results are coming.
     :upstream Edge: Edge whose target is node.
     :downstream Edge: Edge whose source is node.
-    :time datetime.time: Center of the time window for which results are
-     computed.
+    :time timedelta: Center of the time window for which results are computed,
+      expressed in duration since midnight.
     :vehicles int: Number of vehicles who crossed the node, from edge upstream
      to edge downstream during the time window.
     :crossing_time timedelta: Average crossing time of the vehicles during the
@@ -1038,7 +1038,7 @@ class NodeResults(models.Model):
         Edge, related_name='upstream', on_delete=models.CASCADE)
     downstream = models.ForeignKey(
         Edge, related_name='downstream', on_delete=models.CASCADE)
-    time = models.TimeField()
+    time = models.DurationField()
     vehicles = models.IntegerField()
     crossing_time = models.DurationField()
 
@@ -1052,8 +1052,8 @@ class EdgeResults(models.Model):
 
     :edge Edge: Edge instance for which the EdgeResults is created.
     :run Run: Run instance from which the results are coming.
-    :time datetime.time: Center of the time window for which results are
-     computed.
+    :time timedelta: Center of the time window for which results are computed,
+      expressed in duration since midnight.
     :congestion float: Average congestion level on the edge during the time
      window, in percentage.
     :travel_time timedelta: Average travel time of the edge during the time
@@ -1063,7 +1063,7 @@ class EdgeResults(models.Model):
     """
     edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    time = models.TimeField()
+    time = models.DurationField()
     congestion = models.FloatField()
     travel_time = models.DurationField()
     speed = models.FloatField()
@@ -1286,13 +1286,14 @@ class AgentRoadPath(models.Model):
     :agent Agent: Agent instance for which the AgentRoadPath is created.
     :run Run: Run instance from which the results are coming.
     :edge Edge: Edge of the road network taken.
-    :time datetime.time: Time at which the edge was taken.
+    :time timedelta: Time at which the edge was taken, expressed in duration
+      since midnight.
     :travel_time timedelta: Travel time on the edge.
     """
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
     edge = models.ForeignKey(Edge, on_delete=models.CASCADE)
-    time = models.TimeField()
+    time = models.DurationField()
     travel_time = models.DurationField()
 
     class Meta:

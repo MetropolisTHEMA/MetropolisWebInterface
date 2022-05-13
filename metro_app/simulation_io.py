@@ -301,57 +301,57 @@ def from_output_json(run, filename):
     # Read agent-specific results.
     agent_results = list()
     agents = run.population.agent_set.all()
-    assert len(agents) == len(output['agent_results']), \
-        'Invalid number of agent-specific results'
-    for (sim_res, agent) in zip(output['agent_results'], agents):
-        dt = timedelta(seconds=sim_res['departure_time'])
-        at = timedelta(seconds=sim_res['arrival_time'])
-        res = AgentResults(
-            agent=agent,
-            run=run,
-            utility=sim_res['utility'],
-            departure_time=dt,
-            arrival_time=at,
-            travel_time=at - dt,
-            real_cost=0.0,
-            surplus=sim_res['pre_day_results']['expected_utility'],
-        )
-        if sim_res['mode_results'].keys()[0] == 'Car':
-            res.mode = AgentResults.CAR
-            res.car_exp_arrival_time = timedelta(
-                seconds=sim_res['pre_day_results']['choices']['Car']['expected_arrival_time'])
-        agent_results.append(res)
-    AgentResults.bulk_create(agent_results)
+    #  assert len(agents) == len(output['agent_results']), \
+        #  'Invalid number of agent-specific results'
+    #  for (sim_res, agent) in zip(output['agent_results'], agents):
+        #  dt = timedelta(seconds=sim_res['departure_time'])
+        #  at = timedelta(seconds=sim_res['arrival_time'])
+        #  res = AgentResults(
+            #  agent=agent,
+            #  run=run,
+            #  utility=sim_res['utility'],
+            #  departure_time=dt,
+            #  arrival_time=at,
+            #  travel_time=at - dt,
+            #  real_cost=0.0,
+            #  surplus=sim_res['pre_day_results']['expected_utility'],
+        #  )
+        #  if 'Car' in sim_res['mode_results']:
+            #  res.mode = AgentResults.CAR
+            #  res.car_exp_arrival_time = timedelta(
+                #  seconds=sim_res['pre_day_results']['choices']['Car']['expected_arrival_time'])
+        #  agent_results.append(res)
+    #  AgentResults.objects.bulk_create(agent_results)
 
     # Read agent paths.
     agent_paths = list()
     edges = run.network.road_network.edge_set.all()
-    for (sim_res, agent) in zip(output['agent_results'], agents):
-        if sim_res['mode_results'].keys()[0] != 'Car':
-            continue
-        route = sim_res['mode_results']['Car']['route']
-        breakpoints = sim_res['mode_results']['Car']['road_breakpoints']
-        for i in len(route):
-            edge = edges[route[i]]
-            if i + 1 < len(route):
-                tt = breakpoints[i + 1] - breakpoints[i]
-            else:
-                tt = sim_res['arrival_time'] - breakpoints[i]
-            path_entry = AgentRoadPath(
-                agent=agent,
-                run=run,
-                edge=edge,
-                time=timedelta(seconds=breakpoints[i]),
-                travel_time=timedelta(seconds=tt),
-            )
-            agent_paths.append(path_entry)
-    AgentRoadPath.bulk_create(agent_paths)
+    #  for (sim_res, agent) in zip(output['agent_results'], agents):
+        #  if not 'Car' in sim_res['mode_results']:
+            #  continue
+        #  route = sim_res['mode_results']['Car']['route']
+        #  breakpoints = sim_res['mode_results']['Car']['road_breakpoints']
+        #  for i in range(len(route)):
+            #  edge = edges[route[i]]
+            #  if i + 1 < len(route):
+                #  tt = breakpoints[i + 1] - breakpoints[i]
+            #  else:
+                #  tt = sim_res['arrival_time'] - breakpoints[i]
+            #  path_entry = AgentRoadPath(
+                #  agent=agent,
+                #  run=run,
+                #  edge=edge,
+                #  time=timedelta(seconds=breakpoints[i]),
+                #  travel_time=timedelta(seconds=tt),
+            #  )
+            #  agent_paths.append(path_entry)
+    #  AgentRoadPath.objects.bulk_create(agent_paths)
 
     # Read edge travel times.
     breakpoints = np.arange(
-        run.parameters.period_start.total_seconds(),
-        run.parameters.period_end.total_seconds() + 1,
-        run.parameters.period_interval.total_seconds(),
+        run.parameter_set.period_start.total_seconds(),
+        run.parameter_set.period_end.total_seconds() + 1,
+        run.parameter_set.period_interval.total_seconds(),
     )
     edge_results = list()
     # TODO: For now, we only take the edge weights of the first vehicle.
@@ -359,29 +359,34 @@ def from_output_json(run, filename):
         edge = edges[i]
         length = edge.length
         if 'Piecewise' in ttf:
-            for j, bp in enumerate(breakpoints):
+            points = ttf['Piecewise']['points']
+            n = len(points)
+            j = 0
+            for bp in breakpoints:
+                while j + 1 < n and points[j + 1]['x'] <= bp:
+                    j += 1
                 res = EdgeResults(
                     edge=edge,
                     run=run,
                     time=timedelta(seconds=bp),
                     congestion=0.0, # TODO
-                    travel_time=timedelta(seconds=ttf['travel_times'][j]),
-                    speed=length / ttf['travel_times'][j],
+                    travel_time=timedelta(seconds=points[j]['y']),
+                    speed=length / points[j]['y'],
                 )
                 edge_results.append(res)
-        for j, bp in enumerate(breakpoints):
-            assert ttf['departure_times'][j] == bp, \
-                'Invalid travel-time function for edge {}'.format(i)
-            res = EdgeResults(
-                edge=edge,
-                run=run,
-                time=timedelta(seconds=bp),
-                congestion=0.0, # TODO
-                travel_time=timedelta(seconds=ttf['travel_times'][j]),
-                speed=length / ttf['travel_times'][j],
-            )
-            edge_results.append(res)
-    EdgeResults.bulk_create(edge_results)
+        else:
+            tt = ttf['Constant']
+            for bp in breakpoints:
+                res = EdgeResults(
+                    edge=edge,
+                    run=run,
+                    time=timedelta(seconds=bp),
+                    congestion=0.0, # TODO
+                    travel_time=timedelta(seconds=tt),
+                    speed=length / tt,
+                )
+                edge_results.append(res)
+    EdgeResults.objects.bulk_create(edge_results)
 
 
 """
