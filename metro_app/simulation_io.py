@@ -301,51 +301,51 @@ def from_output_json(run, filename):
     # Read agent-specific results.
     agent_results = list()
     agents = run.population.agent_set.all()
-    #  assert len(agents) == len(output['agent_results']), \
-        #  'Invalid number of agent-specific results'
-    #  for (sim_res, agent) in zip(output['agent_results'], agents):
-        #  dt = timedelta(seconds=sim_res['departure_time'])
-        #  at = timedelta(seconds=sim_res['arrival_time'])
-        #  res = AgentResults(
-            #  agent=agent,
-            #  run=run,
-            #  utility=sim_res['utility'],
-            #  departure_time=dt,
-            #  arrival_time=at,
-            #  travel_time=at - dt,
-            #  real_cost=0.0,
-            #  surplus=sim_res['pre_day_results']['expected_utility'],
-        #  )
-        #  if 'Car' in sim_res['mode_results']:
-            #  res.mode = AgentResults.CAR
-            #  res.car_exp_arrival_time = timedelta(
-                #  seconds=sim_res['pre_day_results']['choices']['Car']['expected_arrival_time'])
-        #  agent_results.append(res)
-    #  AgentResults.objects.bulk_create(agent_results)
+    assert len(agents) == len(output['agent_results']), \
+        'Invalid number of agent-specific results'
+    for (sim_res, agent) in zip(output['agent_results'], agents):
+        dt = timedelta(seconds=sim_res['departure_time'])
+        at = timedelta(seconds=sim_res['arrival_time'])
+        res = AgentResults(
+            agent=agent,
+            run=run,
+            utility=sim_res['utility'],
+            departure_time=dt,
+            arrival_time=at,
+            travel_time=at - dt,
+            real_cost=0.0,
+            surplus=sim_res['pre_day_results']['expected_utility'],
+        )
+        if 'Car' in sim_res['mode_results']:
+            res.mode = AgentResults.CAR
+            res.car_exp_arrival_time = timedelta(
+                seconds=sim_res['pre_day_results']['choices']['Car']['expected_arrival_time'])
+        agent_results.append(res)
+    AgentResults.objects.bulk_create(agent_results)
 
     # Read agent paths.
     agent_paths = list()
     edges = run.network.road_network.edge_set.all()
-    #  for (sim_res, agent) in zip(output['agent_results'], agents):
-        #  if not 'Car' in sim_res['mode_results']:
-            #  continue
-        #  route = sim_res['mode_results']['Car']['route']
-        #  breakpoints = sim_res['mode_results']['Car']['road_breakpoints']
-        #  for i in range(len(route)):
-            #  edge = edges[route[i]]
-            #  if i + 1 < len(route):
-                #  tt = breakpoints[i + 1] - breakpoints[i]
-            #  else:
-                #  tt = sim_res['arrival_time'] - breakpoints[i]
-            #  path_entry = AgentRoadPath(
-                #  agent=agent,
-                #  run=run,
-                #  edge=edge,
-                #  time=timedelta(seconds=breakpoints[i]),
-                #  travel_time=timedelta(seconds=tt),
-            #  )
-            #  agent_paths.append(path_entry)
-    #  AgentRoadPath.objects.bulk_create(agent_paths)
+    for (sim_res, agent) in zip(output['agent_results'], agents):
+        if not 'Car' in sim_res['mode_results']:
+            continue
+        route = sim_res['mode_results']['Car']['route']
+        breakpoints = sim_res['mode_results']['Car']['road_breakpoints']
+        for i in range(len(route)):
+            edge = edges[route[i]]
+            if i + 1 < len(route):
+                tt = breakpoints[i + 1] - breakpoints[i]
+            else:
+                tt = sim_res['arrival_time'] - breakpoints[i]
+            path_entry = AgentRoadPath(
+                agent=agent,
+                run=run,
+                edge=edge,
+                time=timedelta(seconds=breakpoints[i]),
+                travel_time=timedelta(seconds=tt),
+            )
+            agent_paths.append(path_entry)
+    AgentRoadPath.objects.bulk_create(agent_paths)
 
     # Read edge travel times.
     breakpoints = np.arange(
