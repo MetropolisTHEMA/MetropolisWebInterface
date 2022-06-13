@@ -190,6 +190,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Fixing this error "cannot pickle '_io.BufferedRandom' object"
+# we need to set : FILE_UPLOAD_MAX_MEMORY_SIZE
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024 # 10 Mb limit
+
 LOGIN_URL = 'home'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
@@ -226,3 +230,4 @@ Q_CLUSTER = {
         'password': redis_settings.get('password', None),
     }
 }
+

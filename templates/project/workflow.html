@@ -14,9 +14,10 @@
   </ul>
 {% endif %}
 
+
 <div class="tree">
+	<hr>
 	<table class="table">
-		
 		<tbody>
 			<tr>
 				<td class="align-middle">Vehicle
@@ -56,6 +57,8 @@
 						  href="{% url 'set_parameters' project.pk %}">Set Parameters</a></li>
 						<li><a class="btn btn-outline-info  btn-sm mt-2"
 							href="{% url 'upload_parameters' project.pk %}">Upload Parameters</a></li>
+						<li><a class="btn btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_parameters' project.pk %}">View Parameters</a></li>
 					  </ul>
 				</td>
 			</tr>
@@ -66,6 +69,9 @@
 						   href="{% url 'add_preferences' project.pk %}">Set Preferences</a></li>
 					   <li><a class="btn {% if not vehicles %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
 							href="{% url 'upload_preferences' project.pk %}">Upload Preferences</a></li>
+						<li><a class="btn {% if not vehicles %}disabled{% endif %} btn-outline-info  btn-sm mt-2"
+							href="{% url 'list_of_preferences' project.pk %}">View Preferences</a></li>
+					
 				   </ul>
 				</td>
 				<td class="align-middle {% if is_od_matrix_disabled %}table-secondary{% endif %}">OD Matrix (optional)
@@ -118,15 +124,6 @@
 	</table>
 
 	<hr>
-
-	<div class="comments">
-		<p>
-			Please you should respect the project workflow order <br>
-			Please you should respect the project workflow order <br>
-			Please you should respect the project workflow order <br>
-			Please you should respect the project workflow order <br>
-		</p>
-	</div>
 </div>
 
 

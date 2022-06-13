@@ -43,7 +43,8 @@ from metro_app.od_matrix.views import (list_of_od_matrix, upoload_od_pair,
                                         od_pair_table, delete_od_pair)
 from metro_app.agent.views import (add_agent, upload_agent, agent_table,   
                                    generate_agents_input, delete_agents)
-from metro_app.parameters.views import (set_parameters, upload_parameters)
+from metro_app.parameters.views import (set_parameters, upload_parameters,
+                                        list_of_parameters,)
 from metro_app.run.views import (create_run, update_run, run_details,
                                  delete_run, generate_run_input,
                                  list_of_runs, start_run
@@ -70,8 +71,8 @@ urlpatterns = [
           name='list_of_populations'),
      path('project/<str:pk>/list_of_runs/', list_of_runs,
           name='list_of_runs'),
-     path('network/<str:pk>/delete/nodes', delete_nodes, name='delete_nodes'),
-     path('network/<str:pk>/delete/road_types', delete_roads_types,
+     path('roadnetwork/<str:pk>/delete/nodes', delete_nodes, name='delete_nodes'),
+     path('roadnetwork/<str:pk>/delete/road_types', delete_roads_types,
           name='delete_roads_types'),
      path('zoneset/<str:pk>/delete/zones', delete_zones,
           name='delete_zones'),
@@ -168,6 +169,8 @@ urlpatterns = [
           name='set_parameters'),
      path('parameterset/<str:pk>/upload_parameters/', upload_parameters,
           name='upload_parameters'),
+     path('project/<str:pk>/list_of_parameters/', list_of_parameters,
+          name='list_of_parameters'),
      path('project/<str:pk>/create_run/', create_run,
           name='create_run'),
      path('run/<str:pk>/details/', run_details,

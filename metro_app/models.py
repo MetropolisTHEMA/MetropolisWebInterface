@@ -614,6 +614,13 @@ class ODMatrix(models.Model):
     tags = models.CharField(max_length=240, blank=True)
     date_created = models.DateField(
         auto_now_add=True, help_text='Creation date of the O-D matrix')
+    
+    # Additional dimension
+    # tttc2009=models.DurationField(default=timedelta(0))
+    # ttvp2009=models.DurationField(default=timedelta(0))
+    # tttcsans2009=models.DurationField(default=timedelta(0))
+    # tttcsans2010=models.DurationField(default=timedelta(0))
+    # tttcsans2011=models.DurationField(default=timedelta(0))
 
     def __str__(self):
         return self.name

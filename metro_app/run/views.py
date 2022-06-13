@@ -133,8 +133,9 @@ def start_run(request, pk):
                     env={'RUST_LOG': 'info'})
    
     # List all files in a directory using os.listdir
-    if os.listdir(output_folder) and os.path.isfile(os.path.join(output_folder, results.json)):
-        from_output_json(run, os.path.join(output_folder, results.json))
+    if os.listdir(output_folder) and \
+        os.path.isfile(os.path.join(output_folder, "results.json")):
+        from_output_json(run, os.path.join(output_folder, "results.json"))
         #from_output_json(run, "./output_dir/results.json")
     else:
         messages.error(request, "Simulateur doesn't give back the results.json folder")

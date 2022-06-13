@@ -73,31 +73,27 @@ class ZoneFileForm(forms.Form):
 
 
 class ODMatrixForm(forms.ModelForm):
+
+    def __init__(self, project=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if project:
+            queryset = ZoneSet.objects.filter(project=project)
+            self.fields['zone_set'].queryset = queryset
+
     class Meta:
         model = ODMatrix
-        # fields = '__all__'
-        exclude = ('size', 'locked',)
-
-        def __init__(self, current_project=None, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            if current_project:
-                queryset = ZoneSet.objects.filter(project=current_project)
-                self.fields['zone_set'].queryset = queryset
-
-
+        exclude = ('size', 'locked', 'project')
+            
 class ODPairFileForm(forms.Form):
     my_file = forms.FileField()
-
 
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
         fields = '__all__'
         
-
 class VehicleFileForm(forms.Form):
     my_file = forms.FileField()
-
 
 class PreferencesForm(forms.ModelForm):
     class Meta:
@@ -124,22 +120,34 @@ class PreferencesForm(forms.ModelForm):
         self.fields['dep_time_car_constant_mean'].required = False
         self.fields['dep_time_car_constant_std'].required = False
 
-
 class PreferencesFileForm(forms.Form):
     my_file = forms.FileField()
     
-
 class PopulationForm(forms.ModelForm):
+
+    def __init__(self, project=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if project:
+            queryset = ZoneSet.objects.filter(project=project)
+            self.fields['zone_set'].queryset = queryset
+
     class Meta:
         model = Population
-        # fields = '__all__'
         exclude = ('project', 'locked', 'generated')
 
-
 class NetworkForm(forms.ModelForm):
+
+    def __init__(self, project=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if project:
+            qs1 = ZoneSet.objects.filter(project=project)
+            qs2 = RoadNetwork.objects.filter(project=project)
+            self.fields['zone_set'].queryset = qs1
+            self.fields['road_network'].queryset = qs2
+
     class Meta:
         model = Network
-        # fields = '__all__'
         exclude = ('project',)
 
 

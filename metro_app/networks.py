@@ -45,81 +45,6 @@ def get_network_directory(roadnetwork):
 #                   VIEW OF UPLOADING A PROJECT IN THE DATABASE               #
 # ............................................................................#
 
-"""
-def upload_road_type(request, pk):
-    template = "networks/roadtype.html"
-    roadnetwork = RoadNetwork.objects.get(id=pk)
-    roadtypes = RoadType.objects.select_related(
-        'network').filter(network_id=pk)
-
-    if roadtypes.count() > 0:
-        messages.warning(request, "Fail ! Network contains \
-                            already road type data.")
-        return redirect('network_details', roadnetwork.pk)
-
-    list_roadtype_instance = []
-    if request.method == 'POST':
-        form = RoadTypeFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            datafile = request.FILES['my_file']
-            if datafile.name.endswith('.csv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile, delimiter=',')
-                for row in datafile:  # each row is dictionary
-                    row = {k: None if not v else v for k, v in row.items()}
-                    try:
-                        road_type_id = row['id']
-                        name = row['name']
-                    except KeyError:
-                        message = "There is a problem with either id or name. \
-                                  Id filed shouldn't be string.\
-                                  Name field shouldn't be empty."
-                        messages.warning(request, message)
-                        return redirect('upload_road', roadnetwork.pk)
-
-                    else:
-                        roadtype = RoadType(
-                            road_type_id=road_type_id,
-                            name=name,
-                            congestion=CONGESTION_TYPES[
-                                       row['congestion'].lower()],
-                            default_speed=row.get('default_speed', None),
-                            default_lanes=row.get('default_lanes', None),
-                            default_outflow=row.get('default_outflow', None),
-                            default_param1=row.get('default_param1', None),
-                            default_param2=row.get('default_param2', None),
-                            default_param3=row.get('default_param3', None),
-                            color=row.get('color', None),
-                            network=roadnetwork)
-
-                    list_roadtype_instance.append(roadtype)
-            else:
-                messages.error(request, 'You file does not respect Metropolis \
-                                format guidelines')
-                return render(request, template, {'form': form})
-            try:
-                RoadType.objects.bulk_create(list_roadtype_instance)
-            except ValueError:
-                message = "There is a problem Id field. \
-                          It shouldn't a string."
-                messages.warning(request, message)
-                return redirect('upload_road', roadnetwork.pk)
-            except IntegrityError:
-                message = "There is a problem Id field. \
-                          It shouldn't be empty."
-                messages.warning(request, message)
-                return redirect('upload_road', roadnetwork.pk)
-
-            if roadtypes.count() > 0:
-                messages.success(request, 'Your road type file has been \
-                                 successfully imported !')
-            return redirect('network_details', roadnetwork.pk)
-
-    else:
-        form = RoadTypeFileForm()
-        return render(request, template, {'form': form})
-"""
-
 def upload_node_func(roadnetwork, filepath):
     dtype = {'id': int, 'x': float, 'y': float}
     # Read file with GeoPandas.
@@ -274,7 +199,7 @@ def upload_node(request, pk):
         form = NodeForm()
         return render(request, template, {'form': form})
 
-
+"""
 def upload_edge_func(roadnetwork, filepath):
     # Read file with GeoPandas.
     dtype = {'id': int, 'source': int, 'target': int, 'road_type': int,
@@ -453,7 +378,7 @@ def upload_edge(request, pk):
             filepath = os.path.join(settings.MEDIA_ROOT, filename)
             with open(filepath, 'wb') as f:
                 f.write(datafile.read())
-            # async_tast ne prend pas la fonction avec les parametres tous ensemble ==> a regarder
+            # async_task ne prend pas la fonction avec les parametres tous ensemble ==> a regarder
             task_id = async_task(upload_edge_func, roadnetwork, filepath,
                                  hook=str_hook)
             description = 'Importing edges'
@@ -462,6 +387,7 @@ def upload_edge(request, pk):
                                      road_network=roadnetwork)
             db_task.save()
             messages.success(request, "Task successfully started.")
+            
         else:
             messages.error(
                 request, "Invalid request. Did you upload the file correctly?")
@@ -469,7 +395,7 @@ def upload_edge(request, pk):
     else:
         form = EdgeForm()
         return render(request, template, {'form': form})
-
+"""
 
 def get_offset_polygon(linestring, width, oneway=True, drive_right=True):
     """Returns a polygon of a given width, representing a road defined by a
@@ -672,94 +598,6 @@ def make_network_visualization(road_network_id, node_radius=6, lane_width=3,
         # edges_gdf.to_file(
         #    os.path.join(directory, "edges.geojson"), driver='GeoJSON')
 
-"""
-def upload_zone(request, pk):
-    template = "networks/zone.html"
-    list_zone_instance = []
-    zoneset = ZoneSet.objects.get(id=pk)
-    zone = zoneset.zone_set.all()
-    if zone.exists():
-        messages.warning(request, "Zone already contains data")
-        return redirect('zoneset_details', pk)
-    if request.method == 'POST':
-        # File must be included when creating the form
-        form = ZoneFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            # hey, if form is valid, get me back the data from the input form
-            datafile = request.FILES['my_file']  # get by name
-            # IF THE FILE UPLOADED IS A GEOJSON EXTENSION
-            if datafile.name.endswith('.geojson'):
-                objects = json.load(datafile)
-                for object in objects['features']:
-                    properties = object['properties']
-                    geometry = object['geometry']
-                    radius = properties.get('radius', 0.00)
-                    zone_id = properties['id']
-                    name = properties.get('name', 'No name')
-                    coordinates = geometry['coordinates']
-                    # geometry = GEOSGeometry(Polygon(coordinates,
-                    #                                srid=4326))
-                    # geometry = Polygon(
-                    #    [tuple(l) for l in coordinates[0]], srid=4326)
-                    if geometry['type'] == 'Polygon':
-                        geometry = Polygon(coordinates[0], srid=4326)
-                        centroid = geometry.centroid
-
-                    elif geometry['type'] == 'Point':
-                        centroid = fromstr(
-                            f'POINT({coordinates[0]} {coordinates[1]})',
-                            srid=4326)
-                        geometry = None
-
-                    else:
-                        message = "Zone don't import the good file!"
-                        messages.error(request, message)
-                        return redirect('upload_zone', zoneset.pk)
-
-                    zone_instance = Zone(zone_id=zone_id, centroid=centroid,
-                                         geometry=geometry, radius=radius,
-                                         name=name, zone_set=zoneset)
-                    list_zone_instance.append(zone_instance)
-
-                Zone.objects.bulk_create(list_zone_instance)
-                messages.success(request, "Zones successfully uploaded")
-                return redirect('zoneset_details', zoneset.pk)
-
-            elif datafile.name.endswith('.csv'):
-                datafile = datafile.read().decode('utf-8').splitlines()
-                datafile = csv.DictReader(datafile)
-                for row in datafile:
-                    try:
-                        lon, lat = row['x'], row['y']
-                    except KeyError:
-                        message = "Zone don't import the good file!"
-                        messages.error(request, message)
-                        return redirect('upload_zone', zoneset.pk)
-                    else:
-                        zone_instance = Zone(
-                            zone_id=row['id'],
-                            centroid=fromstr(f'POINT({lon} {lat})', srid=4326),
-                            geometry=None,
-                            radius=row.get('radius', 0.00),
-                            name=row.get('name', 'No name'),
-                            zone_set=zoneset
-                        )
-                        list_zone_instance.append(zone_instance)
-
-                Zone.objects.bulk_create(list_zone_instance)
-                if len(list_zone_instance) > 0:
-                    message = "Zone file has been successfully imported !"
-                    messages.success(request, message)
-
-                return redirect('zoneset_details', zoneset.pk)
-        else:
-            return HttpResponse('Unknown format')
-
-    else:
-        form = ZoneFileForm()
-        return render(request, template, {'form': form})
-"""
-
 def read_od_pair_file(file):
     if file.name.endswith('.csv'):
         file = file.read().decode('utf-8').splitlines()
@@ -772,58 +610,114 @@ def read_od_pair_file(file):
 
     return file
 
-"""
-def upoload_od_pair(request, pk):
-    template = "networks/od_pair.html"
-    od_matrix = ODMatrix.objects.get(id=pk)
-    od_pair = od_matrix.odpair_set.all()
-    if od_pair.exists():
-        messages.warning(request, "ODPair already contains data")
-        return redirect('od_matrix_details', pk)
-    zoneset = od_matrix.zone_set
-    zones = Zone.objects.filter(zone_set=zoneset)
-    if not zones.exists():
-        msg = "Please upload Zone first before uploading OD pair !"
-        messages.warning(request, msg)
-        return redirect('od_matrix_details', pk)
+def upload_edge(request, pk):
+    template = "networks/edge.html"
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    roadtypes = RoadType.objects.select_related('network').filter(
+                                                             network_id=pk)
+    nodes = Node.objects.select_related('network').filter(network_id=pk)
+    edges = Edge.objects.select_related().filter(network_id=pk)
+    # node_id_dict = {node.node_id: node for node in nodes}
+    # road_type_id_dict = {roadtype.road_type_id: roadtype
+    #                     for roadtype in roadtypes}
+    list_edge_instance = []
+    if edges.count() > 0:
+        messages.warning(request, "Fail ! Network contains \
+                            already edges data.")
+        return redirect('road_network_details', roadnetwork.pk)
 
-    list_od_pair_instance = []
-    compteur = 0
-    zone_instance_dict = {zone.zone_id: zone for zone in zones}
+    if nodes.count() == 0 or roadtypes.count() == 0:
+        messages.warning(request, "Fail ! First import node or road type file \
+                            before importing edge.")
+        return redirect('road_network_details', roadnetwork.pk)
+    form = EdgeForm()
     if request.method == 'POST':
-        form = ODPairFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            my_file = request.FILES['my_file']
-            file = read_od_pair_file(my_file)
-            od_matrix_size=0
-            for row in file:
-                try:
-                    origin = zone_instance_dict[int(row['origin'])]
-                    destination = zone_instance_dict[int(row['destination'])]
-                except TypeError:
-                    messages.error(request, 'Uploaded file format not recongnized')
-                    return redirect('upoload_od_pair', pk)
-                except KeyError:
-                    compteur = compteur+1
-                else:
-                    od_matrix_size += int(row['size'])
-                    od_pair_instance = ODPair(
-                        origin=origin,
-                        destination=destination,
-                        size=row['size'],
-                        matrix=od_matrix,
-                    )
-                    list_od_pair_instance.append(od_pair_instance)
-            ODPair.objects.bulk_create(list_od_pair_instance)
-            od_matrix.size = od_matrix_size
-            od_matrix.save()
+        node_id_dict = {node.node_id: node for node in nodes}
+        road_type_id_dict = {roadtype.road_type_id: roadtype
+                             for roadtype in roadtypes}
 
-            # msg= "{} haven't been imported".format(compteur)
-            msg = "OD Pair successfully imported"
-            messages.success(request, msg)
-            return redirect('od_matrix_details', od_matrix.pk)
-            
+        form = EdgeForm(request.POST, request.FILES)
+        if form.is_valid():
+            datafile = request.FILES['my_file']
+            if datafile.name.endswith('.geojson'):
+                objects = json.load(datafile)
+
+            elif datafile.name.endswith('.csv'):
+                edges = pd.read_csv(datafile,)
+                nodes = Node.objects.filter(network_id=pk).values()
+                nodes = pd.DataFrame(nodes)
+                # merge origin coordonates
+                edges = edges.merge(nodes[['node_id', 'location']],
+                                    left_on='source', right_on='node_id')
+
+                # merge destination coordinates
+                edges = edges.merge(
+                    nodes[['node_id', 'location']], left_on='target',
+                    right_on='node_id')
+                edges['geometry'] = edges.apply(lambda x:
+                                                [x['location_x'],
+                                                 x['location_y']], axis=1)
+                edges.drop(['node_id_x', 'node_id_y', 'location_x',
+                            'location_y'], axis=1, inplace=True)
+                edges['geometry'] = edges['geometry'].apply(geom.LineString)
+                edges = gpd.GeoDataFrame(edges)
+                datafile = edges.to_json()
+                objects = json.loads(datafile)
+
+            else:
+                messages.error(request, "You file does not respect Metropolis \
+                                format guidelines")
+                return render(request, template, {'form': form})
+
+            for object in objects['features']:
+                objet_type = object['geometry']['type']
+                if objet_type == 'LineString':
+                    properties = object['properties']
+                    geometry = object['geometry']
+                    location = GEOSGeometry(
+                        LineString(geometry['coordinates']), srid=4326)
+
+                    target = properties.get('target')
+                    source = properties.get('source')
+                    road_type = properties.get('road_type')
+                    try:
+                        target = node_id_dict[target]
+                        source = node_id_dict[source]
+                        roadtype = road_type_id_dict[road_type]
+                    except KeyError:
+                        pass
+                        # messages.error(request, "There is a problem at this \
+                        #               source_id {}, target_id {} and \
+                        #               roadtype_id {}".format(source,
+                        #                                    target, roadtype))
+                        # return render(request, template, {'form': form})
+                    else:
+                        edge = Edge(
+                                edge_id=properties['id'],
+                                param1=properties.get('param1', None),
+                                param2=properties.get('param2', None),
+                                param3=properties.get('param3', None),
+                                speed=properties.get('speed', None),
+                                length=properties['length'],
+                                lanes=properties.get('lanes', None),
+                                geometry=location,
+                                name=properties.get('name', ''),
+                                road_type=roadtype,
+                                target=target,
+                                source=source,
+                                network=roadnetwork)
+                        list_edge_instance.append(edge)
+                else:
+                    messages.error(request, "The uploaded file is not \
+                                   the edge one, please select the good one !")
+                    return render(request, template, {'form': form})
+
+            Edge.objects.bulk_create(list_edge_instance)
+
+            if list_edge_instance:
+                messages.success(request, 'Your edge file has been \
+                             successfully imported !')
+
+        return redirect('road_network_details', roadnetwork.pk)
     else:
-        form = ODPairFileForm()
         return render(request, template, {'form': form})
-"""

@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 from metro_app.models import Project, Network, Node, Zone,ZoneNodeRelation
 from metro_app.forms import NetworkForm, ZoneNodeRelationFileForm
@@ -19,8 +19,7 @@ def list_of_networks(request, pk):
     }
     return render(request, 'list.html', context)
 
-
-def create_network(request, pk):
+def create_network_not_to_use(request, pk):
     current_project = Project.objects.get(id=pk)
     network = Network(project=current_project)
     if request.method == 'POST':
@@ -38,16 +37,37 @@ def create_network(request, pk):
     }
     return render(request, 'form.html', context)
 
+def create_network(request, pk):
+    current_project = get_object_or_404(Project, pk=pk)
+    if request.method == 'POST':
+        network = Network(project=current_project)
+        form = NetworkForm(current_project, request.POST, instance=network)
+        if form.is_valid():
+            form.save()
+            msg= "Network successfully created"
+            messages.success(request, msg)
+            return redirect('network_details', network.pk)
+    else:
+        form = NetworkForm(project=current_project,
+            initial={'project':current_project})
+            
+    context = {
+        'project': current_project,
+        'form': form
+    }
+    return render(request, 'form.html', context)
 
 def update_network(request, pk):
     network = Network.objects.get(id=pk)
     if request.method == 'POST':
-        form = NetworkForm(request.POST, instance=network)
+        form = NetworkForm(network.project, request.POST, instance=network)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Network successfully updated')
             return redirect('list_of_networks', network.project.pk)
+    else:
+        form = NetworkForm(project=network.project, instance=network)
 
-    form = NetworkForm(instance=network)
     context = {
         'form': form,
         'parent_template': 'index.html'
