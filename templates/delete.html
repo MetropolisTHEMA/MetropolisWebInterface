@@ -42,6 +42,14 @@
 				<input class="btn btn-danger" type="submit" name="" value="Confirm">
 			</form>
 
+			{% elif edges_to_delete %}
+			<p>You're about to delete edges. Are you sure ? </p>
+			<form class="" action="{% url 'delete_edges' roadnetwork.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
+				<a class="btn btn-info" href="{% url 'road_network_details' roadnetwork.pk  %}">
+					Cancel</a>
+				<input class="btn btn-danger" type="submit" name="" value="Confirm">
+			</form>
+
 			{% elif zones_to_delete %}
 			<p>You're about to delete Zones. Are you sure ? </p>
 			<form class="" action="{% url 'delete_zones' zoneset.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}

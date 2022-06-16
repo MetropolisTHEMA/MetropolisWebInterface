@@ -154,7 +154,7 @@ def delete_nodes(request, pk):
     nodes = Node.objects.filter(network=roadnetwork)
     if request.method == 'POST':
         nodes.delete()
-        messages.success(request, 'Nodes types deleted!')
+        messages.success(request, 'Nodes successfully deleted!')
         return redirect('road_network_details', pk)
 
     context = {
@@ -163,6 +163,19 @@ def delete_nodes(request, pk):
     }
     return render(request, 'delete.html', context)
 
+def delete_edges(request, pk):
+    roadnetwork = RoadNetwork.objects.get(id=pk)
+    edges = Edge.objects.filter(network=roadnetwork)
+    if request.method == 'POST':
+        edges.delete()
+        messages.success(request, 'Edges sucessfully deleted!')
+        return redirect('road_network_details', pk)
+    
+    context = {
+        'roadnetwork': roadnetwork,
+        'edges_to_delete': edges
+    }
+    return render(request, 'delete.html', context)
 
 def delete_roads_types(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)

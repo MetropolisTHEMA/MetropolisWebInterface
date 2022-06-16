@@ -73,7 +73,6 @@ def update_population(request, pk):
 
 def population_details(request, pk):
     population = Population.objects.get(id=pk)
-    #project = population.project
     tasks = population.backgroundtask_set.order_by('-start_date')[:5]
     context = {
         'population': population,
@@ -111,6 +110,33 @@ def create_population_segment(request, pk):
                 return redirect('population_details', pk)
 
         form = PopulationSegmentForm(initial={'population': population})
+        context = {
+            'population': population,
+            'form': form,
+        }
+        return render(request, 'form.html', context)
+
+def create_population_segment_after(request, pk):
+    #population = get_object_or_404(Project, pk=pk)
+    population = Population.objects.get(id=pk)
+    agent = population.agent_set.all()
+    if agent.exists():
+        messages.warning(request, 'There exists an agent already created. \
+        So you can not create or add an popuation segment.')
+        return redirect('population_details', pk)
+    else:
+
+        if request.method == 'POST':
+            population_segment = PopulationSegment(population=population)
+            form = PopulationSegmentForm(population.project, prequest.POST,
+                instance=population_segment)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Population segment created')
+                return redirect('population_details', pk)
+        else:
+            form = PopulationSegmentForm(project=population.project,
+                initial={'population': population})
         context = {
             'population': population,
             'form': form,

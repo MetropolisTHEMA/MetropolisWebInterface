@@ -152,6 +152,13 @@ class NetworkForm(forms.ModelForm):
 
 
 class PopulationSegmentForm(forms.ModelForm):
+
+    """def __init__(self, project=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if project:
+            queryset = ODMatrix.objects.filter(project=project)
+            self.fields['od_matrix'] = queryset"""
+
     class Meta:
         model = PopulationSegment
         exclude = ('population', 'locked', 'generated',)

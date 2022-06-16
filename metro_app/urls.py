@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (create_project, delete_nodes, delete_roads_types,
+from .views import (create_project, delete_nodes, delete_edges, delete_roads_types,
                     delete_zones, project_details, update_project,
                     delete_project, index, visualization,
                     edges_point_geojson, fetch_task,
@@ -72,6 +72,7 @@ urlpatterns = [
      path('project/<str:pk>/list_of_runs/', list_of_runs,
           name='list_of_runs'),
      path('roadnetwork/<str:pk>/delete/nodes', delete_nodes, name='delete_nodes'),
+     path('roadnetwork/<str:pk>/delete/edges', delete_edges, name='delete_edges'),
      path('roadnetwork/<str:pk>/delete/road_types', delete_roads_types,
           name='delete_roads_types'),
      path('zoneset/<str:pk>/delete/zones', delete_zones,
