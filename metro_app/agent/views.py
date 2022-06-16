@@ -33,7 +33,7 @@ def add_agent(request, pk):
         context = {
             'form': form
         }
-        return render(request, 'views/form.html', context)
+        return render(request, 'form.html', context)
 
 def upload_agent(request, pk):
     population = Population.objects.get(id=pk)
@@ -180,8 +180,15 @@ def delete_agents(request, pk):
     return render(request, 'delete.html', context)
 
 def generate_agents_input(request, pk):
-    population = Population.objects.get(id=pk)    
-    # population_segment = population.populationsegment_set.all()
+    population = Population.objects.get(id=pk)
+    population_segment = population.populationsegment_set.all()
+    # If there is any segment created, stop generating agent
+    # and return a message.
+    if not population_segment.exists():
+        messages.warning(request, 'There is any population segement created,  \
+            please create one before !')
+        return redirect('population_details', population.pk)
+
     task_id = async_task(generate_agents, population,  hook=str_hook)
     description = 'Generating agents'
     db_task = BackgroundTask(

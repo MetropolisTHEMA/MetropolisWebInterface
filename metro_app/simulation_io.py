@@ -52,10 +52,11 @@ def generate_values(rng, distr, mean, std, size):
 the database.
 """
 def generate_agents(population):
+    
     agents = list()
     i = 0
     rng = np.random.default_rng(population.random_seed)
-
+    
     for population_segment in population.populationsegment_set.all():
         preferences = population_segment.preferences
         od_matrix = population_segment.od_matrix
@@ -167,12 +168,16 @@ def generate_agents(population):
                         seconds=dep_time_car_constant[i])
                 agents.append(agent)
                 i += 1
-
-    Agent.objects.bulk_create(agents)
-
-    population.generated = True
-    population.save()
-
+    
+    try:
+        Agent.objects.bulk_create(agents)
+    except Exception as e:
+        return "Couldn't save agent due to his error: {}".format(e)
+    else:
+        population.generated = True
+        population.save()
+        return "Agents successfully created"
+   
 
 """
 Create a JSON input file readable by the simulator from a Run.

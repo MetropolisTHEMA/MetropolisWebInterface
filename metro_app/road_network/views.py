@@ -44,7 +44,6 @@ def create_road_network(request, pk):
     }
     return render(request, 'form.html', context)
 
-
 def road_network_details(request, pk):
 
     roadnetwork = RoadNetwork.objects.get(id=pk)
