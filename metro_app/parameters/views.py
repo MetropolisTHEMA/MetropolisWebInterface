@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from metro_app.models import Project, ParameterSet
 from metro_app.forms import ParameterSetForm, ParameterSetFileForm
@@ -21,7 +21,6 @@ def set_parameters(request, pk):
         'form': form,
     }
     return render(request, 'form.html', context)
-
 
 def upload_parameters(request, pk):
     current_project = Project.objects.get(id=pk)
@@ -107,3 +106,12 @@ def upload_parameters(request, pk):
         'form': form
     }
     return render(request, 'parameters/parameters.html', context)
+
+def list_of_parameters(request, pk):
+    current_project = get_object_or_404(Project, pk=pk)
+    parameters = ParameterSet.objects.filter(project=current_project)
+    context = {
+        'current_project': current_project,
+        'parameters': parameters
+    }
+    return render(request, 'list.html', context)

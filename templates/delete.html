@@ -37,7 +37,7 @@
 			{% elif nodes_to_delete %}
 			<p>You're about to delete nodes. Are you sure ? </p>
 			<form class="" action="{% url 'delete_nodes' roadnetwork.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-				<a class="btn btn-info" href="{% url 'network_details' roadnetwork.pk  %}">
+				<a class="btn btn-info" href="{% url 'road_network_details' roadnetwork.pk  %}">
 					Cancel</a>
 				<input class="btn btn-danger" type="submit" name="" value="Confirm">
 			</form>
@@ -53,7 +53,7 @@
 			{% elif roads_types_to_delete %}
 			<p>You're about to delete roads types. Are you sure ? </p>
 			<form class="" action="{% url 'delete_roads_types' roadnetwork.pk %}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-				<a class="btn btn-info" href="{% url 'network_details' roadnetwork.pk  %}">
+				<a class="btn btn-info" href="{% url 'road_network_details' roadnetwork.pk  %}">
 					Cancel</a>
 				<input class="btn btn-danger" type="submit" name="" value="Confirm">
 			</form>

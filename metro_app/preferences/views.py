@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from metro_app.forms import PreferencesForm
 from metro_app.models import Project, Preferences, Vehicle
@@ -8,14 +8,13 @@ from datetime import timedelta
 
 
 def list_of_preferences(request, pk):
-    current_project = Project.objects.get(id=pk)
+    current_project = get_object_or_404(Project, pk=pk)
     preferences = Preferences.objects.filter(project=current_project)
-    total_preferences = preferences.count()
+    # total_preferences = preferences.count()
     context = {
         'current_project': current_project,
         'preferences': preferences,
-        'total_preferences': total_preferences,
-
+        # 'total_preferences': total_preferences,
     }
     return render(request, 'list.html', context)
 
@@ -117,7 +116,6 @@ def read_field_func2(field, std=0):
                     field_std = distribution['Log-normal']['std']     
 
     return field_distr, field_mean, field_std, field_model
-
 
 def upload_preferences(request, pk):
     # storage = messages.get_messages(request)
@@ -244,8 +242,6 @@ def upload_preferences(request, pk):
     }
     return render(request, 'preferences/preferences.html', context)
 
-
-
 def update_preferences(request, pk):
     preference = Preferences.objects.get(id=pk)
     if request.method == 'POST':
@@ -260,7 +256,6 @@ def update_preferences(request, pk):
         'parent_template': 'index.html'
     }
     return render(request, 'update.html', context)
-
 
 def delete_preferences(request, pk):
     preference_to_delete = Preferences.objects.get(id=pk)

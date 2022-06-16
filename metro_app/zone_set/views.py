@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.gis.geos import GEOSGeometry, Polygon, fromstr
+from shapely import geometry as geom
 from django.contrib import messages
 from django.conf import settings
 from metro_app.models import (Zone, ZoneSet, Project, BackgroundTask,)
@@ -81,6 +82,7 @@ def update_zoneset(request, pk):
         else:
             if form.is_valid():
                 form.save()
+                messages.success(request, 'Zone set successfully updated')
                 return redirect('list_of_zonesets', zoneset.project.pk)
 
     context = {
@@ -181,7 +183,7 @@ def async_task_for_zone_set_file(zoneset, filepath):
             return None
         else:
             return value
-
+    print(gdf)
     for zone_id, row in gdf.iterrows():
         try:
             zone = Zone(
@@ -196,6 +198,7 @@ def async_task_for_zone_set_file(zoneset, filepath):
             invalid_zones.append(str(zone_id))
         else:
             zones_to_import.append(zone)
+            
     if invalid_zones:
         message += (
             'The following zones could not be imported correctly: {}\n'
@@ -217,49 +220,6 @@ def async_task_for_zone_set_file(zoneset, filepath):
     message += 'Successfully imported {} zones.'.format(
         len(zones_to_import))
     return message
-
-def upload_node(request, pk):
-    template = "networks/node.html"
-    roadnetwork = get_object_or_404(RoadNetwork, pk=pk)
-    if Node.objects.filter(network_id=pk).exists():
-        messages.warning(request, "The road network already contains nodes.")
-        return redirect('road_network_details', roadnetwork.pk)
-    if BackgroundTask.objects.filter(
-            road_network=roadnetwork, status=BackgroundTask.INPROGRESS
-    ).exists():
-        messages.warning(
-            request, "A task is in progress for this road network.")
-        return redirect('road_network_details', roadnetwork.pk)
-
-    if request.method == 'POST':
-        # We need to include the files when creating the form
-        form = NodeForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Getting data from the fielfield input
-            datafile = request.FILES['my_file']
-
-            # Save file on disk (we cannot send large files as arguments of
-            # async tasks).
-            filename = '{}-{}'.format(uuid.uuid4(), datafile.name)
-            filepath = os.path.join(settings.MEDIA_ROOT, filename)
-            with open(filepath, 'wb') as f:
-                f.write(datafile.read())
-            task_id = async_task(upload_node_func, roadnetwork, filepath,
-                                 hook=str_hook)
-            description = 'Importing nodes'
-            db_task = BackgroundTask(project=roadnetwork.project, id=task_id,
-                                     description=description,
-                                     road_network=roadnetwork)
-            db_task.save()
-            messages.success(request, "Task successfully started.")
-        else:
-            messages.error(
-                request, "Invalid request. Did you upload the file correctly?")
-        return redirect('road_network_details', roadnetwork.pk)
-    else:
-        form = NodeForm()
-        return render(request, template, {'form': form})
-
 
 def upload_zone(request, pk):
     template = "zone_set/zone.html"

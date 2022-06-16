@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from metro_app.models import (ODMatrix, Project, Zone, 
                               BackgroundTask, ODPair)
@@ -23,7 +23,7 @@ def list_of_od_matrix(request, pk):
     }
     return render(request, 'list.html', context)
 
-def async_task_for_od_pair_file(file, od_marix_id):
+def async_task_for_od_pair_file(file, od_matrix_id):
     if file.name.endswith('.csv'):
         file = file.read().decode('utf-8').splitlines()
         data = csv.DictReader(file)
@@ -33,7 +33,7 @@ def async_task_for_od_pair_file(file, od_marix_id):
     else:
         return "Error: Uploaded file format not recongnized"
 
-    od_matrix = ODMatrix.objects.get(id=od_marix_id)
+    od_matrix = ODMatrix.objects.get(id=od_matrix_id)
     zoneset = od_matrix.zone_set
     zones = Zone.objects.filter(zone_set=zoneset)
     zone_instance_dict = {zone.zone_id: zone for zone in zones}
@@ -71,7 +71,6 @@ def async_task_for_od_pair_file(file, od_marix_id):
     else:
         return "No data uploaded"
 
-
 def upoload_od_pair(request, pk):
     template = "od_matrix/od_pair.html"
     od_matrix = ODMatrix.objects.get(id=pk)
@@ -85,8 +84,7 @@ def upoload_od_pair(request, pk):
         msg = "Please upload Zone first before uploading OD pair !"
         messages.warning(request, msg)
         return redirect('od_matrix_details', pk)
-
-    
+  
     if request.method == 'POST':
         form = ODPairFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -110,17 +108,14 @@ def upoload_od_pair(request, pk):
         form = ODPairFileForm()
         return render(request, template, {'form': form})
 
-
-def create_od_matrix(request, pk):
+def create_od_matrix_not_to_use(request, pk):
     """A roadnetwork depends on a project. It
      must be created inside the project"""
     
-    current_project = Project.objects.get(id=pk)
-    form = ODMatrixForm(initial={'project': current_project})
+    project = Project.objects.get(id=pk)
+    form = ODMatrixForm(initial={'project': project})
     if request.method == 'POST':
-        print(request)
         od_matrix = ODMatrix(project=current_project)
-        # form = ODMatrixForm(request.POST, instance=od_marix)
         form = ODMatrixForm(data=request.POST, instance=od_matrix)
         if form.is_valid():
             form.save()
@@ -128,22 +123,29 @@ def create_od_matrix(request, pk):
             return redirect('od_matrix_details', od_matrix.pk)
 
     context = {
-        'project': current_project,
+        'project': project,
         'form': form}
     return render(request, 'form.html', context)
 
-
-def od_matrix_details(request, pk):
-    od_matrix = ODMatrix.objects.get(id=pk)
-    tasks = od_matrix.backgroundtask_set.order_by('-start_date')[:5]
+def create_od_matrix(request, pk):
+    current_project = get_object_or_404(Project, pk=pk)
+    if request.method == 'POST':
+        od_matrix = ODMatrix(project=current_project)
+        form = ODMatrixForm(od_matrix.project, request.POST, instance=od_matrix)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'OD matrix cessfully created')
+            return redirect('od_matrix_details', od_matrix.pk)
+    else:
+        form = ODMatrixForm(project=current_project,
+            initial={'project': current_project})
     context = {
-        'od_matrix': od_matrix,
-        'tasks': tasks,
+        'project': current_project,
+        'form': form
     }
-    return render(request, 'details.html', context)
+    return render(request, 'form.html', context)
 
-
-def update_od_matrix(request, pk):
+def update_od_matrix_not_to_use(request, pk):
     od_matrix = ODMatrix.objects.get(id=pk)
     form = ODMatrixForm(instance=od_matrix)
     if request.method == 'POST':
@@ -157,6 +159,34 @@ def update_od_matrix(request, pk):
         'parent_template': 'base.html',
     }
     return render(request, 'update.html', context)
+
+def update_od_matrix(request, pk):
+    od_matrix = ODMatrix.objects.get(id=pk)
+    if request.method == 'POST':
+        form = ODMatrixForm(od_matrix.project, request.POST, instance=od_matrix)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'OD Matrix successfully updated')
+            return redirect('list_of_od_matrix', od_matrix.project.pk)
+    else:
+        form = ODMatrixForm(project=od_matrix.project, instance=od_matrix)
+
+    context = {
+        'form': form,
+        'parent_template': 'base.html',
+    }
+    return render(request, 'update.html', context)
+
+
+
+def od_matrix_details(request, pk):
+    od_matrix = ODMatrix.objects.get(id=pk)
+    tasks = od_matrix.backgroundtask_set.order_by('-start_date')[:5]
+    context = {
+        'od_matrix': od_matrix,
+        'tasks': tasks,
+    }
+    return render(request, 'details.html', context)
 
 
 def delete_od_matrix(request, pk):

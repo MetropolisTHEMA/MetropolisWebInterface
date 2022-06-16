@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 from metro_app.forms import PopulationForm, PopulationSegmentForm
 from metro_app.models import (Project, Population, PopulationSegment, 
@@ -18,7 +18,7 @@ def list_of_populations(request, pk):
     }
     return render(request, 'list.html', context)
 
-def add_population(request, pk):
+def add_population_not_to_use(request, pk):
     current_project = Project.objects.get(id=pk)
     population = Population(project=current_project)
     if request.method == 'POST':
@@ -35,16 +35,36 @@ def add_population(request, pk):
     }
     return render(request, 'form.html', context)
 
+def add_population(request, pk):
+    current_project = get_object_or_404(Project, pk=pk)
+    if request.method == 'POST':
+        population = Population(project=current_project)
+        form = PopulationForm(current_project, request.POST, instance=population)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Population successfully added')
+            return redirect('population_details', population.pk)
+
+    else:
+        form = PopulationForm(project=current_project,
+            initial={'project': current_project})
+    context = {
+        'project': current_project,
+        'form': form
+    }
+    return render(request, 'form.html', context)
 
 def update_population(request, pk):
     population = Population.objects.get(id=pk)
     if request.method == 'POST':
-        form = PopulationForm(request.POST, instance=population)
+        form = PopulationForm(population.project, request.POST, instance=population)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Population successfully updated')
             return redirect('list_of_populations', population.project.pk)
+    else:
+        form = PopulationForm(project=population.project, instance=population)
 
-    form = PopulationForm(instance=population)
     context = {
         'form': form,
         'parent_template': 'index.html'
