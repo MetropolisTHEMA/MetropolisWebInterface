@@ -148,12 +148,19 @@ def index(request):
     }
     return render(request, 'dashboard.html', context)
 
-
 def delete_nodes(request, pk):
     roadnetwork = RoadNetwork.objects.get(id=pk)
     nodes = Node.objects.filter(network=roadnetwork)
     if request.method == 'POST':
         nodes.delete()
+        # Let's also delete edges file inside visualization folder
+        try:
+            directory = get_network_directory(roadnetwork)
+            edges_file = os.path.join(directory, 'edges.geojson')
+            os.remove(edges_file)
+        except Exception:
+            pass
+
         messages.success(request, 'Nodes successfully deleted!')
         return redirect('road_network_details', pk)
 
@@ -168,9 +175,17 @@ def delete_edges(request, pk):
     edges = Edge.objects.filter(network=roadnetwork)
     if request.method == 'POST':
         edges.delete()
+        # Let's also delete edge file inside visualization folder
+        try:
+            directory = get_network_directory(roadnetwork)
+            edges_file = os.path.join(directory, 'edges.geojson')
+            os.remove(edges_file)
+        except Exception:
+            pass
+
         messages.success(request, 'Edges sucessfully deleted!')
         return redirect('road_network_details', pk)
-    
+
     context = {
         'roadnetwork': roadnetwork,
         'edges_to_delete': edges
@@ -182,6 +197,14 @@ def delete_roads_types(request, pk):
     roads_types = RoadType.objects.filter(network=roadnetwork)
     if request.method == 'POST':
         roads_types.delete()
+        # Let's also delete edge file inside visualization folder
+        try:
+            directory = get_network_directory(roadnetwork)
+            edges_file = os.path.join(directory, 'edges.geojson')
+            os.remove(edges_file)
+        except Exception:
+            pass
+
         messages.success(request, 'Roads types deleted!')
         return redirect('road_network_details', pk)
 
@@ -198,7 +221,7 @@ def delete_zones(request, pk):
         zones.delete()
         messages.success(request, "Zones successfully deleted")
         return redirect('zoneset_details', zoneset.pk)
-    
+
     context = {
         'zoneset': zoneset,
         'zones_to_delete': zones
@@ -208,7 +231,6 @@ def delete_zones(request, pk):
 # ............................................................................#
 #                   VIEW OF SAVING A PROJECT IN THE DATABASE                  #
 # ............................................................................#
-
 
 def create_project(request):
     if request.method == 'POST':
@@ -233,7 +255,6 @@ def create_project(request):
     }
     return render(request, 'form.html', context)
 
-
 def update_project(request, pk):
     project = Project.objects.get(id=pk)
     form = ProjectForm(instance=project)
@@ -250,11 +271,18 @@ def update_project(request, pk):
         }
     return render(request, 'update.html', context)
 
-
 def delete_project(request, pk):
     project_to_delete = Project.objects.get(id=pk)
     if request.method == 'POST':
         project_to_delete.delete()
+        # Let's also delete edge file inside visualization folder
+        try:
+            directory = get_network_directory(roadnetwork)
+            edges_file = os.path.join(directory, 'edges.geojson')
+            os.remove(edges_file)
+        except Exception:
+            pass
+
         return redirect('home')
 
     context = {
@@ -300,7 +328,7 @@ def project_details(request, pk):
         'networks': networks,
         'runs': runs,
         'tasks': tasks,
-        
+
         # boolean fields
         'is_od_matrix_disabled': is_od_matrix_disabled,
         'is_preferences_disabled': is_preferences_disabled,
@@ -334,12 +362,9 @@ def visualization(request, pk):
                }
     return render(request, 'index-visualization.html', context)
 
-
-
 # ........................................................................... #
 #             VIEW OF RETURNIGNG EDGES GeoJSON FILE                           #
 # ............................................................................#
-
 
 def edges_point_geojson(request, pk):
     """"

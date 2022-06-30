@@ -363,7 +363,7 @@ class RoadType(models.Model):
 
     class Meta:
         db_table = 'RoadType'
- 
+
 
 class Node(models.Model):
     """A Node is an element of the road-network graph, representing an
@@ -615,12 +615,6 @@ class ODMatrix(models.Model):
     date_created = models.DateField(
         auto_now_add=True, help_text='Creation date of the O-D matrix')
     
-    # Additional dimension
-    # tttc2009=models.DurationField(default=timedelta(0))
-    # ttvp2009=models.DurationField(default=timedelta(0))
-    # tttcsans2009=models.DurationField(default=timedelta(0))
-    # tttcsans2010=models.DurationField(default=timedelta(0))
-    # tttcsans2011=models.DurationField(default=timedelta(0))
 
     def __str__(self):
         return self.name

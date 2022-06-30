@@ -7,6 +7,7 @@ from django_tables2 import RequestConfig
 from metro_app.filters import VehicleFilter
 from metro_app.tables import VehicleTable
 
+
 def upload_vehicle(request, pk):
 
     current_project = Project.objects.get(id=pk)
